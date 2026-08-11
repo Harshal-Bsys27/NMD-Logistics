@@ -6,31 +6,36 @@ export const authService = {
   // Sign up with email and password
   async signUp(email: string, password: string, userData: Partial<User>) {
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          full_name: userData.full_name,
+          phone: userData.phone,
+          role: userData.role || 'supervisor',
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result?.error || 'Unable to register account.');
+      }
+
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (authError) throw authError;
+      if (error) throw error;
 
-      if (authData.user) {
-        // Create user record in database
-        const { error: userError } = await supabase.from('users').insert({
-          id: authData.user.id,
-          email,
-          full_name: userData.full_name || '',
-          role: userData.role || 'delivery_personnel',
-          status: userData.status || 'active',
-          phone: userData.phone,
-          department: userData.department,
-        });
-
-        if (userError) throw userError;
-
-        return { user: authData.user, error: null };
-      }
+      return { user: data.session?.user ?? null, error: null };
     } catch (error) {
-      return { user: null, error };
+      return { user: null, error: error instanceof Error ? error : new Error('Registration failed') };
     }
   },
 
