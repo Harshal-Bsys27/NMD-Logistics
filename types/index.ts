@@ -108,6 +108,10 @@ export interface OrderAssignment {
   updated_at: string;
 }
 
+// Alias for convenience
+export type Assignment = OrderAssignment;
+
+
 // Delivery Status History Types
 export interface DeliveryStatusHistory {
   id: string;
