@@ -53,8 +53,19 @@
   * {
     @apply border-border;
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-slate-950 text-slate-100 antialiased;
+    background-image: radial-gradient(circle at top, rgba(34, 211, 238, 0.14), transparent 25%),
+      linear-gradient(to bottom, #020617, #0f172a 35%, #020617);
+  }
+
+  #root {
+    min-height: 100vh;
   }
 }
 
