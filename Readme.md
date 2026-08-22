@@ -10,7 +10,7 @@ A production-ready SaaS-style web application for managing logistics operations.
 
 **Target User:** Logistics companies and delivery service providers (Proprietorship.)
 
-**Status:** MVP Development
+**Status:** MVP under development
 
 ## ✨ Key Features (MVP)
 
