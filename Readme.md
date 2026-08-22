@@ -8,7 +8,7 @@ A production-ready SaaS-style web application for managing logistics operations.
 
 **Purpose:** Complete logistics operations management platform for delivery companies to manage orders, assign delivery personnel, track progress, and generate analytics.
 
-**Target User:** Logistics companies and delivery service providers
+**Target User:** Logistics companies and delivery service providers (Proprietorship.)
 
 **Status:** MVP Development
 
