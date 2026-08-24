@@ -371,6 +371,4 @@ For questions or issues related to the architecture, refer to:
 4. Schema in `database/schema.sql`
 
 ---
-
-**Last Updated:** 2026-07-31
 **Project Version:** 1.0.0-alpha
