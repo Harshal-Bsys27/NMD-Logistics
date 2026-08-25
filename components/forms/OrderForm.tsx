@@ -6,6 +6,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateOrderInput, createOrderSchema } from '@/lib/validations/schemas';
 import { Order } from '@/types';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import Button from '@/components/ui/Button';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import Card from '@/components/ui/Card';
 
 interface OrderFormProps {
   initialOrder?: Order;
@@ -55,162 +59,152 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
   };
 
   return (
-    <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
-      {successMessage && (
-        <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-          <p className="text-sm text-emerald-300">{successMessage}</p>
-        </div>
-      )}
+    <Card className="border-slate-800 bg-slate-900/60 p-6 shadow-lg shadow-slate-950/20">
+      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
+        {successMessage && (
+          <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+            <p className="text-sm text-emerald-300">{successMessage}</p>
+          </div>
+        )}
 
-      {errorMessage && (
-        <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
-          <AlertCircle className="h-5 w-5 text-red-400" />
-          <p className="text-sm text-red-300">{errorMessage}</p>
-        </div>
-      )}
+        {errorMessage && (
+          <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
+            <AlertCircle className="h-5 w-5 text-red-400" />
+            <p className="text-sm text-red-300">{errorMessage}</p>
+          </div>
+        )}
 
-      {/* Order Number & Status */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div>
-          <label className="block text-sm font-medium text-white">Client Name</label>
-          <input
-            {...register('client_name')}
-            type="text"
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-white placeholder-slate-500"
-            placeholder="John Doe"
-          />
-          {errors.client_name && (
-            <p className="mt-1 text-xs text-red-400">{errors.client_name.message}</p>
-          )}
-        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <label className="block text-sm font-medium text-slate-200">Client Name</label>
+            <Input
+              {...register('client_name')}
+              aria-invalid={!!errors.client_name}
+              type="text"
+              placeholder="John Doe"
+            />
+            {errors.client_name && (
+              <p className="mt-1 text-xs text-red-400">{errors.client_name.message}</p>
+            )}
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-white">Phone</label>
-          <input
-            {...register('client_phone')}
-            type="tel"
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-white placeholder-slate-500"
-            placeholder="9876543210"
-          />
-          {errors.client_phone && (
-            <p className="mt-1 text-xs text-red-400">{errors.client_phone.message}</p>
-          )}
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-200">Phone</label>
+            <Input
+              {...register('client_phone')}
+              aria-invalid={!!errors.client_phone}
+              type="tel"
+              placeholder="9876543210"
+            />
+            {errors.client_phone && (
+              <p className="mt-1 text-xs text-red-400">{errors.client_phone.message}</p>
+            )}
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-white">Email (Optional)</label>
-          <input
-            {...register('client_email')}
-            type="email"
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-white placeholder-slate-500"
-            placeholder="john@example.com"
-          />
-          {errors.client_email && (
-            <p className="mt-1 text-xs text-red-400">{errors.client_email.message}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Locations */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-white">Pickup Location</label>
-          <input
-            {...register('pickup_location')}
-            type="text"
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-white placeholder-slate-500"
-            placeholder="123 Main St, Mumbai"
-          />
-          {errors.pickup_location && (
-            <p className="mt-1 text-xs text-red-400">{errors.pickup_location.message}</p>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-slate-200">Email (Optional)</label>
+            <Input
+              {...register('client_email')}
+              aria-invalid={!!errors.client_email}
+              type="email"
+              placeholder="john@example.com"
+            />
+            {errors.client_email && (
+              <p className="mt-1 text-xs text-red-400">{errors.client_email.message}</p>
+            )}
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-white">Delivery Location</label>
-          <input
-            {...register('delivery_location')}
-            type="text"
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-white placeholder-slate-500"
-            placeholder="456 Oak Ave, Mumbai"
-          />
-          {errors.delivery_location && (
-            <p className="mt-1 text-xs text-red-400">{errors.delivery_location.message}</p>
-          )}
-        </div>
-      </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-slate-200">Pickup Location</label>
+            <Input
+              {...register('pickup_location')}
+              aria-invalid={!!errors.pickup_location}
+              type="text"
+              placeholder="123 Main St, Mumbai"
+            />
+            {errors.pickup_location && (
+              <p className="mt-1 text-xs text-red-400">{errors.pickup_location.message}</p>
+            )}
+          </div>
 
-      {/* Package Details */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-white">Description</label>
-          <input
-            {...register('package_description')}
-            type="text"
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-white placeholder-slate-500"
-            placeholder="Electronics - Laptop"
-          />
-          {errors.package_description && (
-            <p className="mt-1 text-xs text-red-400">{errors.package_description.message}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-white">Package Value (₹)</label>
-          <input
-            {...register('package_value', { valueAsNumber: true })}
-            type="number"
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-white placeholder-slate-500"
-            placeholder="50000"
-          />
-          {errors.package_value && (
-            <p className="mt-1 text-xs text-red-400">{errors.package_value.message}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Priority & Instructions */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-white">Priority</label>
-          <select
-            {...register('priority')}
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-white"
-          >
-            <option value="Normal">Normal</option>
-            <option value="High">High</option>
-            <option value="Urgent">Urgent</option>
-          </select>
-          {errors.priority && (
-            <p className="mt-1 text-xs text-red-400">{errors.priority.message}</p>
-          )}
+          <div>
+            <label className="block text-sm font-medium text-slate-200">Delivery Location</label>
+            <Input
+              {...register('delivery_location')}
+              aria-invalid={!!errors.delivery_location}
+              type="text"
+              placeholder="456 Oak Ave, Mumbai"
+            />
+            {errors.delivery_location && (
+              <p className="mt-1 text-xs text-red-400">{errors.delivery_location.message}</p>
+            )}
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-white">Special Instructions</label>
-          <input
-            {...register('special_instructions')}
-            type="text"
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-white placeholder-slate-500"
-            placeholder="Leave at door if not home"
-          />
-          {errors.special_instructions && (
-            <p className="mt-1 text-xs text-red-400">{errors.special_instructions.message}</p>
-          )}
-        </div>
-      </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-slate-200">Description</label>
+            <Input
+              {...register('package_description')}
+              aria-invalid={!!errors.package_description}
+              type="text"
+              placeholder="Electronics - Laptop"
+            />
+            {errors.package_description && (
+              <p className="mt-1 text-xs text-red-400">{errors.package_description.message}</p>
+            )}
+          </div>
 
-      {/* Submit Button */}
-      <div className="flex gap-3">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-3 font-semibold text-white transition hover:from-cyan-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isLoading ? 'Saving...' : initialOrder ? 'Update Order' : 'Create Order'}
-        </button>
-      </div>
-    </form>
+          <div>
+            <label className="block text-sm font-medium text-slate-200">Package Value (₹)</label>
+            <Input
+              {...register('package_value', { valueAsNumber: true })}
+              aria-invalid={!!errors.package_value}
+              type="number"
+              placeholder="50000"
+            />
+            {errors.package_value && (
+              <p className="mt-1 text-xs text-red-400">{errors.package_value.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-slate-200">Priority</label>
+            <Select {...register('priority')} aria-invalid={!!errors.priority}>
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </Select>
+            {errors.priority && (
+              <p className="mt-1 text-xs text-red-400">{errors.priority.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-200">Special Instructions</label>
+            <Input
+              {...register('special_instructions')}
+              aria-invalid={!!errors.special_instructions}
+              type="text"
+              placeholder="Leave at door if not home"
+            />
+            {errors.special_instructions && (
+              <p className="mt-1 text-xs text-red-400">{errors.special_instructions.message}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <Button type="submit" disabled={isLoading} className="flex-1">
+            {isLoading ? 'Saving...' : initialOrder ? 'Update Order' : 'Create Order'}
+          </Button>
+        </div>
+      </form>
+    </Card>
   );
 }
