@@ -59,7 +59,13 @@
   }
 
   body {
-    @apply bg-slate-950 text-slate-100 antialiased;
+    @apply bg-slate-50 text-slate-900 antialiased;
+    background-image: radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 25%),
+      linear-gradient(to bottom, #f8fafc, #e2e8f0 35%, #f8fafc);
+  }
+
+  .dark body {
+    @apply bg-slate-950 text-slate-100;
     background-image: radial-gradient(circle at top, rgba(34, 211, 238, 0.14), transparent 25%),
       linear-gradient(to bottom, #020617, #0f172a 35%, #020617);
   }

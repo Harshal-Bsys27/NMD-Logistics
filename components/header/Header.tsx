@@ -1,6 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import Button from '@/components/ui/Button'
+import ThemeToggle from '@/components/theme/ThemeToggle'
 
 export default function Header() {
   return (
@@ -28,6 +29,7 @@ export default function Header() {
           </div>
           <Button variant="primary" className="hidden sm:inline-flex">New Order</Button>
           <Button variant="ghost">Profile</Button>
+          <ThemeToggle />
         </div>
       </div>
     </header>
