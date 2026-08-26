@@ -35,6 +35,7 @@ export default function RootLayout({
             <Sidebar />
             <main className="flex-1 min-h-[calc(100vh-64px)]">{children}</main>
           </div>
+          <ToastContainer />
         </div>
       </body>
     </html>
