@@ -60,14 +60,21 @@
 
   body {
     @apply bg-slate-50 text-slate-900 antialiased;
-    background-image: radial-gradient(circle at top, rgba(34, 211, 238, 0.12), transparent 25%),
-      linear-gradient(to bottom, #f8fafc, #e2e8f0 35%, #f8fafc);
+    background-color: #f3f7f8;
+    background-image: linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+      radial-gradient(circle at 85% -10%, rgba(20, 184, 166, 0.2), transparent 32%);
+    background-size: 32px 32px, 32px 32px, auto;
   }
 
   .dark body {
     @apply bg-slate-950 text-slate-100;
-    background-image: radial-gradient(circle at top, rgba(34, 211, 238, 0.14), transparent 25%),
-      linear-gradient(to bottom, #020617, #0f172a 35%, #020617);
+    background-color: #061016;
+    background-image: linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+      radial-gradient(circle at 85% -10%, rgba(34, 211, 238, 0.16), transparent 30%),
+      linear-gradient(135deg, #061016 0%, #0b1720 55%, #071116 100%);
+    background-size: 32px 32px, 32px 32px, auto, auto;
   }
 
   #root {
@@ -164,5 +171,13 @@
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
+  }
+
+  .surface-glass {
+    @apply border border-slate-200/80 bg-white/75 shadow-xl shadow-slate-900/5 backdrop-blur-xl;
+  }
+
+  .dark .surface-glass {
+    @apply border-slate-800/80 bg-slate-900/65 shadow-black/20;
   }
 }
