@@ -121,20 +121,20 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="container-main mx-auto px-4 py-10 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8 flex flex-col gap-6 rounded-[2rem] border border-slate-800 bg-slate-900/90 p-8 shadow-[0_35px_120px_-40px_rgba(15,23,42,0.75)] backdrop-blur-xl sm:p-10">
+        <div className="surface-glass mb-8 flex flex-col gap-6 rounded-3xl p-8 sm:p-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.28em] text-cyan-300/80">Operations dashboard</p>
-              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{welcomeTitle}</h1>
+              <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-400/80">Operations dashboard</p>
+              <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">{welcomeTitle}</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
-                Real-time logistics analytics and order tracking across your operations.
+                Real-time analytics, order tracking, and team management across your entire logistics network.
               </p>
             </div>
 
             <button
               onClick={handleSignOut}
               disabled={signingOut}
-              className="inline-flex items-center justify-center gap-2 rounded-3xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-950/30 transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300/20 bg-slate-100/10 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-100/20 hover:border-slate-300/30 dark:border-slate-700/30 dark:bg-slate-950 dark:hover:bg-slate-900 dark:hover:border-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <LogOut className="h-4 w-4" />
               {signingOut ? 'Signing out…' : 'Sign out'}
@@ -146,12 +146,13 @@ export default function DashboardPage() {
             {sampleStats.map((stat) => {
               const Icon = stat.icon;
               return (
-                <div key={stat.label} className="group overflow-hidden rounded-[1.75rem] border border-slate-800 bg-slate-950/80 p-6 transition hover:border-cyan-400/20 hover:bg-slate-900">
-                  <div className={cn('inline-flex rounded-3xl p-3 text-white shadow-lg shadow-cyan-500/10', stat.accent)}>
-                    <Icon className="h-5 w-5" />
+                <div key={stat.label} className="surface-glass group rounded-2xl p-6 transition hover:border-cyan-400/40">
+                  <div className={cn('inline-flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-lg', stat.accent)}>
+                    <Icon className="h-6 w-6" />
                   </div>
-                  <p className="mt-6 text-sm uppercase tracking-[0.24em] text-slate-500">{stat.label}</p>
-                  <p className="mt-3 text-3xl font-semibold text-white">{stat.value}</p>
+                  <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">{stat.label}</p>
+                  <p className="mt-2 text-3xl font-bold text-white">{stat.value}</p>
+                  <div className="mt-3 h-1 w-12 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-60" />
                 </div>
               );
             })}
@@ -161,7 +162,7 @@ export default function DashboardPage() {
         {/* Charts Grid - Row 1 */}
         <div className="mb-6 grid gap-6 lg:grid-cols-2">
           {/* Order Completion Chart */}
-          <div className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-6">
+          <div className="surface-glass rounded-2xl p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-white">Order Completion Trends</h3>
               <p className="mt-1 text-sm text-slate-400">Weekly order status distribution</p>
@@ -189,7 +190,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Revenue vs Target */}
-          <div className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-6">
+          <div className="surface-glass rounded-2xl p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-white">Revenue Performance</h3>
               <p className="mt-1 text-sm text-slate-400">Weekly revenue vs target</p>
@@ -211,7 +212,7 @@ export default function DashboardPage() {
         {/* Charts Grid - Row 2 */}
         <div className="mb-6 grid gap-6 lg:grid-cols-2">
           {/* Delivery Time Distribution */}
-          <div className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-6">
+          <div className="surface-glass rounded-2xl p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-white">Delivery Time Distribution</h3>
               <p className="mt-1 text-sm text-slate-400">How long deliveries take</p>
@@ -238,7 +239,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Driver Performance */}
-          <div className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-6">
+          <div className="surface-glass rounded-2xl p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-white">Top Driver Performance</h3>
               <p className="mt-1 text-sm text-slate-400">Deliveries and customer ratings</p>
@@ -260,25 +261,25 @@ export default function DashboardPage() {
         {/* Bottom Section */}
         <div className="grid gap-6 xl:grid-cols-[1.9fr_1fr]">
           {/* Recent Activity */}
-          <section className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-8 shadow-[0_35px_120px_-40px_rgba(15,23,42,0.75)]">
+          <section className="surface-glass rounded-2xl p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Latest activity</p>
-                <h2 className="mt-4 text-2xl font-semibold text-white">Recent Orders</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Latest activity</p>
+                <h2 className="mt-4 text-2xl font-bold text-white">Recent Orders</h2>
               </div>
-              <span className="rounded-3xl bg-cyan-500/10 px-4 py-2 text-sm text-cyan-200">Live</span>
+              <span className="rounded-full bg-emerald-400/15 px-3 py-1.5 text-xs font-semibold text-emerald-300">LIVE</span>
             </div>
 
-            <div className="mt-8 space-y-5">
+            <div className="mt-8 space-y-3">
               {orders.slice(0, 3).map((order) => (
-                <div key={order.id} className="rounded-[1.75rem] border border-slate-800 bg-slate-950/70 p-5 transition hover:border-cyan-400/20">
+                <div key={order.id} className="surface-glass rounded-xl p-4 transition hover:border-cyan-400/50">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-lg font-semibold text-white">{order.order_number}</p>
-                    <span className="rounded-2xl bg-slate-800 px-3 py-1 text-xs uppercase tracking-[0.24em] text-slate-400">{order.status}</span>
+                    <p className="font-semibold text-white">{order.order_number}</p>
+                    <span className="rounded-full bg-slate-700/50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-300">{order.status}</span>
                   </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-400">{order.client_name}</p>
-                  <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                    <span>₹{order.package_value?.toLocaleString('en-IN')}</span>
+                  <p className="mt-3 text-sm text-slate-400">{order.client_name}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                    <span className="font-semibold text-cyan-300">₹{order.package_value?.toLocaleString('en-IN')}</span>
                     <span className="h-1 w-1 rounded-full bg-slate-600" />
                     <span>{formatDate(order.created_at, 'short')}</span>
                   </div>
@@ -288,48 +289,48 @@ export default function DashboardPage() {
           </section>
 
           {/* Quick Stats */}
-          <section className="space-y-6">
+          <section className="space-y-5">
             {/* Order Stats */}
-            <div className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-6">
-              <h3 className="text-sm uppercase tracking-[0.24em] text-slate-500">Order Stats</h3>
-              <div className="mt-6 space-y-4">
+            <div className="surface-glass rounded-2xl p-6">
+              <h3 className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Order Stats</h3>
+              <div className="mt-6 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Delivered</span>
+                  <span className="text-sm text-slate-400">Delivered</span>
                   <span className="font-bold text-emerald-300">{orderStats.delivered}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">In Transit</span>
+                  <span className="text-sm text-slate-400">In Transit</span>
                   <span className="font-bold text-violet-300">{orderStats.inTransit}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Pending</span>
+                  <span className="text-sm text-slate-400">Pending</span>
                   <span className="font-bold text-amber-300">{orderStats.pending}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Failed</span>
+                  <span className="text-sm text-slate-400">Failed</span>
                   <span className="font-bold text-rose-300">{orderStats.failed}</span>
                 </div>
               </div>
             </div>
 
             {/* Driver Stats */}
-            <div className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-6">
-              <h3 className="text-sm uppercase tracking-[0.24em] text-slate-500">Driver Stats</h3>
-              <div className="mt-6 space-y-4">
+            <div className="surface-glass rounded-2xl p-6">
+              <h3 className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Driver Stats</h3>
+              <div className="mt-6 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Total</span>
+                  <span className="text-sm text-slate-400">Total</span>
                   <span className="font-bold text-cyan-300">{driverStats.total}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Available</span>
+                  <span className="text-sm text-slate-400">Available</span>
                   <span className="font-bold text-emerald-300">{driverStats.available}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">On Delivery</span>
+                  <span className="text-sm text-slate-400">On Delivery</span>
                   <span className="font-bold text-violet-300">{driverStats.onDelivery}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Avg Rating</span>
+                  <span className="text-sm text-slate-400">Avg Rating</span>
                   <span className="font-bold text-yellow-300">{driverStats.avgRating}⭐</span>
                 </div>
               </div>
