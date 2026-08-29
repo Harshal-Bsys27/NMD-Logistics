@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { startTransition, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks';
 
@@ -10,11 +10,13 @@ export default function AuthRootPage() {
 
   useEffect(() => {
     if (!loading) {
-      if (user) {
-        router.replace('/dashboard');
-      } else {
-        router.replace('/auth/signin');
-      }
+      startTransition(() => {
+        if (user) {
+          router.replace('/dashboard');
+        } else {
+          router.replace('/auth/signin');
+        }
+      });
     }
   }, [user, loading, router]);
 
