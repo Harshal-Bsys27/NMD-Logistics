@@ -23,7 +23,20 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { LogOut, Package, MapPin, CheckCircle2, ShieldCheck } from 'lucide-react';
+import {
+  LogOut,
+  Package,
+  MapPin,
+  CheckCircle2,
+  ShieldCheck,
+  Truck,
+  Clock3,
+  TrendingUp,
+  AlertTriangle,
+  Users,
+  ArrowUpRight,
+  BellRing,
+} from 'lucide-react';
 
 // Chart data
 const orderCompletionData = [
@@ -63,6 +76,24 @@ const sampleStats = [
   { label: 'Pending assignments', value: 14, icon: MapPin, accent: 'from-violet-500 to-fuchsia-500' },
   { label: 'On-time deliveries', value: 96, icon: CheckCircle2, accent: 'from-emerald-500 to-teal-500' },
   { label: 'Operational uptime', value: '99.8%', icon: ShieldCheck, accent: 'from-slate-500 to-slate-700' },
+];
+
+const routeHealth = [
+  { label: 'City routes', value: 87, tone: 'text-emerald-300', bar: 'bg-emerald-400' },
+  { label: 'Outskirts', value: 72, tone: 'text-cyan-300', bar: 'bg-cyan-400' },
+  { label: 'High priority', value: 91, tone: 'text-violet-300', bar: 'bg-violet-400' },
+];
+
+const priorityAlerts = [
+  { title: 'Orders due in 30 mins', count: 6, level: 'High' },
+  { title: 'Vehicle maintenance due', count: 3, level: 'Medium' },
+  { title: 'Customer escalations', count: 1, level: 'Low' },
+];
+
+const dispatchBoard = [
+  { id: 'NMD-1048', zone: 'Downtown', driver: 'Rahul K.', eta: '12 min', status: 'On route' },
+  { id: 'NMD-1037', zone: 'Industrial', driver: 'Amit P.', eta: '18 min', status: 'Picking up' },
+  { id: 'NMD-1024', zone: 'Airport', driver: 'Sonia R.', eta: '26 min', status: 'Delayed' },
 ];
 
 export default function DashboardPage() {
@@ -120,28 +151,32 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="container-main mx-auto px-4 py-10 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="surface-glass mb-8 flex flex-col gap-6 rounded-3xl p-8 sm:p-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-400/80">Operations dashboard</p>
               <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">{welcomeTitle}</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
-                Real-time analytics, order tracking, and team management across your entire logistics network.
+                Real-time analytics, order tracking, and team performance across your logistics network.
               </p>
             </div>
 
-            <button
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300/20 bg-slate-100/10 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-100/20 hover:border-slate-300/30 dark:border-slate-700/30 dark:bg-slate-950 dark:hover:bg-slate-900 dark:hover:border-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <LogOut className="h-4 w-4" />
-              {signingOut ? 'Signing out…' : 'Sign out'}
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <button className="inline-flex items-center gap-2 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2.5 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-500/20">
+                <ArrowUpRight className="h-4 w-4" />
+                New dispatch
+              </button>
+              <button
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300/20 bg-slate-100/10 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-100/20 hover:border-slate-300/30 dark:border-slate-700/30 dark:bg-slate-950 dark:hover:bg-slate-900 dark:hover:border-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <LogOut className="h-4 w-4" />
+                {signingOut ? 'Signing out…' : 'Sign out'}
+              </button>
+            </div>
           </div>
 
-          {/* Quick Stats */}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {sampleStats.map((stat) => {
               const Icon = stat.icon;
@@ -159,9 +194,78 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Charts Grid - Row 1 */}
+        <div className="mb-6 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+          <section className="surface-glass rounded-2xl p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Operations overview</p>
+                <h2 className="mt-3 text-2xl font-bold text-white">Service performance</h2>
+              </div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                <TrendingUp className="h-3.5 w-3.5" />
+                +12.4%
+              </span>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                <div className="flex items-center justify-between text-slate-400">
+                  <span className="text-sm">Avg. route time</span>
+                  <Clock3 className="h-4 w-4 text-cyan-300" />
+                </div>
+                <p className="mt-4 text-3xl font-bold text-white">42m</p>
+                <p className="mt-2 text-xs text-emerald-300">-6 min vs last week</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                <div className="flex items-center justify-between text-slate-400">
+                  <span className="text-sm">Fleet active</span>
+                  <Truck className="h-4 w-4 text-violet-300" />
+                </div>
+                <p className="mt-4 text-3xl font-bold text-white">26</p>
+                <p className="mt-2 text-xs text-violet-300">4 vehicles in reserve</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                <div className="flex items-center justify-between text-slate-400">
+                  <span className="text-sm">Support load</span>
+                  <Users className="h-4 w-4 text-amber-300" />
+                </div>
+                <p className="mt-4 text-3xl font-bold text-white">8</p>
+                <p className="mt-2 text-xs text-amber-300">2 supervisors online</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="surface-glass rounded-2xl p-6">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Priority alerts</p>
+                <h2 className="mt-3 text-xl font-bold text-white">Watchlist</h2>
+              </div>
+              <BellRing className="h-5 w-5 text-cyan-300" />
+            </div>
+
+            <div className="space-y-3">
+              {priorityAlerts.map((alert) => (
+                <div key={alert.title} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/60 p-3">
+                  <div>
+                    <p className="text-sm font-medium text-white">{alert.title}</p>
+                    <p className="mt-1 text-xs text-slate-400">{alert.count} items needing attention</p>
+                  </div>
+                  <span className={cn(
+                    'rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
+                    alert.level === 'High' && 'bg-rose-500/15 text-rose-300',
+                    alert.level === 'Medium' && 'bg-amber-500/15 text-amber-300',
+                    alert.level === 'Low' && 'bg-emerald-500/15 text-emerald-300'
+                  )}>
+                    {alert.level}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+
         <div className="mb-6 grid gap-6 lg:grid-cols-2">
-          {/* Order Completion Chart */}
           <div className="surface-glass rounded-2xl p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-white">Order Completion Trends</h3>
@@ -189,7 +293,28 @@ export default function DashboardPage() {
             </ResponsiveContainer>
           </div>
 
-          {/* Revenue vs Target */}
+          <div className="surface-glass rounded-2xl p-6">
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-white">Route efficiency</h3>
+              <p className="mt-1 text-sm text-slate-400">Operational route health status</p>
+            </div>
+            <div className="space-y-5">
+              {routeHealth.map((route) => (
+                <div key={route.label}>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="text-slate-300">{route.label}</span>
+                    <span className={cn('font-semibold', route.tone)}>{route.value}%</span>
+                  </div>
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
+                    <div className={cn('h-full rounded-full', route.bar)} style={{ width: `${route.value}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-6 grid gap-6 lg:grid-cols-2">
           <div className="surface-glass rounded-2xl p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-white">Revenue Performance</h3>
@@ -207,11 +332,7 @@ export default function DashboardPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-        </div>
 
-        {/* Charts Grid - Row 2 */}
-        <div className="mb-6 grid gap-6 lg:grid-cols-2">
-          {/* Delivery Time Distribution */}
           <div className="surface-glass rounded-2xl p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-white">Delivery Time Distribution</h3>
@@ -237,8 +358,9 @@ export default function DashboardPage() {
               </PieChart>
             </ResponsiveContainer>
           </div>
+        </div>
 
-          {/* Driver Performance */}
+        <div className="mb-6 grid gap-6 lg:grid-cols-2">
           <div className="surface-glass rounded-2xl p-6">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-white">Top Driver Performance</h3>
@@ -256,11 +378,37 @@ export default function DashboardPage() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+
+          <div className="surface-glass rounded-2xl p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-white">Dispatch board</h3>
+                <p className="mt-1 text-sm text-slate-400">Current route assignments</p>
+              </div>
+              <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">Live</span>
+            </div>
+
+            <div className="space-y-3">
+              {dispatchBoard.map((job) => (
+                <div key={job.id} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/60 p-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-white">{job.id}</p>
+                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] uppercase tracking-wider text-slate-300">{job.zone}</span>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400">{job.driver}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-cyan-300">{job.eta}</p>
+                    <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-slate-400">{job.status}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Bottom Section */}
         <div className="grid gap-6 xl:grid-cols-[1.9fr_1fr]">
-          {/* Recent Activity */}
           <section className="surface-glass rounded-2xl p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -288,9 +436,7 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          {/* Quick Stats */}
           <section className="space-y-5">
-            {/* Order Stats */}
             <div className="surface-glass rounded-2xl p-6">
               <h3 className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Order Stats</h3>
               <div className="mt-6 space-y-3">
@@ -313,7 +459,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Driver Stats */}
             <div className="surface-glass rounded-2xl p-6">
               <h3 className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Driver Stats</h3>
               <div className="mt-6 space-y-3">
@@ -333,6 +478,17 @@ export default function DashboardPage() {
                   <span className="text-sm text-slate-400">Avg Rating</span>
                   <span className="font-bold text-yellow-300">{driverStats.avgRating}⭐</span>
                 </div>
+              </div>
+            </div>
+
+            <div className="surface-glass rounded-2xl p-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">System health</h3>
+                <AlertTriangle className="h-4 w-4 text-amber-300" />
+              </div>
+              <div className="mt-5 rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4">
+                <p className="text-sm font-medium text-amber-200">2 low-priority issues</p>
+                <p className="mt-2 text-xs text-amber-100/80">Vehicle checks and delayed pickups are being monitored.</p>
               </div>
             </div>
           </section>
