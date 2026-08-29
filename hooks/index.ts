@@ -4,6 +4,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import type { User } from '@/types';
 
+const getFallbackUser = (sessionUser: any): User | null => {
+  if (!sessionUser) return null;
+
+  return {
+    id: sessionUser.id,
+    email: sessionUser.email ?? '',
+    full_name: sessionUser.user_metadata?.full_name ?? 'NMD User',
+    phone: sessionUser.user_metadata?.phone ?? undefined,
+    role: sessionUser.user_metadata?.role ?? 'supervisor',
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+};
+
 /**
  * Hook to get current user and auth state
  */
@@ -13,25 +28,63 @@ export function useAuth() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
+    const syncUser = async (sessionUser: any) => {
+      if (!sessionUser) {
+        if (isMounted) setUser(null);
+        return;
+      }
+
+      const fallbackUser = getFallbackUser(sessionUser);
+      if (fallbackUser && isMounted) {
+        setUser(fallbackUser);
+      }
+
+      try {
+        const { data: profileData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', sessionUser.id)
+          .maybeSingle();
+
+        if (profileData && isMounted) {
+          setUser(profileData as User);
+        }
+      } catch {
+        if (fallbackUser && isMounted) {
+          setUser(fallbackUser);
+        }
+      }
+    };
+
     const initAuth = async () => {
       try {
         const {
-          data: { user: authUser },
-        } = await supabase.auth.getUser();
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
 
-        if (authUser) {
-          const { data: userData } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', authUser.id)
-            .single();
+        if (sessionError) {
+          throw sessionError;
+        }
 
-          setUser(userData as User);
+        if (!isMounted) return;
+
+        if (session?.user) {
+          await syncUser(session.user);
+        } else {
+          setUser(null);
         }
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Auth error'));
+        if (isMounted) {
+          setError(err instanceof Error ? err : new Error('Auth error'));
+          setUser(null);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -40,21 +93,21 @@ export function useAuth() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (!isMounted) return;
+
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
         if (session?.user) {
-          const { data: userData } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          setUser(userData as User);
+          await syncUser(session.user);
+          setLoading(false);
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        setLoading(false);
       }
     });
 
     return () => {
+      isMounted = false;
       subscription?.unsubscribe();
     };
   }, []);
