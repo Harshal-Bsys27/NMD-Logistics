@@ -6,6 +6,7 @@ import { authService } from '@/services/auth';
 import { useAuth } from '@/hooks';
 import { useMockOrders, useMockDrivers } from '@/services/mockData';
 import { cn, formatDate } from '@/utils/helpers';
+import OrdersTable from '@/components/tables/OrdersTable';
 import {
   AreaChart,
   Area,
@@ -492,6 +493,21 @@ export default function DashboardPage() {
               </div>
             </div>
           </section>
+        </div>
+
+        {/* Orders Table Section */}
+        <div className="mb-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Order Management</p>
+              <h2 className="mt-2 text-2xl font-bold text-white">All Orders</h2>
+            </div>
+            <button className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-90">
+              <ArrowUpRight className="h-4 w-4" />
+              New Order
+            </button>
+          </div>
+          <OrdersTable orders={orders} />
         </div>
       </div>
     </div>
