@@ -42,65 +42,73 @@ export default function DriversPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-7xl space-y-8">
         {/* Header */}
-        <div className="mb-8">
+        <div>
           <h1 className="text-4xl font-bold text-white">Drivers & Assignments</h1>
           <p className="mt-2 text-slate-400">Manage your delivery personnel and track active assignments</p>
         </div>
 
         {/* Stats Grid */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-[1.5rem] border border-slate-800 bg-slate-900/50 p-6">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Total Drivers</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Total Drivers</p>
                 <p className="mt-3 text-3xl font-bold text-white">{drivers.length}</p>
               </div>
-              <Users className="h-12 w-12 text-cyan-300 opacity-30" />
+              <div className="rounded-xl bg-cyan-500/20 p-3">
+                <Users className="h-6 w-6 text-cyan-300" />
+              </div>
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-slate-800 bg-slate-900/50 p-6">
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Available Now</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Available Now</p>
                 <p className="mt-3 text-3xl font-bold text-emerald-300">{availableCount}</p>
               </div>
-              <MapPin className="h-12 w-12 text-emerald-300 opacity-30" />
+              <div className="rounded-xl bg-emerald-500/20 p-3">
+                <MapPin className="h-6 w-6 text-emerald-300" />
+              </div>
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-slate-800 bg-slate-900/50 p-6">
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">On Delivery</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">On Delivery</p>
                 <p className="mt-3 text-3xl font-bold text-violet-300">{onDeliveryCount}</p>
               </div>
-              <TrendingUp className="h-12 w-12 text-violet-300 opacity-30" />
+              <div className="rounded-xl bg-violet-500/20 p-3">
+                <TrendingUp className="h-6 w-6 text-violet-300" />
+              </div>
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-slate-800 bg-slate-900/50 p-6">
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm uppercase tracking-[0.2em] text-slate-400">Avg Rating</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Avg Rating</p>
                 <p className="mt-3 text-3xl font-bold text-yellow-300">{avgRating}⭐</p>
               </div>
-              <Award className="h-12 w-12 text-yellow-300 opacity-30" />
+              <div className="rounded-xl bg-yellow-500/20 p-3">
+                <Award className="h-6 w-6 text-yellow-300" />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Search */}
-        <div className="mb-6 relative">
-          <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-500" />
+        <div className="relative">
+          <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
           <input
             type="text"
             placeholder="Search by employee ID or vehicle number..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-[1.5rem] border border-slate-800 bg-slate-950/70 py-3 pl-12 pr-4 text-sm text-white placeholder-slate-500 outline-none transition hover:border-slate-700 focus:border-cyan-400"
+            className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-12 py-3 text-sm text-white placeholder-slate-500 transition focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
           />
         </div>
 
@@ -115,12 +123,12 @@ export default function DriversPage() {
               <div
                 key={driver.id}
                 onClick={() => router.push(`/drivers/${driver.id}`)}
-                className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-6 transition hover:border-slate-700 cursor-pointer"
+                className="surface-glass rounded-2xl border border-slate-700/50 p-6 transition cursor-pointer hover:border-slate-600/50"
               >
                 {/* Driver Header */}
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 text-2xl">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 text-2xl">
                       {vehicleEmojis[driver.vehicle_type]}
                     </div>
                     <div>
@@ -134,7 +142,7 @@ export default function DriversPage() {
                 </div>
 
                 {/* Vehicle Info */}
-                <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+                <div className="mt-6 rounded-xl border border-slate-700/50 bg-slate-800/30 p-4">
                   <div className="grid gap-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-slate-400">Vehicle:</span>
