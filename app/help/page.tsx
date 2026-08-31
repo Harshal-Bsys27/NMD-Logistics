@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, Search, Package, Truck, Users, BarChart3, Settings, Bell, BookOpen } from 'lucide-react';
+import { ChevronDown, Search, Package, Truck, Users, BarChart3, Settings, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
 const helpSections = [
