@@ -111,7 +111,7 @@ export default function GettingStartedPage() {
 
         {/* Steps */}
         <div className="space-y-6">
-          {steps.map((step, index) => {
+          {steps.map((step) => {
             const Icon = step.icon;
             const isCompleted = completedSteps.includes(step.number);
 
@@ -190,9 +190,9 @@ export default function GettingStartedPage() {
               { title: 'Performance Metrics', description: 'Track KPIs like delivery time, rating, and completion rate' },
               { title: 'Customer Notifications', description: 'Customers get automated updates at each delivery stage' },
               { title: 'Historical Data', description: 'All orders and assignments are logged for audits and reporting' },
-            ].map((tip, i) => (
+            ].map((tip) => (
               <div
-                key={i}
+                key={tip.title}
                 className="surface-glass rounded-xl border border-slate-700/50 p-4"
               >
                 <h4 className="font-semibold text-white">{tip.title}</h4>
