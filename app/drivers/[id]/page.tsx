@@ -67,10 +67,10 @@ export default function DriverDetailPage() {
         </button>
 
         {/* Driver Header */}
-        <div className="mb-8 rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-8">
+        <div className="surface-glass mb-8 rounded-2xl border border-slate-700/50 p-8">
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <div className="text-6xl">{vehicleEmojis[driver.vehicle_type]}</div>
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 text-4xl">{vehicleEmojis[driver.vehicle_type]}</div>
               <div>
                 <h1 className="text-3xl font-bold text-white">{driver.employee_id}</h1>
                 <p className="mt-1 text-slate-400 capitalize">{driver.vehicle_type} Driver</p>
@@ -90,23 +90,23 @@ export default function DriverDetailPage() {
 
         {/* Quick Stats Grid */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Completed Deliveries</p>
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Completed Deliveries</p>
             <p className="mt-3 text-2xl font-bold text-emerald-300">{driver.total_deliveries_completed}</p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Customer Rating</p>
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Customer Rating</p>
             <p className="mt-3 text-2xl font-bold text-yellow-300">{driver.rating}</p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Active Assignments</p>
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Active Assignments</p>
             <p className="mt-3 text-2xl font-bold text-cyan-300">{driverAssignments.length}</p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Verification</p>
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Verification</p>
             <p className="mt-3 text-sm font-semibold">
               {driver.phone_verified ? (
                 <span className="text-emerald-300">✓ Verified</span>
