@@ -94,7 +94,7 @@ export default function HelpPage() {
     { q: 'Can I bulk import orders?', a: 'Yes! Use the Import Orders feature in the Orders menu to upload a CSV file.' },
     { q: 'How are drivers assigned to orders?', a: 'The system automatically selects the best driver based on location, availability, rating, and current load.' },
     { q: 'What formats do reports support?', a: 'Reports can be exported as PDF, CSV, or Excel. Custom date ranges and filters are supported.' },
-    { q: 'Is mobile tracking real-time?', a: 'Yes! GPS updates every 10 seconds. Battery optimizations available in driver app settings.' },
+    { q: 'Is live tracking real-time?', a: 'Yes! GPS updates are displayed in the dashboard with route status and live ETA updates.' },
     { q: 'How do I contact support?', a: 'Email: support@nmdlogistics.com | Phone: 1-800-NMD-HELP | Chat: Available 9 AM - 6 PM IST' },
   ];
 

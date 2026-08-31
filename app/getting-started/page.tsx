@@ -184,7 +184,7 @@ export default function GettingStartedPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             {[
-              { title: 'Mobile App', description: 'Drivers use the mobile app for real-time updates and notifications' },
+              { title: 'Driver Tracking', description: 'Monitor live driver availability, route progress, and delivery updates from the dashboard' },
               { title: 'Real-time Tracking', description: 'Monitor driver location and delivery progress live' },
               { title: 'Automated Assignments', description: 'System intelligently assigns orders based on driver capacity' },
               { title: 'Performance Metrics', description: 'Track KPIs like delivery time, rating, and completion rate' },
