@@ -74,14 +74,14 @@ export default function OrderDetailPage() {
         {/* Order Overview */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Order Number */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Order Number</p>
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Order Number</p>
             <p className="mt-2 text-lg font-semibold text-white">{order.order_number}</p>
           </div>
 
           {/* Status */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Status</p>
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Status</p>
             <div className="mt-2">
               <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusColors[order.status]}`}>
                 {order.status.replace('_', ' ')}
@@ -90,16 +90,16 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Value */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Package Value</p>
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Package Value</p>
             <p className="mt-2 flex items-center gap-1 text-lg font-semibold text-emerald-300">
               <DollarSign className="h-4 w-4" />₹{order.package_value?.toLocaleString('en-IN')}
             </p>
           </div>
 
           {/* Created Date */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Created</p>
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Created</p>
             <p className="mt-2 flex items-center gap-1 text-sm text-slate-300">
               <Calendar className="h-4 w-4" />
               {formatDate(order.created_at, 'short')}
@@ -109,17 +109,21 @@ export default function OrderDetailPage() {
 
         {/* Location Info */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/95 p-6">
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
             <div className="mb-3 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-cyan-400" />
+              <div className="rounded-lg bg-cyan-500/20 p-2">
+                <MapPin className="h-5 w-5 text-cyan-300" />
+              </div>
               <h3 className="font-semibold text-white">Pickup Location</h3>
             </div>
             <p className="text-slate-300">{order.pickup_location}</p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/95 p-6">
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
             <div className="mb-3 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-emerald-400" />
+              <div className="rounded-lg bg-emerald-500/20 p-2">
+                <MapPin className="h-5 w-5 text-emerald-300" />
+              </div>
               <h3 className="font-semibold text-white">Delivery Location</h3>
             </div>
             <p className="text-slate-300">{order.delivery_location}</p>
@@ -127,9 +131,11 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Package Details */}
-        <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900/95 p-6">
+        <div className="surface-glass mb-8 rounded-2xl border border-slate-700/50 p-6">
           <div className="mb-4 flex items-center gap-2">
-            <Package className="h-5 w-5 text-violet-400" />
+            <div className="rounded-lg bg-violet-500/20 p-2">
+              <Package className="h-5 w-5 text-violet-300" />
+            </div>
             <h3 className="font-semibold text-white">Package Details</h3>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -153,7 +159,7 @@ export default function OrderDetailPage() {
         {/* Edit Form */}
         <div className="mb-8">
           <h2 className="mb-4 text-2xl font-bold text-white">Edit Order</h2>
-          <div className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-8">
+          <div className="surface-glass rounded-2xl border border-slate-700/50 p-8">
             <OrderForm initialOrder={order} onSubmit={handleSubmit} isLoading={isLoading} />
           </div>
         </div>
