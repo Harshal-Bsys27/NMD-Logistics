@@ -40,7 +40,7 @@ export default function CreateOrderPage() {
         </div>
 
         {/* Form Container */}
-        <div className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-8">
+        <div className="surface-glass rounded-2xl border border-slate-700/50 p-8">
           <OrderForm onSubmit={handleSubmit} isLoading={isLoading} />
         </div>
       </div>
