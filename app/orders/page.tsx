@@ -49,36 +49,37 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-7xl space-y-8">
         {/* Header */}
-        <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-4xl font-bold text-white">Orders</h1>
             <p className="mt-2 text-slate-400">Manage all delivery orders and track their status</p>
           </div>
           <button
             onClick={() => router.push('/orders/create')}
-            className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-3 font-semibold text-white transition hover:from-cyan-600 hover:to-blue-600"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-600 hover:to-blue-600"
           >
             <Plus className="h-5 w-5" />
             New Order
           </button>
         </div>
 
+
         {/* Stats Row */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
           {Object.entries(statusStats).map(([status, count]) => (
             <button
               key={status}
               onClick={() => setFilterStatus(filterStatus === status ? null : status)}
               className={cn(
-                'rounded-[1.5rem] border p-4 transition',
+                'surface-glass rounded-2xl border p-6 transition',
                 filterStatus === status
-                  ? 'border-cyan-400 bg-cyan-500/10'
-                  : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'
+                  ? 'border-cyan-500/50 bg-cyan-500/10'
+                  : 'border-slate-700/50 hover:border-slate-600/50'
               )}
             >
-              <p className="text-sm uppercase tracking-[0.2em] text-slate-400">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
                 {status.replace('_', ' ')}
               </p>
               <p className="mt-2 text-2xl font-bold text-white">{count}</p>
@@ -87,51 +88,51 @@ export default function OrdersPage() {
         </div>
 
         {/* Search & Filter */}
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-500" />
+            <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
             <input
               type="text"
               placeholder="Search by order #, client name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-[1.5rem] border border-slate-800 bg-slate-950/70 py-3 pl-12 pr-4 text-sm text-white placeholder-slate-500 outline-none transition hover:border-slate-700 focus:border-cyan-400"
+              className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-12 py-3 text-sm text-white placeholder-slate-500 transition focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
             />
           </div>
-          <button className="inline-flex items-center gap-2 rounded-[1.5rem] border border-slate-800 bg-slate-950 px-4 py-3 text-sm text-slate-300 transition hover:border-slate-700">
+          <button className="surface-glass flex items-center gap-2 rounded-xl border border-slate-700/50 px-4 py-3 text-sm text-slate-300 transition hover:border-slate-600/50">
             <Filter className="h-4 w-4" />
             More Filters
           </button>
         </div>
 
         {/* Orders Table */}
-        <div className="rounded-[2rem] border border-slate-800 bg-slate-900/95 overflow-hidden">
+        <div className="surface-glass rounded-2xl border border-slate-700/50 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-950/50">
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <tr className="border-b border-slate-700/50 bg-slate-800/50">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
                     Order
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
                     Client
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
                     Priority
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
                     Value
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
                     Created
                   </th>
                   <th className="px-6 py-4"></th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-700/50">
                 {filteredOrders.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center">
@@ -145,7 +146,7 @@ export default function OrdersPage() {
                       <tr
                         key={order.id}
                         onClick={() => router.push(`/orders/${order.id}`)}
-                        className="border-b border-slate-800 cursor-pointer transition hover:bg-slate-800/30"
+                        className="border-b border-slate-700/50 cursor-pointer transition hover:bg-slate-800/50"
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
