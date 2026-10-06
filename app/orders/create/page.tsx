@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { OrderForm } from '@/components/forms/OrderForm';
 import { CreateOrderInput } from '@/lib/validations/schemas';
+import { orderService } from '@/services/database';
 import { ArrowLeft } from 'lucide-react';
 
 export default function CreateOrderPage() {
@@ -13,10 +14,19 @@ export default function CreateOrderPage() {
   const handleSubmit = async (data: CreateOrderInput) => {
     setIsLoading(true);
     try {
-      // Simulate API call - in production, call your backend
-      console.log('Creating order:', data);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      router.push('/orders');
+      const { data: createdOrder, error } = await orderService.create(data);
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      // Navigate to the new order detail page
+      if (createdOrder) {
+        router.push(`/orders/${createdOrder.id}`);
+      }
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }

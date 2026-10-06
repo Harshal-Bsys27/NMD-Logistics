@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useMockOrders } from '@/services/mockData';
+import { orderService } from '@/services/database';
 import { OrderForm } from '@/components/forms/OrderForm';
 import { CreateOrderInput } from '@/lib/validations/schemas';
 import { formatDate } from '@/utils/helpers';
@@ -14,8 +15,44 @@ export default function OrderDetailPage() {
   const orderId = params.id as string;
   const { orders } = useMockOrders();
   const [isLoading, setIsLoading] = useState(false);
+  const [dbOrder, setDbOrder] = useState(null);
+  const [loadingDb, setLoadingDb] = useState(true);
 
-  const order = useMemo(() => orders.find((o) => o.id === orderId), [orders, orderId]);
+  // Try to load from database first, fall back to mock data
+  useEffect(() => {
+    const loadOrder = async () => {
+      try {
+        const { data, error } = await orderService.getById(orderId);
+        if (!error && data) {
+          setDbOrder(data);
+        }
+      } catch (err) {
+        console.log('Database order fetch failed, using mock data');
+      } finally {
+        setLoadingDb(false);
+      }
+    };
+
+    loadOrder();
+  }, [orderId]);
+
+  const order = dbOrder || useMemo(() => orders.find((o) => o.id === orderId), [orders, orderId]);
+
+  if (loadingDb) {
+    return (
+      <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl">
+          <div className="animate-pulse space-y-4">
+            <div className="h-12 w-1/3 rounded-lg bg-slate-800" />
+            <div className="space-y-3">
+              <div className="h-6 w-full rounded-lg bg-slate-800" />
+              <div className="h-6 w-5/6 rounded-lg bg-slate-800" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
@@ -40,9 +77,16 @@ export default function OrderDetailPage() {
   const handleSubmit = async (data: CreateOrderInput) => {
     setIsLoading(true);
     try {
-      console.log('Updating order:', orderId, data);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const { error } = await orderService.update(orderId, data);
+
+      if (error) {
+        throw new Error(error);
+      }
+
       router.push('/orders');
+    } catch (error) {
+      console.error('Failed to update order:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }

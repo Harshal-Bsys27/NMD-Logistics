@@ -10,6 +10,8 @@ import {
   Truck,
   Zap,
   BarChart3,
+  Activity,
+  FileCode2,
   Settings,
   HelpCircle,
   LogOut,
@@ -22,6 +24,8 @@ const navItems = [
   { href: '/drivers', label: 'Drivers', icon: Truck, badge: '3' },
   { href: '/assignments', label: 'Assignments', icon: Zap, badge: '2' },
   { href: '/analytics', label: 'Analytics', icon: BarChart3, badge: null },
+  { href: '/status', label: 'Status', icon: Activity, badge: null },
+  { href: '/api-docs', label: 'API Docs', icon: FileCode2, badge: null },
 ];
 
 const bottomItems = [
