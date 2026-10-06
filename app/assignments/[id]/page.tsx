@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useMockAssignments, useMockOrders, useMockDrivers } from '@/services/mockData';
+import { assignmentService } from '@/services/database';
 import { formatDate } from '@/utils/helpers';
 import {
   ArrowLeft,
@@ -16,7 +17,6 @@ import {
   Star,
   AlertTriangle,
   MapPinIcon,
-  Package,
 } from 'lucide-react';
 
 type AssignmentStatus = 'pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
@@ -80,10 +80,21 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
 
   const handleStatusUpdate = async (newStatus: AssignmentStatus) => {
     setActionLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setActionMessage(`Assignment ${statusColors[newStatus].label}`);
-    setActionLoading(false);
-    setTimeout(() => setActionMessage(null), 2500);
+    try {
+      const { error } = await assignmentService.updateStatus(assignment.id, newStatus);
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      setActionMessage(`Assignment ${statusColors[newStatus].label}`);
+      setTimeout(() => setActionMessage(null), 2500);
+    } catch (error) {
+      console.error('Failed to update assignment status:', error);
+      setActionMessage(null);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const canAccept = assignment.status === 'pending';
@@ -92,7 +103,7 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
   const canComplete = assignment.status === 'in_progress';
 
   const eta = assignment.started_at
-    ? new Date(new Date(assignment.started_at).getTime() + assignment.estimated_duration_minutes * 60 * 1000)
+    ? new Date(new Date(assignment.started_at).getTime() + (assignment.estimated_duration_minutes || 45) * 60 * 1000)
     : null;
 
   return (
@@ -190,7 +201,7 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
             </div>
             <div className="rounded-xl bg-slate-800/50 p-4">
               <p className="text-sm text-slate-400">Package Value</p>
-              <p className="mt-1 font-bold text-white">₹{order.package_value.toLocaleString()}</p>
+              <p className="mt-1 font-bold text-white">₹{(order.package_value || 0).toLocaleString()}</p>
             </div>
             <div className="rounded-xl bg-slate-800/50 p-4">
               <p className="text-sm text-slate-400">Priority</p>

@@ -97,9 +97,8 @@ export default function AssignmentsPage() {
                   key={assignment.id}
                   href={`/assignments/${assignment.id}`}
                 >
-                  <div className="surface-glass rounded-2xl border border-slate-700/50 p-6 transition hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10"
-                  >
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="surface-glass rounded-2xl border border-slate-700/50 p-6 transition hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     {/* Main Info */}
                     <div className="flex-1">
                       <div className="mb-3 flex items-center gap-3">
@@ -171,6 +170,7 @@ export default function AssignmentsPage() {
                       </p>
                       <p className="text-xs text-slate-400">minutes</p>
                     </div>
+                  </div>
                   </div>
                 </Link>
               );
