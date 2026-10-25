@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/header/Header'
-import Sidebar from '@/components/sidebar/Sidebar'
-import ToastContainer from '@/components/notifications/ToastContainer'
+import AppShell from '@/components/layout/AppShell';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -30,12 +28,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <div id="root">
-          <Header />
-          <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6">
-            <Sidebar />
-            <main className="flex-1 min-h-[calc(100vh-64px)]">{children}</main>
-          </div>
-          <ToastContainer />
+          <AppShell>{children}</AppShell>
         </div>
       </body>
     </html>
