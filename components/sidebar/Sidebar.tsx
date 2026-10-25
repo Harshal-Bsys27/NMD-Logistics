@@ -2,8 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Badge from '@/components/ui/Badge';
+import { authService } from '@/services/auth';
 import {
   LayoutDashboard,
   Package,
@@ -35,6 +36,15 @@ const bottomItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    const { error } = await authService.signOut();
+    if (!error) {
+      router.replace('/auth/signin');
+      router.refresh();
+    }
+  };
 
   return (
     <aside className="surface-glass hidden w-64 shrink-0 self-start flex-col rounded-2xl p-4 lg:flex">
@@ -99,7 +109,10 @@ export default function Sidebar() {
       </nav>
 
       {/* Sign Out */}
-      <button className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/20">
+      <button
+        onClick={handleSignOut}
+        className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-rose-600 transition hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/20"
+      >
         <LogOut className="h-5 w-5" />
         <span>Sign out</span>
       </button>

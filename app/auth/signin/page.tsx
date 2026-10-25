@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,6 +13,15 @@ export default function SignInPage() {
   const router = useRouter();
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get('error') === 'google') {
+      setFormError('Google sign-in could not be completed. Please try again or use your email and password.');
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+  }, []);
 
   const {
     register,
@@ -42,6 +51,23 @@ export default function SignInPage() {
     }
   };
 
+  const onGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    setFormError(null);
+
+    const { data, error } = await authService.signInWithGoogle(
+      `${window.location.origin}/auth/callback`
+    );
+
+    if (error || !data?.url) {
+      setFormError(error instanceof Error ? error.message : 'Unable to start Google sign-in.');
+      setGoogleLoading(false);
+      return;
+    }
+
+    window.location.assign(data.url);
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="container-main flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
@@ -56,6 +82,22 @@ export default function SignInPage() {
                 Secure access for administrators and logistics supervisors.
               </p>
             </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onGoogleSignIn}
+            disabled={loading || googleLoading}
+            className="inline-flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-700 bg-slate-950/70 px-5 py-4 text-sm font-semibold text-white transition hover:border-slate-500 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <span aria-hidden="true" className="text-lg font-bold text-blue-400">G</span>
+            {googleLoading ? 'Connecting to Google…' : 'Continue with Google'}
+          </button>
+
+          <div className="my-6 flex items-center gap-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+            <span className="h-px flex-1 bg-slate-800" />
+            <span>Or use email</span>
+            <span className="h-px flex-1 bg-slate-800" />
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -98,7 +140,7 @@ export default function SignInPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || googleLoading}
               className="inline-flex w-full items-center justify-center rounded-3xl bg-gradient-to-r from-blue-500 to-cyan-400 px-5 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Signing in…' : 'Continue'}
