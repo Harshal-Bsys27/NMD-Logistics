@@ -191,7 +191,7 @@ export const driverService = {
   async getStats(driverId: string) {
     try {
       const { data: assignments, error } = await supabase
-        .from('assignments')
+        .from('order_assignments')
         .select('status, estimated_duration_minutes')
         .eq('personnel_id', driverId);
 
@@ -223,7 +223,7 @@ export const assignmentService = {
   }) {
     try {
       const { data, error } = await supabase
-        .from('assignments')
+        .from('order_assignments')
         .insert([
           {
             order_id: assignmentData.order_id,
@@ -268,7 +268,7 @@ export const assignmentService = {
       }
 
       const { data, error } = await supabase
-        .from('assignments')
+        .from('order_assignments')
         .update(updateData)
         .eq('id', assignmentId)
         .select()
@@ -285,7 +285,7 @@ export const assignmentService = {
   async getAll() {
     try {
       const { data, error } = await supabase
-        .from('assignments')
+        .from('order_assignments')
         .select('*')
         .order('assigned_at', { ascending: false });
 
@@ -300,7 +300,7 @@ export const assignmentService = {
   async getById(assignmentId: string) {
     try {
       const { data, error } = await supabase
-        .from('assignments')
+        .from('order_assignments')
         .select('*')
         .eq('id', assignmentId)
         .single();
@@ -316,7 +316,7 @@ export const assignmentService = {
   async getByStatus(status: string) {
     try {
       const { data, error } = await supabase
-        .from('assignments')
+        .from('order_assignments')
         .select('*')
         .eq('status', status)
         .order('assigned_at', { ascending: false });
