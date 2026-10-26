@@ -130,21 +130,34 @@ npm install
 
 3. Set up environment variables:
 ```bash
-cp .env.example .env.local
+Copy-Item .env.example .env.local
 ```
 
-Fill in your Supabase credentials and application settings.
+Create a Supabase project in the dashboard. In **Project Settings > API**, copy the project URL, anon/publishable key, and service-role/secret key into `.env.local`. The service-role key is server-only and must never use a `NEXT_PUBLIC_` prefix.
 
-4. Set up the database:
-   - Create a new PostgreSQL database in Supabase
-   - Run the SQL schema from `database/schema.sql` in Supabase SQL Editor
+4. Link this workspace to the new project and apply tracked migrations:
+```powershell
+npx supabase login
+npx supabase link --project-ref <PROJECT_REF>
+npm run db:push
+```
+
+The CLI prompts for your database password while linking. Migrations in `supabase/migrations/` create the schema and Row Level Security policies. Do not run `database/schema.sql` separately on a project that has already received the migrations.
+
+After the first supervisor account is created, promote the designated company administrator once from Supabase **SQL Editor**:
+```sql
+UPDATE public.users
+SET role = 'admin'
+WHERE email = 'admin@your-company.com';
+```
+Replace the email with that account's exact email. Public registration cannot assign the admin role.
 
 5. Run the development server:
 ```bash
 npm run dev
 ```
 
-Visit http://localhost:3000 to access the application.
+Visit the local URL printed by Next.js (usually http://localhost:3000). For Google sign-in, add `http://localhost:3000/auth/callback` under Supabase **Authentication > URL Configuration**; also allow port 3001 if Next.js uses it.
 
 ## 📚 Database Schema
 
@@ -160,7 +173,7 @@ The database is designed with the following tables:
 - **settings** - Application configuration
 - **audit_log** - Comprehensive audit trail
 
-See `database/schema.sql` for the complete schema with relationships, constraints, and indexes.
+The initial schema is tracked in `supabase/migrations/`; `database/schema.sql` remains as the original reference. Use `npm run db:push` for the linked cloud project. For local development, start Docker Desktop, run `npm run db:start`, then `npm run db:lint` or `npm run db:reset`.
 
 ## 🔐 Security & Best Practices
 
