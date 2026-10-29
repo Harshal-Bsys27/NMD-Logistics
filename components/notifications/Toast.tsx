@@ -15,28 +15,28 @@ export interface ToastProps {
 
 const toastStyles: Record<ToastType, { bg: string; border: string; icon: React.ReactNode; text: string }> = {
   success: {
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/20',
-    icon: <CheckCircle2 className="h-5 w-5 text-emerald-400" />,
-    text: 'text-emerald-300',
+    bg: 'bg-success',
+    border: 'border-success/30',
+    icon: <CheckCircle2 className="h-5 w-5 text-success-foreground" />,
+    text: 'text-success-foreground',
   },
   error: {
-    bg: 'bg-red-500/10',
-    border: 'border-red-500/20',
-    icon: <AlertCircle className="h-5 w-5 text-red-400" />,
-    text: 'text-red-300',
+    bg: 'bg-danger',
+    border: 'border-danger/30',
+    icon: <AlertCircle className="h-5 w-5 text-danger-foreground" />,
+    text: 'text-danger-foreground',
   },
   info: {
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/20',
-    icon: <Info className="h-5 w-5 text-blue-400" />,
-    text: 'text-blue-300',
+    bg: 'bg-info',
+    border: 'border-info/30',
+    icon: <Info className="h-5 w-5 text-info-foreground" />,
+    text: 'text-info-foreground',
   },
   warning: {
-    bg: 'bg-yellow-500/10',
-    border: 'border-yellow-500/20',
-    icon: <AlertCircle className="h-5 w-5 text-yellow-400" />,
-    text: 'text-yellow-300',
+    bg: 'bg-warning',
+    border: 'border-warning/30',
+    icon: <AlertCircle className="h-5 w-5 text-warning-foreground" />,
+    text: 'text-warning-foreground',
   },
 }
 
@@ -61,7 +61,7 @@ export default function Toast({ id, message, type = 'info', duration = 5000, onC
         type="button"
         aria-label="Close notification"
         onClick={() => onClose(id)}
-        className="text-slate-400 hover:text-slate-300"
+        className="min-h-[44px] min-w-[44px] text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         <X className="h-4 w-4" />
       </button>
