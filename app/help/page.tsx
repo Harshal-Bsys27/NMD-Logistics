@@ -67,16 +67,17 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
   return (
     <button
       onClick={() => setOpen(!open)}
-      className="w-full text-left"
+      aria-expanded={open}
+      className="w-full rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div className="surface-glass rounded-xl border border-slate-700/50 p-4 transition hover:border-slate-600/50">
+      <div className="surface-glass rounded-lg border border-border p-4 transition hover:border-ring/50">
         <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-white">{question}</h4>
+          <h4 className="font-semibold text-foreground">{question}</h4>
           <ChevronDown
-            className={`h-5 w-5 text-slate-400 transition ${open ? 'rotate-180' : ''}`}
+            className={`h-5 w-5 text-muted-foreground transition ${open ? 'rotate-180' : ''}`}
           />
         </div>
-        {open && <p className="mt-3 text-slate-300">{answer}</p>}
+        {open && <p className="mt-3 text-foreground">{answer}</p>}
       </div>
     </button>
   );
@@ -105,30 +106,30 @@ export default function HelpPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl space-y-8">
+    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="w-full space-y-6">
         {/* Header */}
         <div>
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-cyan-500/20 p-3">
-              <BookOpen className="h-8 w-8 text-cyan-300" />
+            <div className="rounded-md bg-primary/10 p-3 text-primary">
+              <BookOpen className="h-8 w-8" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white">Help & Support</h1>
-              <p className="mt-1 text-slate-400">Find answers and learn how to use NMD Logistics</p>
+              <h1 className="text-3xl font-semibold text-foreground">Help & Support</h1>
+              <p className="mt-1 text-muted-foreground">Find answers and learn how to use NMD Logistics</p>
             </div>
           </div>
         </div>
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
+          <Search className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search help topics..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-12 py-3 text-white placeholder-slate-500 transition focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+            className="min-h-11 w-full rounded-lg border border-input bg-background px-12 py-2.5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
 
@@ -143,17 +144,17 @@ export default function HelpPage() {
                 <button
                   key={index}
                   onClick={() => setSelectedSection(actualIndex)}
-                  className={`surface-glass w-full rounded-xl border p-4 text-left transition ${
+                  className={`surface-glass min-h-16 w-full rounded-lg border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                     selectedSection === actualIndex
-                      ? 'border-cyan-500/50 bg-cyan-500/10'
-                      : 'border-slate-700/50 hover:border-slate-600/50'
+                      ? 'border-primary/50 bg-primary/10'
+                      : 'border-border hover:border-ring/50'
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <Icon className="mt-1 h-5 w-5 flex-shrink-0 text-cyan-300" />
+                    <Icon className="mt-1 h-5 w-5 flex-shrink-0 text-primary" />
                     <div>
-                      <h3 className="font-semibold text-white">{section.title}</h3>
-                      <p className="text-xs text-slate-400">{section.description}</p>
+                      <h3 className="font-semibold text-foreground">{section.title}</h3>
+                      <p className="text-xs text-muted-foreground">{section.description}</p>
                     </div>
                   </div>
                 </button>
@@ -163,22 +164,22 @@ export default function HelpPage() {
 
           {/* Content */}
           <div className="space-y-6 lg:col-span-2">
-            <div className="surface-glass rounded-2xl border border-slate-700/50 p-8">
+            <div className="surface-glass rounded-lg p-6 sm:p-8">
               <div className="mb-6 flex items-center gap-3">
-                <div className="rounded-xl bg-cyan-500/20 p-3">
-                  <CurrentIcon className="h-6 w-6 text-cyan-300" />
+                <div className="rounded-md bg-primary/10 p-3 text-primary">
+                  <CurrentIcon className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">{currentSection.title}</h2>
-                  <p className="text-slate-400">{currentSection.description}</p>
+                  <h2 className="text-xl font-semibold text-foreground">{currentSection.title}</h2>
+                  <p className="text-muted-foreground">{currentSection.description}</p>
                 </div>
               </div>
 
-              <div className="space-y-4 border-t border-slate-700/50 pt-6">
+              <div className="space-y-4 border-t border-border pt-6">
                 {currentSection.topics.map((topic, i) => (
                   <div key={i}>
-                    <h4 className="font-semibold text-white">{topic.title}</h4>
-                    <p className="mt-2 text-slate-300">{topic.content}</p>
+                    <h4 className="font-semibold text-foreground">{topic.title}</h4>
+                    <p className="mt-2 text-muted-foreground">{topic.content}</p>
                   </div>
                 ))}
               </div>
@@ -189,8 +190,8 @@ export default function HelpPage() {
         {/* FAQs */}
         <div className="space-y-6">
           <div>
-            <h2 className="text-2xl font-bold text-white">Frequently Asked Questions</h2>
-            <p className="mt-2 text-slate-400">Quick answers to common questions</p>
+            <h2 className="text-xl font-semibold text-foreground">Frequently Asked Questions</h2>
+            <p className="mt-2 text-muted-foreground">Quick answers to common questions</p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -201,22 +202,22 @@ export default function HelpPage() {
         </div>
 
         {/* Contact */}
-        <div className="surface-glass rounded-2xl border border-slate-700/50 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 p-8">
+        <div className="surface-glass rounded-lg border border-primary/20 bg-primary/5 p-6 sm:p-8">
           <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-xl font-bold text-white">Need more help?</h3>
-              <p className="mt-1 text-slate-400">Our support team is available 24/7</p>
+              <h3 className="text-xl font-semibold text-foreground">Need more help?</h3>
+              <p className="mt-1 text-muted-foreground">Our support team is available 24/7</p>
             </div>
             <div className="flex gap-3">
               <a
                 href="mailto:support@nmdlogistics.com"
-                className="rounded-xl bg-slate-800/50 px-6 py-3 font-semibold text-slate-300 transition hover:bg-slate-700/50"
+                className="inline-flex min-h-11 items-center rounded-md border border-border bg-background px-4 py-2.5 font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Email Support
               </a>
               <a
                 href="tel:+18009996343"
-                className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-600 hover:to-blue-600"
+                className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Call Us
               </a>
@@ -237,10 +238,10 @@ export default function HelpPage() {
             <Link
               key={link.href}
               href={link.href}
-              className="surface-glass rounded-xl border border-slate-700/50 p-4 text-center transition hover:border-slate-600/50"
+              className="surface-glass rounded-lg border border-border p-4 text-center text-foreground transition hover:border-ring/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <div className="text-3xl">{link.icon}</div>
-              <h4 className="mt-2 font-semibold text-white">{link.title}</h4>
+              <h4 className="mt-2 font-semibold text-foreground">{link.title}</h4>
             </Link>
           ))}
         </div>

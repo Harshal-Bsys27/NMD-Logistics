@@ -21,18 +21,18 @@ export default function DriverDetailPage() {
 
   if (!driver) {
     return (
-      <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <button
             onClick={() => router.back()}
-            className="mb-6 flex items-center gap-2 text-cyan-300 transition hover:text-cyan-200"
+            className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>
-          <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
-            <AlertCircle className="h-5 w-5 text-red-400" />
-            <p className="text-sm text-red-300">Driver not found</p>
+          <div className="flex items-center gap-3 rounded-lg border border-danger/30 bg-danger p-4 text-danger-foreground">
+            <AlertCircle className="h-5 w-5" />
+            <p className="text-sm">Driver not found</p>
           </div>
         </div>
       </div>
@@ -40,10 +40,10 @@ export default function DriverDetailPage() {
   }
 
   const statusColors: Record<string, string> = {
-    available: 'bg-emerald-600 text-emerald-100',
-    on_delivery: 'bg-cyan-600 text-cyan-100',
-    on_break: 'bg-amber-600 text-amber-100',
-    off_duty: 'bg-slate-600 text-slate-100',
+    available: 'bg-success text-success-foreground',
+    on_delivery: 'bg-info text-info-foreground',
+    on_break: 'bg-warning text-warning-foreground',
+    off_duty: 'bg-muted text-muted-foreground',
   };
 
   const vehicleEmojis: Record<string, string> = {
@@ -55,33 +55,33 @@ export default function DriverDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
+    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <button
           onClick={() => router.back()}
-          className="mb-6 flex items-center gap-2 text-cyan-300 transition hover:text-cyan-200"
+          className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
         </button>
 
         {/* Driver Header */}
-        <div className="surface-glass mb-8 rounded-2xl border border-slate-700/50 p-8">
+        <div className="surface-glass mb-8 rounded-lg p-6 sm:p-8">
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-500 text-4xl">{vehicleEmojis[driver.vehicle_type]}</div>
+              <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-primary/10 text-4xl">{vehicleEmojis[driver.vehicle_type]}</div>
               <div>
-                <h1 className="text-3xl font-bold text-white">{driver.employee_id}</h1>
-                <p className="mt-1 text-slate-400 capitalize">{driver.vehicle_type} Driver</p>
+                <h1 className="text-3xl font-semibold text-foreground">{driver.employee_id}</h1>
+                <p className="mt-1 text-muted-foreground capitalize">{driver.vehicle_type} Driver</p>
               </div>
             </div>
 
             <div className="flex flex-col items-start gap-3 sm:items-end">
-              <span className={`rounded-full px-4 py-2 text-sm font-semibold ${statusColors[driver.current_status]}`}>
+              <span className={`inline-flex min-h-8 items-center rounded-full px-4 py-2 text-sm font-semibold ${statusColors[driver.current_status] ?? 'bg-muted text-muted-foreground'}`}>
                 {driver.current_status.replace('_', ' ')}
               </span>
-              <div className="flex items-center gap-2 text-lg font-semibold text-yellow-300">
+              <div className="flex items-center gap-2 text-lg font-semibold text-warning-foreground">
                 {driver.rating}⭐
               </div>
             </div>
@@ -90,28 +90,28 @@ export default function DriverDetailPage() {
 
         {/* Quick Stats Grid */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Completed Deliveries</p>
-            <p className="mt-3 text-2xl font-bold text-emerald-300">{driver.total_deliveries_completed}</p>
+          <div className="surface-glass h-full rounded-lg p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Completed Deliveries</p>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-success-foreground">{driver.total_deliveries_completed}</p>
           </div>
 
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Customer Rating</p>
-            <p className="mt-3 text-2xl font-bold text-yellow-300">{driver.rating}</p>
+          <div className="surface-glass h-full rounded-lg p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Customer Rating</p>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-warning-foreground">{driver.rating}</p>
           </div>
 
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Active Assignments</p>
-            <p className="mt-3 text-2xl font-bold text-cyan-300">{driverAssignments.length}</p>
+          <div className="surface-glass h-full rounded-lg p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Active Assignments</p>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-info-foreground">{driverAssignments.length}</p>
           </div>
 
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Verification</p>
+          <div className="surface-glass h-full rounded-lg p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Verification</p>
             <p className="mt-3 text-sm font-semibold">
               {driver.phone_verified ? (
-                <span className="text-emerald-300">✓ Verified</span>
+                <span className="text-success-foreground">✓ Verified</span>
               ) : (
-                <span className="text-red-300">⚠ Pending</span>
+                <span className="text-danger-foreground">⚠ Pending</span>
               )}
             </p>
           </div>
@@ -120,37 +120,37 @@ export default function DriverDetailPage() {
         {/* Driver Information */}
         <div className="mb-8 grid gap-6 lg:grid-cols-2">
           {/* Contact & License */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/95 p-6">
-            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-              <Phone className="h-5 w-5 text-cyan-400" />
+          <div className="surface-glass rounded-lg p-6">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Phone className="h-5 w-5 text-primary" />
               Contact Information
             </h3>
             <div className="space-y-3">
               <div>
-                <p className="text-xs uppercase tracking-wider text-slate-500">Employee ID</p>
-                <p className="mt-1 font-mono text-white">{driver.employee_id}</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Employee ID</p>
+                <p className="mt-1 font-mono text-foreground">{driver.employee_id}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wider text-slate-500">License Number</p>
-                <p className="mt-1 font-mono text-white">{driver.license_number || 'Not provided'}</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">License Number</p>
+                <p className="mt-1 font-mono text-foreground">{driver.license_number || 'Not provided'}</p>
               </div>
             </div>
           </div>
 
           {/* Vehicle Details */}
-          <div className="rounded-xl border border-slate-800 bg-slate-900/95 p-6">
-            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-              <Briefcase className="h-5 w-5 text-violet-400" />
+          <div className="surface-glass rounded-lg p-6">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Briefcase className="h-5 w-5 text-info-foreground" />
               Vehicle Information
             </h3>
             <div className="space-y-3">
               <div>
-                <p className="text-xs uppercase tracking-wider text-slate-500">Vehicle Type</p>
-                <p className="mt-1 capitalize text-white">{driver.vehicle_type}</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Vehicle Type</p>
+                <p className="mt-1 capitalize text-foreground">{driver.vehicle_type}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-wider text-slate-500">Vehicle Number</p>
-                <p className="mt-1 font-mono text-white">{driver.vehicle_number}</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">Vehicle Number</p>
+                <p className="mt-1 font-mono text-foreground">{driver.vehicle_number}</p>
               </div>
             </div>
           </div>
@@ -159,24 +159,24 @@ export default function DriverDetailPage() {
         {/* Active Assignments */}
         {driverAssignments.length > 0 && (
           <div className="mb-8">
-            <h2 className="mb-4 flex items-center gap-2 text-2xl font-bold text-white">
+            <h2 className="mb-4 flex items-center gap-2 text-xl font-semibold text-foreground">
               <Activity className="h-6 w-6" />
               Active Assignments
             </h2>
             <div className="space-y-3">
               {driverAssignments.map((assignment) => (
-                <div key={assignment.id} className="rounded-xl border border-slate-800 bg-slate-900/95 p-4">
+                <div key={assignment.id} className="surface-glass rounded-lg border border-border p-4">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
-                      <p className="font-semibold text-white">Order #{assignment.order_id.slice(0, 8)}</p>
-                      <p className="mt-1 text-sm text-slate-400">
+                      <p className="font-semibold text-foreground">Order #{assignment.order_id.slice(0, 8)}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
                         Status: {assignment.status} • Est. {assignment.estimated_duration_minutes} mins
                       </p>
                       {assignment.notes && (
-                        <p className="mt-2 text-sm text-slate-300">{assignment.notes}</p>
+                        <p className="mt-2 text-sm text-foreground">{assignment.notes}</p>
                       )}
                     </div>
-                    <span className="inline-block rounded-full bg-cyan-500/20 px-3 py-1 text-xs font-semibold text-cyan-300">
+                    <span className="inline-flex min-h-6 items-center rounded-full bg-info px-3 py-1 text-xs font-semibold text-info-foreground">
                       {assignment.status}
                     </span>
                   </div>
@@ -187,25 +187,25 @@ export default function DriverDetailPage() {
         )}
 
         {/* Performance Stats */}
-        <div className="rounded-xl border border-slate-800 bg-slate-900/95 p-6">
-          <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
-            <Award className="h-5 w-5 text-amber-400" />
+        <div className="surface-glass rounded-lg p-6">
+          <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+            <Award className="h-5 w-5 text-warning-foreground" />
             Performance Metrics
           </h3>
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <p className="text-3xl font-bold text-emerald-300">{driver.total_deliveries_completed}</p>
-              <p className="mt-1 text-sm text-slate-400">Total Deliveries</p>
+              <p className="text-3xl font-bold tabular-nums text-success-foreground">{driver.total_deliveries_completed}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Total Deliveries</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-yellow-300">{driver.rating}</p>
-              <p className="mt-1 text-sm text-slate-400">Customer Rating</p>
+              <p className="text-3xl font-bold tabular-nums text-warning-foreground">{driver.rating}</p>
+              <p className="mt-1 text-sm text-muted-foreground">Customer Rating</p>
             </div>
             <div>
-              <p className="text-3xl font-bold text-blue-300">
+              <p className="text-3xl font-bold tabular-nums text-info-foreground">
                 {((driver.total_deliveries_completed / (driver.total_deliveries_completed + 5)) * 100).toFixed(1)}%
               </p>
-              <p className="mt-1 text-sm text-slate-400">Success Rate</p>
+              <p className="mt-1 text-sm text-muted-foreground">Success Rate</p>
             </div>
           </div>
         </div>

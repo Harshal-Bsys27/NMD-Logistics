@@ -133,61 +133,61 @@ export default function ReportsPage() {
   const previewHeaders = previewRows[0] ? Object.keys(previewRows[0]) : [];
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-8 text-slate-100 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-8">
-        <header className="flex flex-col gap-4 border-b border-slate-800 pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="w-full space-y-6">
+        <header className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300">Operations / Reports</p>
-            <h1 className="mt-2 text-3xl font-semibold text-white">Reports</h1>
-            <p className="mt-2 text-sm text-slate-400">Build and export operational summaries.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Operations / Reports</p>
+            <h1 className="mt-2 text-3xl font-semibold text-foreground">Reports</h1>
+            <p className="mt-2 text-sm text-muted-foreground">Build and export operational summaries.</p>
           </div>
-          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-medium text-amber-200">
+          <span className="inline-flex min-h-8 w-fit items-center gap-2 rounded-full border border-warning/40 bg-warning px-3 py-1.5 text-xs font-medium text-warning-foreground">
             Sample records
           </span>
         </header>
 
         <div className="grid gap-8 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
           <section className="space-y-6">
-            <div className="border-b border-slate-800 pb-5">
-              <h2 className="text-lg font-semibold text-white">Report setup</h2>
-              <p className="mt-1 text-sm text-slate-400">Choose a dataset and reporting period.</p>
+            <div className="border-b border-border pb-5">
+              <h2 className="text-lg font-semibold text-foreground">Report setup</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Choose a dataset and reporting period.</p>
             </div>
 
             <label className="block">
-              <span className="mb-2 block text-sm font-medium text-slate-300">Report type</span>
+              <span className="mb-2 block text-sm font-medium text-foreground">Report type</span>
               <select
                 value={reportType}
                 onChange={(event) => setReportType(event.target.value as ReportType)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm text-white outline-none focus:border-cyan-400"
+                className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [color-scheme:light] dark:[color-scheme:dark]"
               >
                 {reportOptions.map((option) => <option key={option.id} value={option.id}>{option.title}</option>)}
               </select>
-              <span className="mt-2 block text-xs text-slate-500">
+              <span className="mt-2 block text-xs text-muted-foreground">
                 {reportOptions.find((option) => option.id === reportType)?.description}
               </span>
             </label>
 
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-300">From</span>
-                <input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm text-white [color-scheme:dark]" />
+                <span className="mb-2 block text-sm font-medium text-foreground">From</span>
+                <input type="date" value={fromDate} onChange={(event) => setFromDate(event.target.value)} className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [color-scheme:light] dark:[color-scheme:dark]" />
               </label>
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-300">To</span>
-                <input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm text-white [color-scheme:dark]" />
+                <span className="mb-2 block text-sm font-medium text-foreground">To</span>
+                <input type="date" value={toDate} onChange={(event) => setToDate(event.target.value)} className="min-h-11 w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [color-scheme:light] dark:[color-scheme:dark]" />
               </label>
             </div>
 
-            {error && <p role="status" className="text-sm text-amber-300">{error}</p>}
+            {error && <p role="status" className="text-sm text-warning-foreground">{error}</p>}
 
             <div className="flex flex-wrap gap-3">
-              <button onClick={handleGenerate} className="inline-flex items-center gap-2 rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300">
+              <button onClick={handleGenerate} className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <FileText className="h-4 w-4" /> Generate report
               </button>
               <button
                 onClick={() => generated && downloadReport(generated)}
                 disabled={!generated || generated.rows.length === 0}
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex min-h-11 items-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Download className="h-4 w-4" /> Export CSV
               </button>
@@ -195,82 +195,82 @@ export default function ReportsPage() {
           </section>
 
           <section className="space-y-5">
-            <div className="border-b border-slate-800 pb-5">
-              <h2 className="text-lg font-semibold text-white">Report coverage</h2>
-              <p className="mt-1 text-sm text-slate-400">Available operational datasets.</p>
+            <div className="border-b border-border pb-5">
+              <h2 className="text-lg font-semibold text-foreground">Report coverage</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Available operational datasets.</p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-              <div className="flex items-center justify-between border-b border-slate-800 py-3">
-                <span className="flex items-center gap-3 text-sm text-slate-300"><FileText className="h-4 w-4 text-cyan-300" />Orders in period</span>
-                <span className="font-semibold text-white">{filteredOrders.length}</span>
+              <div className="flex items-center justify-between border-b border-border py-3">
+                <span className="flex items-center gap-3 text-sm text-foreground"><FileText className="h-4 w-4 text-primary" />Orders in period</span>
+                <span className="font-semibold tabular-nums text-foreground">{filteredOrders.length}</span>
               </div>
-              <div className="flex items-center justify-between border-b border-slate-800 py-3">
-                <span className="flex items-center gap-3 text-sm text-slate-300"><PackageCheck className="h-4 w-4 text-emerald-300" />Delivered</span>
-                <span className="font-semibold text-white">{filteredOrders.filter((order) => order.status === 'delivered').length}</span>
+              <div className="flex items-center justify-between border-b border-border py-3">
+                <span className="flex items-center gap-3 text-sm text-foreground"><PackageCheck className="h-4 w-4 text-success-foreground" />Delivered</span>
+                <span className="font-semibold tabular-nums text-foreground">{filteredOrders.filter((order) => order.status === 'delivered').length}</span>
               </div>
-              <div className="flex items-center justify-between border-b border-slate-800 py-3">
-                <span className="flex items-center gap-3 text-sm text-slate-300"><Truck className="h-4 w-4 text-amber-300" />Drivers</span>
-                <span className="font-semibold text-white">{mockDrivers.length}</span>
+              <div className="flex items-center justify-between border-b border-border py-3">
+                <span className="flex items-center gap-3 text-sm text-foreground"><Truck className="h-4 w-4 text-warning-foreground" />Drivers</span>
+                <span className="font-semibold tabular-nums text-foreground">{mockDrivers.length}</span>
               </div>
             </div>
-            <div className="border-l-2 border-amber-400/70 pl-4 text-sm leading-6 text-slate-400">
+            <div className="border-l-2 border-warning-foreground pl-4 text-sm leading-6 text-muted-foreground">
               Generated reports use the project’s sample records and are kept in this browser session only.
             </div>
           </section>
         </div>
 
-        <section className="space-y-5 border-t border-slate-800 pt-7">
+        <section className="space-y-5 border-t border-border pt-7">
           <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
             <div>
-              <h2 className="text-lg font-semibold text-white">Preview</h2>
-              <p className="mt-1 text-sm text-slate-400">{generated ? `${generated.title} · ${generated.period}` : 'Generate a report to preview its rows.'}</p>
+              <h2 className="text-lg font-semibold text-foreground">Preview</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{generated ? `${generated.title} · ${generated.period}` : 'Generate a report to preview its rows.'}</p>
             </div>
-            {generated && <span className="text-xs text-slate-500">Generated {generated.generatedAt}</span>}
+            {generated && <span className="text-xs text-muted-foreground">Generated {generated.generatedAt}</span>}
           </div>
 
           {generated && generated.rows.length > 0 ? (
-            <div className="overflow-x-auto border-y border-slate-800">
+            <div className="overflow-x-auto border-y border-border">
               <table className="min-w-full text-left text-sm">
-                <thead className="text-xs uppercase tracking-wide text-slate-500">
+                <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>{previewHeaders.map((header) => <th key={header} className="whitespace-nowrap px-4 py-3 font-semibold">{header.replace(/_/g, ' ')}</th>)}</tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-border">
                   {previewRows.map((row, index) => (
                     <tr key={`${generated.id}-${index}`}>
-                      {previewHeaders.map((header) => <td key={header} className="whitespace-nowrap px-4 py-3 text-slate-300">{row[header]}</td>)}
+                      {previewHeaders.map((header) => <td key={header} className="whitespace-nowrap px-4 py-3 text-foreground">{row[header]}</td>)}
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {generated.rows.length > previewRows.length && <p className="px-4 py-3 text-xs text-slate-500">Showing {previewRows.length} of {generated.rows.length} rows.</p>}
+              {generated.rows.length > previewRows.length && <p className="px-4 py-3 text-xs text-muted-foreground">Showing {previewRows.length} of {generated.rows.length} rows.</p>}
             </div>
           ) : (
-              <div className="border-y border-slate-800 py-10 text-center text-sm text-slate-500">
+              <div className="border-y border-border py-10 text-center text-sm text-muted-foreground">
                 {generated ? 'No records found for this report period.' : 'No report preview yet.'}
               </div>
           )}
         </section>
 
-        <section className="space-y-4 border-t border-slate-800 pt-7">
+        <section className="space-y-4 border-t border-border pt-7">
           <div className="flex items-end justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-white">Recent exports</h2>
-              <p className="mt-1 text-sm text-slate-400">Reports generated during this session.</p>
+              <h2 className="text-lg font-semibold text-foreground">Recent exports</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Reports generated during this session.</p>
             </div>
-            <span className="text-xs text-slate-500">{history.length} / 5</span>
+            <span className="text-xs tabular-nums text-muted-foreground">{history.length} / 5</span>
           </div>
           {history.length ? history.map((report) => (
-            <div key={report.id} className="flex flex-col gap-3 border-b border-slate-800 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div key={report.id} className="flex flex-col gap-3 border-b border-border py-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-medium text-white">{report.title}</p>
-                <p className="mt-1 text-xs text-slate-500">{report.period} · {report.rows.length} rows · {report.generatedAt}</p>
+                <p className="text-sm font-medium text-foreground">{report.title}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{report.period} · {report.rows.length} rows · {report.generatedAt}</p>
               </div>
-              <button onClick={() => downloadReport(report)} aria-label={`Download ${report.title}`} title="Download CSV" className="inline-flex w-fit items-center gap-2 rounded-md p-2 text-slate-300 transition hover:bg-slate-800 hover:text-white">
+              <button onClick={() => downloadReport(report)} aria-label={`Download ${report.title}`} title="Download CSV" className="inline-flex min-h-11 min-w-11 w-fit items-center gap-2 rounded-md p-2 text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <Download className="h-4 w-4" /> <span className="text-xs">CSV</span>
               </button>
             </div>
           )) : (
-            <p className="border-b border-slate-800 py-6 text-sm text-slate-500">No exports generated in this session.</p>
+            <p className="border-b border-border py-6 text-sm text-muted-foreground">No exports generated in this session.</p>
           )}
         </section>
       </div>

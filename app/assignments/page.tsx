@@ -30,12 +30,12 @@ export default function AssignmentsPage() {
   const getDriverInfo = (driverId: string) => drivers.find((d) => d.id === driverId);
 
   const statusBadgeColors: Record<AssignmentStatus, string> = {
-    pending: 'bg-amber-600 text-amber-100',
-    accepted: 'bg-blue-600 text-blue-100',
-    rejected: 'bg-red-600 text-red-100',
-    in_progress: 'bg-cyan-600 text-cyan-100',
-    completed: 'bg-emerald-600 text-emerald-100',
-    cancelled: 'bg-slate-700 text-slate-300',
+    pending: 'bg-warning text-warning-foreground',
+    accepted: 'bg-info text-info-foreground',
+    rejected: 'bg-danger text-danger-foreground',
+    in_progress: 'bg-info text-info-foreground',
+    completed: 'bg-success text-success-foreground',
+    cancelled: 'bg-muted text-muted-foreground',
   };
 
   const statusCounts = {
@@ -47,12 +47,12 @@ export default function AssignmentsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-8">
+    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="w-full space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-bold text-white">Driver Assignments</h1>
-          <p className="mt-2 text-slate-400">Track and manage delivery assignments</p>
+          <h1 className="text-3xl font-semibold text-foreground">Driver Assignments</h1>
+          <p className="mt-2 text-muted-foreground">Track and manage delivery assignments</p>
         </div>
 
         {/* Status Filter Buttons */}
@@ -61,10 +61,10 @@ export default function AssignmentsPage() {
             <button
               key={status}
               onClick={() => setSelectedStatus(status)}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+              className={`min-h-11 rounded-lg px-4 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 selectedStatus === status
-                  ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/20'
-                  : 'border border-slate-700/50 bg-slate-800/50 text-slate-300 hover:border-slate-600/50'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'border border-border bg-background text-foreground hover:bg-muted'
               }`}
             >
               {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')} ({statusCounts[status]})
@@ -74,13 +74,13 @@ export default function AssignmentsPage() {
 
         {/* Search Bar */}
         <div className="flex gap-3">
-          <div className="flex-1 surface-glass rounded-xl border border-slate-700/50 px-4 py-3">
+          <div className="surface-glass min-h-11 flex-1 rounded-lg border border-border px-4 py-2.5">
             <input
               type="text"
               placeholder="Search by order, driver, or assignment ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-transparent text-white placeholder-slate-500 outline-none"
+              className="w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
         </div>
@@ -97,34 +97,34 @@ export default function AssignmentsPage() {
                   key={assignment.id}
                   href={`/assignments/${assignment.id}`}
                 >
-                  <div className="surface-glass rounded-2xl border border-slate-700/50 p-6 transition hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/10">
+                  <div className="surface-glass rounded-lg border border-border p-5 transition hover:border-ring/50">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     {/* Main Info */}
                     <div className="flex-1">
                       <div className="mb-3 flex items-center gap-3">
-                        <h3 className="text-lg font-semibold text-white">
+                        <h3 className="text-lg font-semibold text-foreground">
                           {order?.order_number || 'Order'} → {driver?.employee_id || 'Driver'}
                         </h3>
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeColors[assignment.status]}`}>
+                        <span className={`inline-flex min-h-6 items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeColors[assignment.status]}`}>
                           {assignment.status.replace('_', ' ')}
                         </span>
                       </div>
 
                       {/* Order & Driver Details */}
                       <div className="mb-3 grid gap-4 sm:grid-cols-2">
-                        <div className="rounded-lg bg-slate-950/50 p-3">
-                          <p className="text-xs uppercase tracking-wider text-slate-500">Order Details</p>
-                          <p className="mt-1 text-sm text-slate-300">{order?.package_description}</p>
-                          <p className="mt-1 flex items-center gap-1 text-xs text-slate-400">
+                        <div className="rounded-md bg-muted/50 p-3">
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">Order Details</p>
+                          <p className="mt-1 text-sm text-foreground">{order?.package_description}</p>
+                          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                             <MapPin className="h-3 w-3" />
                             {order?.delivery_location}
                           </p>
                         </div>
 
-                        <div className="rounded-lg bg-slate-950/50 p-3">
-                          <p className="text-xs uppercase tracking-wider text-slate-500">Driver</p>
-                          <p className="mt-1 text-sm text-slate-300">{driver?.employee_id}</p>
-                          <p className="mt-1 text-xs text-slate-400">
+                        <div className="rounded-md bg-muted/50 p-3">
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">Driver</p>
+                          <p className="mt-1 text-sm text-foreground">{driver?.employee_id}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">
                             {driver && (driver.vehicle_type.charAt(0).toUpperCase() + driver.vehicle_type.slice(1))} •{' '}
                             {driver?.vehicle_number}
                           </p>
@@ -133,28 +133,28 @@ export default function AssignmentsPage() {
 
                       {/* Assignment Notes */}
                       {assignment.notes && (
-                        <div className="mb-3 rounded-lg border border-slate-700 bg-slate-950/50 p-3">
-                          <p className="text-xs uppercase tracking-wider text-slate-500">Notes</p>
-                          <p className="mt-1 text-sm text-slate-300">{assignment.notes}</p>
+                        <div className="mb-3 rounded-md border border-border bg-muted/50 p-3">
+                          <p className="text-xs uppercase tracking-wider text-muted-foreground">Notes</p>
+                          <p className="mt-1 text-sm text-foreground">{assignment.notes}</p>
                         </div>
                       )}
 
                       {/* Timeline */}
                       <div className="flex flex-wrap gap-3 text-xs">
                         {assignment.assigned_at && (
-                          <div className="flex items-center gap-1 text-slate-400">
+                          <div className="flex items-center gap-1 text-muted-foreground">
                             <Clock className="h-3 w-3" />
                             Assigned: {formatDate(assignment.assigned_at, 'short')}
                           </div>
                         )}
                         {assignment.accepted_at && (
-                          <div className="flex items-center gap-1 text-emerald-400">
+                          <div className="flex items-center gap-1 text-success-foreground">
                             <CheckCircle2 className="h-3 w-3" />
                             Accepted: {formatDate(assignment.accepted_at, 'short')}
                           </div>
                         )}
                         {assignment.started_at && (
-                          <div className="flex items-center gap-1 text-cyan-400">
+                          <div className="flex items-center gap-1 text-info-foreground">
                             <AlertCircle className="h-3 w-3" />
                             Started: {formatDate(assignment.started_at, 'short')}
                           </div>
@@ -163,12 +163,12 @@ export default function AssignmentsPage() {
                     </div>
 
                     {/* Duration Estimate */}
-                    <div className="rounded-lg border border-slate-700 bg-slate-950/50 p-4 text-center lg:min-w-[150px]">
-                      <p className="text-xs uppercase tracking-wider text-slate-500">Est. Duration</p>
-                      <p className="mt-2 text-2xl font-bold text-cyan-300">
+                    <div className="rounded-md border border-border bg-muted/40 p-4 text-center lg:min-w-[150px]">
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">Est. Duration</p>
+                      <p className="mt-2 text-2xl font-bold tabular-nums text-info-foreground">
                         {assignment.estimated_duration_minutes}
                       </p>
-                      <p className="text-xs text-slate-400">minutes</p>
+                      <p className="text-xs text-muted-foreground">minutes</p>
                     </div>
                   </div>
                   </div>
@@ -176,36 +176,36 @@ export default function AssignmentsPage() {
               );
             })
           ) : (
-            <div className="rounded-xl border border-slate-700 bg-slate-900/50 p-8 text-center">
-              <p className="text-slate-400">No assignments found</p>
+            <div className="surface-glass rounded-lg border border-border p-8 text-center">
+              <p className="text-muted-foreground">No assignments found</p>
             </div>
           )}
         </div>
 
         {/* Summary Stats */}
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Total Assignments</p>
-            <p className="mt-3 text-3xl font-bold text-white">{assignments.length}</p>
+          <div className="surface-glass h-full rounded-lg border border-border p-4">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Total Assignments</p>
+            <p className="mt-3 text-3xl font-bold tabular-nums text-foreground">{assignments.length}</p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">In Progress</p>
-            <p className="mt-3 text-3xl font-bold text-cyan-300">
+          <div className="surface-glass h-full rounded-lg border border-border p-4">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">In Progress</p>
+            <p className="mt-3 text-3xl font-bold tabular-nums text-info-foreground">
               {assignments.filter((a) => a.status === 'in_progress').length}
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Completed</p>
-            <p className="mt-3 text-3xl font-bold text-emerald-300">
+          <div className="surface-glass h-full rounded-lg border border-border p-4">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Completed</p>
+            <p className="mt-3 text-3xl font-bold tabular-nums text-success-foreground">
               {assignments.filter((a) => a.status === 'completed').length}
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 bg-slate-900/70 p-4">
-            <p className="text-xs uppercase tracking-wider text-slate-500">Pending</p>
-            <p className="mt-3 text-3xl font-bold text-amber-300">
+          <div className="surface-glass h-full rounded-lg border border-border p-4">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Pending</p>
+            <p className="mt-3 text-3xl font-bold tabular-nums text-warning-foreground">
               {assignments.filter((a) => a.status === 'pending').length}
             </p>
           </div>

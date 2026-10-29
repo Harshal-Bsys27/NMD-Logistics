@@ -31,57 +31,57 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl space-y-8">
+    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="w-full space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-bold text-white">Settings</h1>
-          <p className="mt-2 text-slate-400">Manage your operations profile and notification preferences.</p>
+          <h1 className="text-3xl font-semibold text-foreground">Settings</h1>
+          <p className="mt-2 text-muted-foreground">Manage your operations profile and notification preferences.</p>
         </div>
 
         <form onSubmit={savePreferences} className="space-y-6">
           {/* Profile Settings */}
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-8">
+          <div className="surface-glass rounded-lg p-6 sm:p-8">
             <div className="mb-6 flex items-center gap-3">
-              <div className="rounded-xl bg-cyan-500/20 p-3">
-                <Shield className="h-6 w-6 text-cyan-300" />
+              <div className="rounded-md bg-primary/10 p-3 text-primary">
+                <Shield className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-white">Profile Information</h2>
-                <p className="mt-1 text-sm text-slate-400">These details are used for operational updates and reports.</p>
+                <h2 className="text-xl font-semibold text-foreground">Profile Information</h2>
+                <p className="mt-1 text-sm text-muted-foreground">These details are used for operational updates and reports.</p>
               </div>
             </div>
 
             <div className="space-y-6">
               <div className="grid gap-6 sm:grid-cols-2">
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-slate-300">Display Name</span>
+                  <span className="mb-2 block text-sm font-medium text-foreground">Display Name</span>
                   <input
                     type="text"
                     value={preferences.name}
                     onChange={(e) => setPreferences({ ...preferences, name: e.target.value })}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 transition focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                    className="min-h-11 w-full rounded-md border border-input bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     required
                   />
                 </label>
                 <label className="block">
-                  <span className="mb-2 block text-sm font-medium text-slate-300">Work Email</span>
+                  <span className="mb-2 block text-sm font-medium text-foreground">Work Email</span>
                   <input
                     type="email"
                     value={preferences.email}
                     onChange={(e) => setPreferences({ ...preferences, email: e.target.value })}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white placeholder-slate-500 transition focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                    className="min-h-11 w-full rounded-md border border-input bg-background px-4 py-2.5 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     required
                   />
                 </label>
               </div>
 
               <label className="block">
-                <span className="mb-2 block text-sm font-medium text-slate-300">Time Zone</span>
+                <span className="mb-2 block text-sm font-medium text-foreground">Time Zone</span>
                 <select
                   value={preferences.timezone}
                   onChange={(e) => setPreferences({ ...preferences, timezone: e.target.value })}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-white transition focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                  className="min-h-11 w-full rounded-md border border-input bg-background px-4 py-2.5 text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [color-scheme:light] dark:[color-scheme:dark]"
                 >
                   <option value="Asia/Kolkata">India Standard Time (IST)</option>
                   <option value="UTC">Coordinated Universal Time (UTC)</option>
@@ -92,14 +92,14 @@ export default function SettingsPage() {
           </div>
 
           {/* Notifications Settings */}
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-8">
+          <div className="surface-glass rounded-lg p-6 sm:p-8">
             <div className="mb-6 flex items-center gap-3">
-              <div className="rounded-xl bg-amber-500/20 p-3">
-                <Bell className="h-6 w-6 text-amber-300" />
+              <div className="rounded-md bg-warning p-3 text-warning-foreground">
+                <Bell className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-white">Notifications</h2>
-                <p className="mt-1 text-sm text-slate-400">Choose what updates you want to receive.</p>
+                <h2 className="text-xl font-semibold text-foreground">Notifications</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Choose what updates you want to receive.</p>
               </div>
             </div>
 
@@ -111,17 +111,17 @@ export default function SettingsPage() {
               ].map(([key, label, description]) => (
                 <label
                   key={key}
-                  className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-700/50 bg-slate-800/30 p-4 transition hover:border-slate-600/50"
+                  className="flex min-h-16 cursor-pointer items-center justify-between gap-4 rounded-md border border-border bg-muted/40 p-4 transition hover:border-ring/50"
                 >
                   <div>
-                    <p className="text-sm font-medium text-white">{label}</p>
-                    <p className="text-xs text-slate-400">{description}</p>
+                    <p className="text-sm font-medium text-foreground">{label}</p>
+                    <p className="text-xs text-muted-foreground">{description}</p>
                   </div>
                   <input
                     type="checkbox"
                     checked={preferences[key as keyof typeof preferences] as boolean}
                     onChange={(e) => setPreferences({ ...preferences, [key]: e.target.checked })}
-                    className="h-5 w-5 rounded cursor-pointer accent-cyan-500"
+                    className="h-5 w-5 cursor-pointer accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </label>
               ))}
@@ -129,22 +129,22 @@ export default function SettingsPage() {
           </div>
 
           {/* Save Section */}
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-8">
+          <div className="surface-glass rounded-lg p-6 sm:p-8">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-white">Ready to save?</h3>
-                <p className="mt-1 text-sm text-slate-400">Your preferences are stored locally in this browser.</p>
+                <h3 className="font-semibold text-foreground">Ready to save?</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Your preferences are stored locally in this browser.</p>
               </div>
               <div className="flex items-center gap-4">
                 {saved && (
-                  <span className="flex items-center gap-2 text-sm text-emerald-400">
+                  <span className="flex items-center gap-2 text-sm text-success-foreground" role="status">
                     <Check className="h-5 w-5" />
                     Saved
                   </span>
                 )}
                 <button
                   type="submit"
-                  className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-600 hover:to-blue-600"
+                  className="min-h-11 rounded-md bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   Save Preferences
                 </button>
@@ -154,19 +154,19 @@ export default function SettingsPage() {
         </form>
 
         {/* Danger Zone */}
-        <div className="surface-glass rounded-2xl border border-rose-500/20 bg-rose-500/5 p-8">
+        <div className="surface-glass rounded-lg border border-danger/30 bg-danger/5 p-6 sm:p-8">
           <div className="mb-6 flex items-center gap-3">
-            <div className="rounded-xl bg-rose-500/20 p-3">
-              <LogOut className="h-6 w-6 text-rose-400" />
+            <div className="rounded-md bg-danger p-3 text-danger-foreground">
+              <LogOut className="h-6 w-6" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white">Sign Out</h2>
-              <p className="mt-1 text-sm text-slate-400">End your current session</p>
+              <h2 className="text-xl font-semibold text-foreground">Sign Out</h2>
+              <p className="mt-1 text-sm text-muted-foreground">End your current session</p>
             </div>
           </div>
           <button
             type="button"
-            className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-6 py-3 font-semibold text-rose-300 transition hover:bg-rose-500/20"
+            className="min-h-11 rounded-md border border-danger/40 bg-danger px-4 py-2.5 font-semibold text-danger-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             Sign Out
           </button>

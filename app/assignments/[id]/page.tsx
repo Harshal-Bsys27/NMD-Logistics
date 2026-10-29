@@ -43,23 +43,23 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
 
   if (!assignment || !order || !driver) {
     return (
-      <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
           <button
             onClick={() => router.back()}
-            className="mb-6 flex items-center gap-2 text-slate-400 transition hover:text-white"
+            className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <ArrowLeft className="h-5 w-5" />
             Back
           </button>
 
-          <div className="surface-glass rounded-2xl border border-rose-500/30 bg-rose-500/10 p-8 text-center">
-            <AlertTriangle className="mx-auto h-12 w-12 text-rose-400" />
-            <h1 className="mt-4 text-2xl font-bold text-white">Assignment Not Found</h1>
-            <p className="mt-2 text-slate-300">The assignment you're looking for doesn't exist.</p>
+          <div className="surface-glass rounded-lg border border-danger/30 bg-danger p-8 text-center">
+            <AlertTriangle className="mx-auto h-12 w-12 text-danger-foreground" />
+            <h1 className="mt-4 text-2xl font-bold text-danger-foreground">Assignment Not Found</h1>
+            <p className="mt-2 text-danger-foreground">The assignment you're looking for doesn't exist.</p>
             <Link
               href="/assignments"
-              className="mt-6 inline-block rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white transition hover:from-cyan-600 hover:to-blue-600"
+              className="mt-6 inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Back to Assignments
             </Link>
@@ -70,12 +70,12 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
   }
 
   const statusColors: Record<AssignmentStatus, { bg: string; text: string; label: string }> = {
-    pending: { bg: 'bg-amber-600', text: 'text-amber-100', label: 'Pending' },
-    accepted: { bg: 'bg-blue-600', text: 'text-blue-100', label: 'Accepted' },
-    rejected: { bg: 'bg-red-600', text: 'text-red-100', label: 'Rejected' },
-    in_progress: { bg: 'bg-cyan-600', text: 'text-cyan-100', label: 'In Progress' },
-    completed: { bg: 'bg-emerald-600', text: 'text-emerald-100', label: 'Completed' },
-    cancelled: { bg: 'bg-slate-700', text: 'text-slate-300', label: 'Cancelled' },
+    pending: { bg: 'bg-warning', text: 'text-warning-foreground', label: 'Pending' },
+    accepted: { bg: 'bg-info', text: 'text-info-foreground', label: 'Accepted' },
+    rejected: { bg: 'bg-danger', text: 'text-danger-foreground', label: 'Rejected' },
+    in_progress: { bg: 'bg-info', text: 'text-info-foreground', label: 'In Progress' },
+    completed: { bg: 'bg-success', text: 'text-success-foreground', label: 'Completed' },
+    cancelled: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'Cancelled' },
   };
 
   const handleStatusUpdate = async (newStatus: AssignmentStatus) => {
@@ -107,13 +107,13 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
     : null;
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
+    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl space-y-8">
         {/* Header */}
         <div>
           <button
             onClick={() => router.back()}
-            className="mb-6 flex items-center gap-2 text-slate-400 transition hover:text-white"
+            className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <ArrowLeft className="h-5 w-5" />
             Back
@@ -121,49 +121,49 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
 
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div>
-              <div className="text-sm uppercase tracking-widest text-slate-400">Assignment ID: {assignment.id.slice(0, 8)}</div>
-              <h1 className="mt-2 text-4xl font-bold text-white">
+              <div className="text-sm uppercase tracking-widest text-muted-foreground">Assignment ID: {assignment.id.slice(0, 8)}</div>
+              <h1 className="mt-2 text-3xl font-semibold text-foreground">
                 {order.order_number} → {driver.employee_id}
               </h1>
-              <p className="mt-2 text-slate-400">Assigned {formatDate(assignment.assigned_at)}</p>
+              <p className="mt-2 text-muted-foreground">Assigned {formatDate(assignment.assigned_at)}</p>
             </div>
-            <div className={`rounded-lg px-4 py-2 text-center font-semibold ${statusColors[assignment.status].bg} ${statusColors[assignment.status].text}`}>
+            <div className={`inline-flex min-h-10 items-center rounded-full px-4 py-2 text-center font-semibold ${statusColors[assignment.status].bg} ${statusColors[assignment.status].text}`}>
               {statusColors[assignment.status].label}
             </div>
           </div>
         </div>
 
         {/* Status Timeline */}
-        <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-          <h2 className="mb-6 text-lg font-bold text-white">Assignment Timeline</h2>
+        <div className="surface-glass rounded-lg p-6">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">Assignment Timeline</h2>
           <div className="space-y-4">
             {/* Assigned */}
             <div className="flex gap-4">
               <div className="flex flex-col items-center">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500 text-white">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                   <Clock className="h-4 w-4" />
                 </div>
-                <div className="my-2 h-8 w-0.5 bg-slate-700" />
+                <div className="my-2 h-8 w-0.5 bg-border" />
               </div>
               <div>
-                <h4 className="font-semibold text-white">Assignment Created</h4>
-                <p className="text-sm text-slate-400">{formatDate(assignment.assigned_at)}</p>
+                <h4 className="font-semibold text-foreground">Assignment Created</h4>
+                <p className="text-sm text-muted-foreground">{formatDate(assignment.assigned_at)}</p>
               </div>
             </div>
 
             {/* Accepted */}
             <div className="flex gap-4">
               <div className="flex flex-col items-center">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${assignment.accepted_at ? 'bg-emerald-500' : 'bg-slate-700'} text-white`}>
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${assignment.accepted_at ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'}`}>
                   <CheckCircle2 className="h-4 w-4" />
                 </div>
-                {assignment.started_at && <div className="my-2 h-8 w-0.5 bg-slate-700" />}
+                {assignment.started_at && <div className="my-2 h-8 w-0.5 bg-border" />}
               </div>
               <div>
-                <h4 className={`font-semibold ${assignment.accepted_at ? 'text-white' : 'text-slate-500'}`}>
+                <h4 className={`font-semibold ${assignment.accepted_at ? 'text-foreground' : 'text-muted-foreground'}`}>
                   Driver Accepted
                 </h4>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-muted-foreground">
                   {assignment.accepted_at ? formatDate(assignment.accepted_at) : 'Pending'}
                 </p>
               </div>
@@ -172,86 +172,86 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
             {/* In Progress */}
             <div className="flex gap-4">
               <div className="flex flex-col items-center">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${assignment.started_at ? 'bg-cyan-500' : 'bg-slate-700'} text-white`}>
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${assignment.started_at ? 'bg-info text-info-foreground' : 'bg-muted text-muted-foreground'}`}>
                   <Truck className="h-4 w-4" />
                 </div>
               </div>
               <div>
-                <h4 className={`font-semibold ${assignment.started_at ? 'text-white' : 'text-slate-500'}`}>
+                <h4 className={`font-semibold ${assignment.started_at ? 'text-foreground' : 'text-muted-foreground'}`}>
                   In Progress
                 </h4>
-                <p className="text-sm text-slate-400">
+                <p className="text-sm text-muted-foreground">
                   {assignment.started_at ? formatDate(assignment.started_at) : 'Not started'}
                 </p>
-                {eta && <p className="mt-1 text-sm text-cyan-300">ETA: {formatDate(eta.toISOString())}</p>}
+                {eta && <p className="mt-1 text-sm text-info-foreground">ETA: {formatDate(eta.toISOString())}</p>}
               </div>
             </div>
           </div>
         </div>
 
         {/* Order Details */}
-        <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-          <h2 className="mb-6 text-lg font-bold text-white">Order Details</h2>
+        <div className="surface-glass rounded-lg p-6">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">Order Details</h2>
 
           {/* Quick Stats */}
           <div className="mb-6 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl bg-slate-800/50 p-4">
-              <p className="text-sm text-slate-400">Order Number</p>
-              <p className="mt-1 font-bold text-white">{order.order_number}</p>
+            <div className="rounded-md bg-muted/50 p-4">
+              <p className="text-sm text-muted-foreground">Order Number</p>
+              <p className="mt-1 font-bold text-foreground">{order.order_number}</p>
             </div>
-            <div className="rounded-xl bg-slate-800/50 p-4">
-              <p className="text-sm text-slate-400">Package Value</p>
-              <p className="mt-1 font-bold text-white">₹{(order.package_value || 0).toLocaleString()}</p>
+            <div className="rounded-md bg-muted/50 p-4">
+              <p className="text-sm text-muted-foreground">Package Value</p>
+              <p className="mt-1 text-right font-bold tabular-nums text-foreground">₹{(order.package_value || 0).toLocaleString()}</p>
             </div>
-            <div className="rounded-xl bg-slate-800/50 p-4">
-              <p className="text-sm text-slate-400">Priority</p>
-              <p className="mt-1 font-bold uppercase text-white">{order.priority}</p>
+            <div className="rounded-md bg-muted/50 p-4">
+              <p className="text-sm text-muted-foreground">Priority</p>
+              <p className="mt-1 font-bold uppercase text-foreground">{order.priority}</p>
             </div>
-            <div className="rounded-xl bg-slate-800/50 p-4">
-              <p className="text-sm text-slate-400">Weight</p>
-              <p className="mt-1 font-bold text-white">{order.package_weight} kg</p>
+            <div className="rounded-md bg-muted/50 p-4">
+              <p className="text-sm text-muted-foreground">Weight</p>
+              <p className="mt-1 font-bold tabular-nums text-foreground">{order.package_weight} kg</p>
             </div>
           </div>
 
           {/* Locations */}
           <div className="space-y-4">
-            <div className="flex gap-4 rounded-xl bg-cyan-500/10 p-4">
-              <MapPin className="h-5 w-5 flex-shrink-0 text-cyan-300" />
+            <div className="flex gap-4 rounded-md bg-info p-4 text-info-foreground">
+              <MapPin className="h-5 w-5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-cyan-300">Pickup Location</p>
-                <p className="mt-1 text-white">{order.pickup_location}</p>
+                <p className="text-sm font-semibold">Pickup Location</p>
+                <p className="mt-1 text-foreground">{order.pickup_location}</p>
               </div>
             </div>
-            <div className="flex gap-4 rounded-xl bg-emerald-500/10 p-4">
-              <MapPin className="h-5 w-5 flex-shrink-0 text-emerald-300" />
+            <div className="flex gap-4 rounded-md bg-success p-4 text-success-foreground">
+              <MapPin className="h-5 w-5 flex-shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-emerald-300">Delivery Location</p>
-                <p className="mt-1 text-white">{order.delivery_location}</p>
+                <p className="text-sm font-semibold">Delivery Location</p>
+                <p className="mt-1 text-foreground">{order.delivery_location}</p>
               </div>
             </div>
           </div>
 
           {/* Package Description */}
-          <div className="mt-4 rounded-xl bg-slate-800/50 p-4">
-            <p className="text-sm text-slate-400">Package Description</p>
-            <p className="mt-2 text-white">{order.package_description}</p>
+          <div className="mt-4 rounded-md bg-muted/50 p-4">
+            <p className="text-sm text-muted-foreground">Package Description</p>
+            <p className="mt-2 text-foreground">{order.package_description}</p>
           </div>
 
           {/* Customer Info */}
-          <div className="mt-4 space-y-3 border-t border-slate-700/50 pt-4">
+          <div className="mt-4 space-y-3 border-t border-border pt-4">
             <div className="flex items-center justify-between">
-              <p className="text-slate-400">Customer</p>
-              <p className="font-semibold text-white">{order.client_name}</p>
+              <p className="text-muted-foreground">Customer</p>
+              <p className="font-semibold text-foreground">{order.client_name}</p>
             </div>
             <div className="flex items-center justify-between">
-              <p className="text-slate-400">Phone</p>
-              <a href={`tel:${order.client_phone}`} className="font-semibold text-cyan-400 hover:text-cyan-300">
+              <p className="text-muted-foreground">Phone</p>
+              <a href={`tel:${order.client_phone}`} className="font-semibold text-primary hover:underline">
                 {order.client_phone}
               </a>
             </div>
             <div className="flex items-center justify-between">
-              <p className="text-slate-400">Email</p>
-              <a href={`mailto:${order.client_email}`} className="font-semibold text-cyan-400 hover:text-cyan-300">
+              <p className="text-muted-foreground">Email</p>
+              <a href={`mailto:${order.client_email}`} className="font-semibold text-primary hover:underline">
                 {order.client_email}
               </a>
             </div>
@@ -259,42 +259,42 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
         </div>
 
         {/* Driver Information */}
-        <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-          <h2 className="mb-6 text-lg font-bold text-white">Driver Information</h2>
+        <div className="surface-glass rounded-lg p-6">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">Driver Information</h2>
 
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-3xl">
+            <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-info text-3xl text-info-foreground">
               {vehicleEmojis[driver.vehicle_type] || '🚗'}
             </div>
 
             <div className="flex-1 space-y-3">
               <div className="flex items-center justify-between">
-                <p className="text-slate-400">Employee ID</p>
-                <p className="font-semibold text-white">{driver.employee_id}</p>
+                <p className="text-muted-foreground">Employee ID</p>
+                <p className="font-semibold text-foreground">{driver.employee_id}</p>
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-slate-400">Vehicle</p>
-                <p className="font-semibold text-white">{driver.vehicle_type.toUpperCase()}</p>
+                <p className="text-muted-foreground">Vehicle</p>
+                <p className="font-semibold text-foreground">{driver.vehicle_type.toUpperCase()}</p>
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-slate-400">Rating</p>
+                <p className="text-muted-foreground">Rating</p>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold text-white">{driver.rating}</span>
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <span className="font-semibold tabular-nums text-foreground">{driver.rating}</span>
+                  <Star className="h-4 w-4 fill-warning-foreground text-warning-foreground" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Driver Stats */}
-          <div className="mt-6 grid gap-4 border-t border-slate-700/50 pt-6 sm:grid-cols-2">
-            <div className="rounded-xl bg-slate-800/50 p-4">
-              <p className="text-sm text-slate-400">Deliveries Completed</p>
-              <p className="mt-1 text-2xl font-bold text-white">{driver.total_deliveries_completed}</p>
+          <div className="mt-6 grid gap-4 border-t border-border pt-6 sm:grid-cols-2">
+            <div className="rounded-md bg-muted/50 p-4">
+              <p className="text-sm text-muted-foreground">Deliveries Completed</p>
+              <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{driver.total_deliveries_completed}</p>
             </div>
-            <div className="rounded-xl bg-slate-800/50 p-4">
-              <p className="text-sm text-slate-400">Phone Verified</p>
-              <p className="mt-1 text-lg font-bold text-emerald-400">
+            <div className="rounded-md bg-muted/50 p-4">
+              <p className="text-sm text-muted-foreground">Phone Verified</p>
+              <p className="mt-1 text-lg font-bold text-success-foreground">
                 {driver.phone_verified ? '✓ Verified' : '✗ Not Verified'}
               </p>
             </div>
@@ -302,13 +302,13 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
 
           {/* Driver Contact */}
           <div className="mt-4">
-            <p className="mb-3 text-sm text-slate-400">Quick Actions</p>
+            <p className="mb-3 text-sm text-muted-foreground">Quick Actions</p>
             <div className="flex gap-3">
-              <button className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-700/50 bg-slate-800/50 px-4 py-2 font-semibold text-slate-300 transition hover:bg-slate-700/50">
+              <button className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <Phone className="h-4 w-4" />
                 Call Driver
               </button>
-              <button className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-slate-700/50 bg-slate-800/50 px-4 py-2 font-semibold text-slate-300 transition hover:bg-slate-700/50">
+              <button className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <MapPinIcon className="h-4 w-4" />
                 Track Live
               </button>
@@ -318,26 +318,26 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
 
         {/* Notes */}
         {assignment.notes && (
-          <div className="surface-glass rounded-2xl border border-amber-500/30 bg-amber-500/10 p-6">
+          <div className="surface-glass rounded-lg border border-warning/30 bg-warning p-6 text-warning-foreground">
             <div className="flex items-start gap-4">
-              <AlertCircle className="h-5 w-5 flex-shrink-0 text-amber-400" />
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
               <div>
-                <h3 className="font-semibold text-amber-300">Notes</h3>
-                <p className="mt-2 text-amber-100">{assignment.notes}</p>
+                <h3 className="font-semibold">Notes</h3>
+                <p className="mt-2">{assignment.notes}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-          <h2 className="mb-4 text-lg font-bold text-white">Update Status</h2>
+        <div className="surface-glass rounded-lg p-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">Update Status</h2>
           <div className="flex flex-col gap-3 sm:flex-row">
             {canAccept && (
               <button
                 onClick={() => handleStatusUpdate('accepted')}
                 disabled={actionLoading}
-                className="flex-1 rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-3 font-semibold text-white transition disabled:opacity-50 hover:from-emerald-600 hover:to-green-600"
+                className="min-h-11 flex-1 rounded-md bg-success px-4 py-2.5 font-semibold text-success-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {actionLoading ? 'Accepting...' : '✓ Accept Assignment'}
               </button>
@@ -347,7 +347,7 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
               <button
                 onClick={() => handleStatusUpdate('in_progress')}
                 disabled={actionLoading}
-                className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition disabled:opacity-50 hover:from-cyan-600 hover:to-blue-600"
+                className="min-h-11 flex-1 rounded-md bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {actionLoading ? 'Starting...' : '🚀 Start Delivery'}
               </button>
@@ -357,7 +357,7 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
               <button
                 onClick={() => handleStatusUpdate('completed')}
                 disabled={actionLoading}
-                className="flex-1 rounded-lg bg-gradient-to-r from-emerald-500 to-green-500 px-4 py-3 font-semibold text-white transition disabled:opacity-50 hover:from-emerald-600 hover:to-green-600"
+                className="min-h-11 flex-1 rounded-md bg-success px-4 py-2.5 font-semibold text-success-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {actionLoading ? 'Completing...' : '✅ Mark Completed'}
               </button>
@@ -367,7 +367,7 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
               <button
                 onClick={() => handleStatusUpdate('rejected')}
                 disabled={actionLoading}
-                className="flex-1 rounded-lg border border-rose-500 bg-rose-500/10 px-4 py-3 font-semibold text-rose-300 transition disabled:opacity-50 hover:bg-rose-500/20"
+                className="min-h-11 flex-1 rounded-md border border-danger/40 bg-danger px-4 py-2.5 font-semibold text-danger-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {actionLoading ? 'Rejecting...' : '✕ Reject'}
               </button>
@@ -375,7 +375,7 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
           </div>
 
           {actionMessage && (
-            <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-500/20 px-4 py-3 text-emerald-300">
+            <div className="mt-4 flex items-center gap-2 rounded-md border border-success/30 bg-success px-4 py-3 text-success-foreground" role="status">
               <CheckCircle2 className="h-5 w-5" />
               {actionMessage}
             </div>
