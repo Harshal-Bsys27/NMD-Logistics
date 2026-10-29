@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { authService } from '@/services/auth';
 import { useAuth } from '@/hooks';
 import { useMockOrders, useMockDrivers } from '@/services/mockData';
-import { cn, formatDate } from '@/utils/helpers';
+import { cn } from '@/utils/helpers';
 import OrdersTable from '@/components/tables/OrdersTable';
 import {
   AreaChart,
@@ -25,17 +24,12 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import {
-  LogOut,
   Package,
   MapPin,
   CheckCircle2,
   ShieldCheck,
-  Truck,
-  Clock3,
   TrendingUp,
   AlertTriangle,
-  Users,
-  ArrowUpRight,
   BellRing,
 } from 'lucide-react';
 
@@ -70,25 +64,77 @@ const driverPerformanceData = [
   { name: 'EMP003', deliveries: 22, rating: 4.7 },
 ];
 
-const COLORS = ['#06b6d4', '#0ea5e9', '#6366f1', '#8b5cf6'];
+const chartTheme = {
+  grid: 'hsl(var(--border))',
+  label: 'hsl(var(--muted-foreground))',
+  tooltipBackground: 'hsl(var(--popover))',
+  tooltipForeground: 'hsl(var(--popover-foreground))',
+  tooltipBorder: '1px solid hsl(var(--border))',
+  colors: [
+    'hsl(var(--info-foreground))',
+    'hsl(var(--success-foreground))',
+    'hsl(var(--warning-foreground))',
+    'hsl(var(--destructive))',
+  ],
+};
 
 const sampleStats = [
-  { label: 'Active orders', value: 28, icon: Package, accent: 'from-cyan-500 to-blue-500' },
-  { label: 'Pending assignments', value: 14, icon: MapPin, accent: 'from-violet-500 to-fuchsia-500' },
-  { label: 'On-time deliveries', value: 96, icon: CheckCircle2, accent: 'from-emerald-500 to-teal-500' },
-  { label: 'Operational uptime', value: '99.8%', icon: ShieldCheck, accent: 'from-slate-500 to-slate-700' },
+  {
+    label: 'Active orders',
+    value: 28,
+    suffix: '',
+    icon: Package,
+    accent: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300',
+    chip: 'bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300',
+    border: 'border-sky-200 dark:border-sky-500/25',
+    sparkline: [3, 5, 4, 7, 6, 8, 7],
+    trend: '+12.4%',
+  },
+  {
+    label: 'Pending assignments',
+    value: 14,
+    suffix: '',
+    icon: MapPin,
+    accent: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+    chip: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300',
+    border: 'border-amber-200 dark:border-amber-500/25',
+    sparkline: [7, 5, 6, 4, 5, 3, 4],
+    trend: '+8.1%',
+  },
+  {
+    label: 'On-time deliveries',
+    value: 96,
+    suffix: '%',
+    icon: CheckCircle2,
+    accent: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
+    chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300',
+    border: 'border-emerald-200 dark:border-emerald-500/25',
+    sparkline: [4, 5, 6, 6, 7, 8, 8],
+    trend: '+2.8%',
+  },
+  {
+    label: 'Operational uptime',
+    value: '99.8',
+    suffix: '%',
+    icon: ShieldCheck,
+    accent: 'bg-slate-200 text-slate-700 dark:bg-slate-700/80 dark:text-slate-200',
+    chip: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+    border: 'border-slate-200 dark:border-slate-700/80',
+    sparkline: [7, 7, 8, 8, 8, 9, 9],
+    trend: '+0.6%',
+  },
 ];
 
 const routeHealth = [
-  { label: 'City routes', value: 87, tone: 'text-emerald-300', bar: 'bg-emerald-400' },
-  { label: 'Outskirts', value: 72, tone: 'text-cyan-300', bar: 'bg-cyan-400' },
-  { label: 'High priority', value: 91, tone: 'text-violet-300', bar: 'bg-violet-400' },
+  { label: 'City routes', value: 87, tone: 'text-success-foreground', bar: 'bg-success-foreground' },
+  { label: 'Outskirts', value: 72, tone: 'text-info-foreground', bar: 'bg-info-foreground' },
+  { label: 'High priority', value: 91, tone: 'text-warning-foreground', bar: 'bg-warning-foreground' },
 ];
 
 const priorityAlerts = [
-  { title: 'Orders due in 30 mins', count: 6, level: 'High' },
-  { title: 'Vehicle maintenance due', count: 3, level: 'Medium' },
-  { title: 'Customer escalations', count: 1, level: 'Low' },
+  { title: 'Orders due in 30 mins', count: 6, level: 'High', border: 'border-l-red-500 bg-red-500/5', badge: 'bg-red-500/10 text-red-700 dark:bg-red-500/15 dark:text-red-300' },
+  { title: 'Vehicle maintenance due', count: 3, level: 'Medium', border: 'border-l-amber-500 bg-amber-500/5', badge: 'bg-amber-500/10 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300' },
+  { title: 'Customer escalations', count: 1, level: 'Low', border: 'border-l-emerald-500 bg-emerald-500/5', badge: 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300' },
 ];
 
 const dispatchBoard = [
@@ -100,7 +146,6 @@ const dispatchBoard = [
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
-  const [signingOut, setSigningOut] = useState(false);
   const { orders } = useMockOrders();
   const { drivers } = useMockDrivers();
 
@@ -110,17 +155,10 @@ export default function DashboardPage() {
     }
   }, [loading, user, router]);
 
-  const welcomeTitle = useMemo(
-    () => (user?.full_name ? `Welcome back, ${user.full_name}` : 'Welcome to NMD Logistics'),
-    [user]
-  );
-
-  const handleSignOut = async () => {
-    setSigningOut(true);
-    await authService.signOut();
-    setSigningOut(false);
-    router.replace('/auth/signin');
-  };
+  const welcomeTitle = useMemo(() => {
+    const firstName = user?.full_name?.trim().split(/\s+/)[0]?.slice(0, 24);
+    return firstName ? `Welcome back, ${firstName}` : 'Welcome back';
+  }, [user?.full_name]);
 
   const orderStats = useMemo(() => {
     return {
@@ -143,121 +181,107 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950">
-        <p className="text-white">Loading...</p>
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
+        <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="container-main mx-auto px-4 py-10 sm:px-6 lg:px-8">
-        <div className="surface-glass mb-8 flex flex-col gap-6 rounded-3xl p-8 sm:p-10">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.28em] text-cyan-400/80">Operations dashboard</p>
-              <h1 className="mt-4 text-4xl font-bold tracking-tight text-white sm:text-5xl">{welcomeTitle}</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
-                Real-time analytics, order tracking, and team performance across your logistics network.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <button className="inline-flex items-center gap-2 rounded-2xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-2.5 text-sm font-semibold text-cyan-200 transition hover:bg-cyan-500/20">
-                <ArrowUpRight className="h-4 w-4" />
-                New dispatch
-              </button>
-              <button
-                onClick={handleSignOut}
-                disabled={signingOut}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300/20 bg-slate-100/10 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-100/20 hover:border-slate-300/30 dark:border-slate-700/30 dark:bg-slate-950 dark:hover:bg-slate-900 dark:hover:border-slate-600 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <LogOut className="h-4 w-4" />
-                {signingOut ? 'Signing out…' : 'Sign out'}
-              </button>
-            </div>
+    <div className="bg-background text-foreground">
+      <div className="flex w-full flex-col gap-4">
+        <header className="order-1 flex flex-col gap-4 border-b border-border pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{welcomeTitle}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Today’s orders, fleet status, and delivery performance.</p>
           </div>
+        </header>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {sampleStats.map((stat) => {
-              const Icon = stat.icon;
-              return (
-                <div key={stat.label} className="surface-glass group rounded-2xl p-6 transition hover:border-cyan-400/40">
-                  <div className={cn('inline-flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-lg', stat.accent)}>
-                    <Icon className="h-6 w-6" />
+        <div className="order-2 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {sampleStats.map((stat) => {
+            const Icon = stat.icon;
+            const min = Math.min(...stat.sparkline);
+            const max = Math.max(...stat.sparkline);
+            const range = max - min || 1;
+            const points = stat.sparkline
+              .map((value, index) => `${(index / (stat.sparkline.length - 1)) * 100},${22 - ((value - min) / range) * 18}`)
+              .join(' ');
+            return (
+              <div key={stat.label} className={cn('surface-glass flex h-full min-h-[160px] items-start justify-between gap-4 rounded-xl border p-4 transition hover:border-ring/50', stat.border)}>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <div className={cn('mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg', stat.accent)}>
+                    <Icon className="h-5 w-5" />
                   </div>
-                  <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">{stat.label}</p>
-                  <p className="mt-2 text-3xl font-bold text-white">{stat.value}</p>
-                  <div className="mt-3 h-1 w-12 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 opacity-60" />
+                  <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">{stat.label}</p>
+                  <div className="mt-3 flex items-end gap-2">
+                    <p className="text-3xl font-bold tabular-nums text-foreground">{stat.value}{stat.suffix}</p>
+                    <span className={cn('inline-flex items-center rounded-full px-2 py-1 text-[10px] font-semibold', stat.chip)}>{stat.trend}</span>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
+                <svg className="mt-auto h-10 w-20 shrink-0 self-end text-foreground/70" viewBox="0 0 100 24" role="img" aria-label={`${stat.label} seven-day trend`}>
+                  <polyline points={points} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="mb-6 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-          <section className="surface-glass rounded-2xl p-6">
+        <div className="order-3 grid grid-cols-12 gap-4">
+          <section className="surface-glass col-span-12 rounded-xl border border-border p-4 md:p-5 xl:col-span-8">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Operations overview</p>
-                <h2 className="mt-3 text-2xl font-bold text-white">Service performance</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Operations overview</p>
+                <h2 className="mt-2 text-xl font-semibold text-foreground">Service performance</h2>
               </div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+              <span className="inline-flex min-h-7 items-center gap-2 rounded-full border border-success/30 bg-success px-3 py-1 text-xs font-semibold text-success-foreground">
                 <TrendingUp className="h-3.5 w-3.5" />
                 +12.4%
               </span>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                <div className="flex items-center justify-between text-slate-400">
-                  <span className="text-sm">Avg. route time</span>
-                  <Clock3 className="h-4 w-4 text-cyan-300" />
-                </div>
-                <p className="mt-4 text-3xl font-bold text-white">42m</p>
-                <p className="mt-2 text-xs text-emerald-300">-6 min vs last week</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                <div className="flex items-center justify-between text-slate-400">
-                  <span className="text-sm">Fleet active</span>
-                  <Truck className="h-4 w-4 text-violet-300" />
-                </div>
-                <p className="mt-4 text-3xl font-bold text-white">26</p>
-                <p className="mt-2 text-xs text-violet-300">4 vehicles in reserve</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                <div className="flex items-center justify-between text-slate-400">
-                  <span className="text-sm">Support load</span>
-                  <Users className="h-4 w-4 text-amber-300" />
-                </div>
-                <p className="mt-4 text-3xl font-bold text-white">8</p>
-                <p className="mt-2 text-xs text-amber-300">2 supervisors online</p>
-              </div>
-            </div>
+            <ResponsiveContainer width="100%" height={240}>
+              <AreaChart data={orderCompletionData} margin={{ top: 12, right: 20, left: 0, bottom: 8 }}>
+                <defs>
+                  <linearGradient id="serviceCompleted" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={chartTheme.colors[1]} stopOpacity={0.28} />
+                    <stop offset="95%" stopColor={chartTheme.colors[1]} stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="serviceFailed" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={chartTheme.colors[3]} stopOpacity={0.24} />
+                    <stop offset="95%" stopColor={chartTheme.colors[3]} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} vertical={false} />
+                <XAxis dataKey="day" stroke={chartTheme.label} tickLine={false} axisLine={false} tickMargin={8} />
+                <YAxis stroke={chartTheme.label} width={32} tickLine={false} axisLine={false} tickMargin={8} />
+                <Tooltip
+                  cursor={{ stroke: chartTheme.grid, strokeWidth: 1 }}
+                  contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground, borderRadius: '0.75rem' }}
+                />
+                <Legend wrapperStyle={{ paddingTop: 12, fontSize: '12px' }} />
+                <Area type="monotone" dataKey="completed" name="Completed" stroke={chartTheme.colors[1]} fill="url(#serviceCompleted)" strokeWidth={2.5} />
+                <Area type="monotone" dataKey="failed" name="Failed" stroke={chartTheme.colors[3]} fill="url(#serviceFailed)" strokeWidth={2.5} />
+              </AreaChart>
+            </ResponsiveContainer>
           </section>
 
-          <section className="surface-glass rounded-2xl p-6">
+          <section className="surface-glass col-span-12 rounded-xl border border-border p-4 md:p-5 xl:col-span-4">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Priority alerts</p>
-                <h2 className="mt-3 text-xl font-bold text-white">Watchlist</h2>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Priority alerts</p>
+                <h2 className="mt-2 text-lg font-semibold text-foreground">Watchlist</h2>
               </div>
-              <BellRing className="h-5 w-5 text-cyan-300" />
+              <BellRing className="h-5 w-5 text-primary" />
             </div>
 
             <div className="space-y-3">
               {priorityAlerts.map((alert) => (
-                <div key={alert.title} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/60 p-3">
+                <div key={alert.title} className={cn('flex items-center justify-between gap-3 rounded-md border border-l-4 border-border bg-muted/30 p-3', alert.border)}>
                   <div>
-                    <p className="text-sm font-medium text-white">{alert.title}</p>
-                    <p className="mt-1 text-xs text-slate-400">{alert.count} items needing attention</p>
+                    <p className="text-sm font-medium text-foreground">{alert.title}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{alert.count} {alert.count === 1 ? 'item' : 'items'} needing attention</p>
                   </div>
-                  <span className={cn(
-                    'rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
-                    alert.level === 'High' && 'bg-rose-500/15 text-rose-300',
-                    alert.level === 'Medium' && 'bg-amber-500/15 text-amber-300',
-                    alert.level === 'Low' && 'bg-emerald-500/15 text-emerald-300'
-                  )}>
+                  <span className={cn('inline-flex min-h-6 items-center rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]', alert.badge)}>
                     {alert.level}
                   </span>
                 </div>
@@ -266,47 +290,20 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        <div className="mb-6 grid gap-6 lg:grid-cols-2">
-          <div className="surface-glass rounded-2xl p-6">
+        <div className="order-5 grid grid-cols-12 gap-4">
+          <div className="surface-glass col-span-12 rounded-xl border border-border p-4 md:p-5">
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-white">Order Completion Trends</h3>
-              <p className="mt-1 text-sm text-slate-400">Weekly order status distribution</p>
-            </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={orderCompletionData}>
-                <defs>
-                  <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorFailed" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="day" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} />
-                <Area type="monotone" dataKey="completed" stroke="#10b981" fillOpacity={1} fill="url(#colorCompleted)" />
-                <Area type="monotone" dataKey="failed" stroke="#ef4444" fillOpacity={1} fill="url(#colorFailed)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="surface-glass rounded-2xl p-6">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-white">Route efficiency</h3>
-              <p className="mt-1 text-sm text-slate-400">Operational route health status</p>
+                <h3 className="text-lg font-semibold text-foreground">Route efficiency</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Operational route health status</p>
             </div>
             <div className="space-y-5">
               {routeHealth.map((route) => (
                 <div key={route.label}>
                   <div className="mb-2 flex items-center justify-between text-sm">
-                    <span className="text-slate-300">{route.label}</span>
+                    <span className="text-foreground">{route.label}</span>
                     <span className={cn('font-semibold', route.tone)}>{route.value}%</span>
                   </div>
-                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
+                  <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
                     <div className={cn('h-full rounded-full', route.bar)} style={{ width: `${route.value}%` }} />
                   </div>
                 </div>
@@ -315,29 +312,29 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mb-6 grid gap-6 lg:grid-cols-2">
-          <div className="surface-glass rounded-2xl p-6">
+        <div className="order-6 grid grid-cols-12 gap-4">
+          <div className="surface-glass col-span-12 rounded-xl border border-border p-4 md:p-5 xl:col-span-6">
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-white">Revenue Performance</h3>
-              <p className="mt-1 text-sm text-slate-400">Weekly revenue vs target</p>
+                <h3 className="text-lg font-semibold text-foreground">Revenue Performance</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Weekly revenue vs target</p>
             </div>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="week" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                <XAxis dataKey="week" stroke={chartTheme.label} />
+                <YAxis stroke={chartTheme.label} />
+                <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
                 <Legend />
-                <Bar dataKey="revenue" fill="#06b6d4" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="target" fill="#64748b" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="revenue" fill={chartTheme.colors[0]} radius={[6, 6, 0, 0]} />
+                <Bar dataKey="target" fill={chartTheme.grid} radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="surface-glass rounded-2xl p-6">
+          <div className="surface-glass col-span-12 rounded-xl border border-border p-4 md:p-5 xl:col-span-6">
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-white">Delivery Time Distribution</h3>
-              <p className="mt-1 text-sm text-slate-400">How long deliveries take</p>
+                <h3 className="text-lg font-semibold text-foreground">Delivery Time Distribution</h3>
+              <p className="mt-1 text-sm text-muted-foreground">How long deliveries take</p>
             </div>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -348,60 +345,59 @@ export default function DashboardPage() {
                   labelLine={false}
                   label={({ name, percentage }) => `${name} ${percentage}%`}
                   outerRadius={80}
-                  fill="#8884d8"
+                  fill={chartTheme.colors[0]}
                   dataKey="percentage"
                 >
-                  {deliveryTimeData.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  {deliveryTimeData.map((entry, index) => (
+                    <Cell key={`cell-${entry.range}`} fill={chartTheme.colors[index % chartTheme.colors.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="mb-6 grid gap-6 lg:grid-cols-2">
-          <div className="surface-glass rounded-2xl p-6">
+        <div className="order-7 grid grid-cols-12 gap-4">
+          <div className="surface-glass col-span-12 rounded-xl border border-border p-4 md:p-5 xl:col-span-6">
             <div className="mb-6">
-              <h3 className="text-lg font-semibold text-white">Top Driver Performance</h3>
-              <p className="mt-1 text-sm text-slate-400">Deliveries and customer ratings</p>
+                <h3 className="text-lg font-semibold text-foreground">Top Driver Performance</h3>
+              <p className="mt-1 text-sm text-muted-foreground">Deliveries and customer ratings</p>
             </div>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={driverPerformanceData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="name" stroke="#94a3b8" />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                <XAxis dataKey="name" stroke={chartTheme.label} />
+                <YAxis stroke={chartTheme.label} />
+                <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
                 <Legend />
-                <Line type="monotone" dataKey="deliveries" stroke="#06b6d4" strokeWidth={2} dot={{ fill: '#06b6d4', r: 4 }} />
-                <Line type="monotone" dataKey="rating" stroke="#fbbf24" strokeWidth={2} dot={{ fill: '#fbbf24', r: 4 }} />
+                <Line type="monotone" dataKey="deliveries" stroke={chartTheme.colors[0]} strokeWidth={2} dot={{ fill: chartTheme.colors[0], r: 4 }} />
+                <Line type="monotone" dataKey="rating" stroke={chartTheme.colors[2]} strokeWidth={2} dot={{ fill: chartTheme.colors[2], r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="surface-glass rounded-2xl p-6">
+          <div className="surface-glass col-span-12 rounded-xl border border-border p-4 md:p-5 xl:col-span-6">
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-white">Dispatch board</h3>
-                <p className="mt-1 text-sm text-slate-400">Current route assignments</p>
+                <h3 className="text-lg font-semibold text-foreground">Dispatch board</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Current route assignments</p>
               </div>
-              <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">Live</span>
             </div>
 
             <div className="space-y-3">
               {dispatchBoard.map((job) => (
-                <div key={job.id} className="flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-950/60 p-3">
+                <div key={job.id} className="flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 p-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold text-white">{job.id}</p>
-                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] uppercase tracking-wider text-slate-300">{job.zone}</span>
+                      <p className="font-semibold text-foreground">{job.id}</p>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] uppercase tracking-wider text-muted-foreground">{job.zone}</span>
                     </div>
-                    <p className="mt-1 text-xs text-slate-400">{job.driver}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{job.driver}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-cyan-300">{job.eta}</p>
-                    <p className="mt-1 text-[10px] uppercase tracking-[0.18em] text-slate-400">{job.status}</p>
+                    <p className="text-sm font-semibold tabular-nums text-info-foreground">{job.eta}</p>
+                    <p className={`mt-1 text-[10px] uppercase tracking-[0.14em] ${job.status === 'Delayed' ? 'text-warning-foreground' : 'text-muted-foreground'}`}>{job.status}</p>
                   </div>
                 </div>
               ))}
@@ -409,106 +405,69 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.9fr_1fr]">
-          <section className="surface-glass rounded-2xl p-8">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Latest activity</p>
-                <h2 className="mt-4 text-2xl font-bold text-white">Recent Orders</h2>
-              </div>
-              <span className="rounded-full bg-emerald-400/15 px-3 py-1.5 text-xs font-semibold text-emerald-300">LIVE</span>
-            </div>
-
-            <div className="mt-8 space-y-3">
-              {orders.slice(0, 3).map((order) => (
-                <div key={order.id} className="surface-glass rounded-xl p-4 transition hover:border-cyan-400/50">
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="font-semibold text-white">{order.order_number}</p>
-                    <span className="rounded-full bg-slate-700/50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-300">{order.status}</span>
-                  </div>
-                  <p className="mt-3 text-sm text-slate-400">{order.client_name}</p>
-                  <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
-                    <span className="font-semibold text-cyan-300">₹{order.package_value?.toLocaleString('en-IN')}</span>
-                    <span className="h-1 w-1 rounded-full bg-slate-600" />
-                    <span>{formatDate(order.created_at, 'short')}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="order-4 grid grid-cols-12 gap-4">
+          <section className="col-span-12 min-w-0 space-y-4 xl:col-span-8">
+            <OrdersTable orders={orders.slice(0, 5)} title="Recent orders" subtitle="Latest activity" />
           </section>
 
-          <section className="space-y-5">
-            <div className="surface-glass rounded-2xl p-6">
-              <h3 className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Order Stats</h3>
+          <section className="col-span-12 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:col-span-4 xl:grid-cols-1">
+            <div className="surface-glass h-full rounded-xl border border-border p-4">
+              <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Order Stats</h3>
               <div className="mt-6 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Delivered</span>
-                  <span className="font-bold text-emerald-300">{orderStats.delivered}</span>
+                  <span className="text-sm text-muted-foreground">Delivered</span>
+                  <span className="font-bold tabular-nums text-success-foreground">{orderStats.delivered}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">In Transit</span>
-                  <span className="font-bold text-violet-300">{orderStats.inTransit}</span>
+                  <span className="text-sm text-muted-foreground">In Transit</span>
+                  <span className="font-bold tabular-nums text-info-foreground">{orderStats.inTransit}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Pending</span>
-                  <span className="font-bold text-amber-300">{orderStats.pending}</span>
+                  <span className="text-sm text-muted-foreground">Pending</span>
+                  <span className="font-bold tabular-nums text-warning-foreground">{orderStats.pending}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Failed</span>
-                  <span className="font-bold text-rose-300">{orderStats.failed}</span>
+                  <span className="text-sm text-muted-foreground">Failed</span>
+                  <span className="font-bold tabular-nums text-danger-foreground">{orderStats.failed}</span>
                 </div>
               </div>
             </div>
 
-            <div className="surface-glass rounded-2xl p-6">
-              <h3 className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Driver Stats</h3>
+            <div className="surface-glass h-full rounded-xl border border-border p-4">
+              <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Driver Stats</h3>
               <div className="mt-6 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Total</span>
-                  <span className="font-bold text-cyan-300">{driverStats.total}</span>
+                  <span className="text-sm text-muted-foreground">Total</span>
+                  <span className="font-bold tabular-nums text-info-foreground">{driverStats.total}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Available</span>
-                  <span className="font-bold text-emerald-300">{driverStats.available}</span>
+                  <span className="text-sm text-muted-foreground">Available</span>
+                  <span className="font-bold tabular-nums text-success-foreground">{driverStats.available}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">On Delivery</span>
-                  <span className="font-bold text-violet-300">{driverStats.onDelivery}</span>
+                  <span className="text-sm text-muted-foreground">On Delivery</span>
+                  <span className="font-bold tabular-nums text-info-foreground">{driverStats.onDelivery}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-400">Avg Rating</span>
-                  <span className="font-bold text-yellow-300">{driverStats.avgRating}⭐</span>
+                  <span className="text-sm text-muted-foreground">Avg Rating</span>
+                  <span className="font-bold tabular-nums text-warning-foreground">{driverStats.avgRating}⭐</span>
                 </div>
               </div>
             </div>
 
-            <div className="surface-glass rounded-2xl p-6">
+            <div className="surface-glass h-full rounded-xl border border-border p-4 sm:col-span-2 xl:col-span-1">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">System health</h3>
-                <AlertTriangle className="h-4 w-4 text-amber-300" />
+                <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">System health</h3>
+                <AlertTriangle className="h-4 w-4 text-warning-foreground" />
               </div>
-              <div className="mt-5 rounded-2xl border border-amber-500/25 bg-amber-500/10 p-4">
-                <p className="text-sm font-medium text-amber-200">2 low-priority issues</p>
-                <p className="mt-2 text-xs text-amber-100/80">Vehicle checks and delayed pickups are being monitored.</p>
+              <div className="mt-5 rounded-md border border-warning/30 bg-warning p-4">
+                <p className="text-sm font-medium text-warning-foreground">2 low-priority issues</p>
+                <p className="mt-2 text-xs text-warning-foreground">Vehicle checks and delayed pickups are being monitored.</p>
               </div>
             </div>
           </section>
         </div>
 
-        {/* Orders Table Section */}
-        <div className="mb-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-500">Order Management</p>
-              <h2 className="mt-2 text-2xl font-bold text-white">All Orders</h2>
-            </div>
-            <button className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:opacity-90">
-              <ArrowUpRight className="h-4 w-4" />
-              New Order
-            </button>
-          </div>
-          <OrdersTable orders={orders} />
-        </div>
       </div>
     </div>
   );
