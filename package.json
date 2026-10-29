@@ -16,7 +16,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:lint": "supabase db lint --local",
-    "db:push": "supabase db push",
+    "db:push": "supabase db push --linked",
     "db:pull": "supabase db pull",
     "db:status": "supabase migration list"
   },
