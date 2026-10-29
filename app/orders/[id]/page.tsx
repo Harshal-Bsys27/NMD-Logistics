@@ -40,13 +40,13 @@ export default function OrderDetailPage() {
 
   if (loadingDb) {
     return (
-      <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
           <div className="animate-pulse space-y-4">
-            <div className="h-12 w-1/3 rounded-lg bg-slate-800" />
+            <div className="h-12 w-1/3 rounded-md bg-muted" />
             <div className="space-y-3">
-              <div className="h-6 w-full rounded-lg bg-slate-800" />
-              <div className="h-6 w-5/6 rounded-lg bg-slate-800" />
+              <div className="h-6 w-full rounded-md bg-muted" />
+              <div className="h-6 w-5/6 rounded-md bg-muted" />
             </div>
           </div>
         </div>
@@ -56,18 +56,18 @@ export default function OrderDetailPage() {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
           <button
             onClick={() => router.back()}
-            className="mb-6 flex items-center gap-2 text-cyan-300 transition hover:text-cyan-200"
+            className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>
-          <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
-            <AlertCircle className="h-5 w-5 text-red-400" />
-            <p className="text-sm text-red-300">Order not found</p>
+          <div className="flex items-center gap-3 rounded-lg border border-danger/30 bg-danger p-4 text-danger-foreground">
+            <AlertCircle className="h-5 w-5" />
+            <p className="text-sm">Order not found</p>
           </div>
         </div>
       </div>
@@ -93,23 +93,23 @@ export default function OrderDetailPage() {
   };
 
   const statusColors: Record<string, string> = {
-    draft: 'bg-slate-600 text-slate-100',
-    confirmed: 'bg-amber-600 text-amber-100',
-    assigned: 'bg-blue-600 text-blue-100',
-    picked_up: 'bg-violet-600 text-violet-100',
-    in_transit: 'bg-cyan-600 text-cyan-100',
-    delivered: 'bg-emerald-600 text-emerald-100',
-    failed: 'bg-red-600 text-red-100',
-    cancelled: 'bg-slate-700 text-slate-300',
+    draft: 'bg-muted text-muted-foreground',
+    confirmed: 'bg-warning text-warning-foreground',
+    assigned: 'bg-info text-info-foreground',
+    picked_up: 'bg-warning text-warning-foreground',
+    in_transit: 'bg-info text-info-foreground',
+    delivered: 'bg-success text-success-foreground',
+    failed: 'bg-danger text-danger-foreground',
+    cancelled: 'bg-muted text-muted-foreground',
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
+    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <button
           onClick={() => router.back()}
-          className="mb-6 flex items-center gap-2 text-cyan-300 transition hover:text-cyan-200"
+          className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
@@ -118,33 +118,33 @@ export default function OrderDetailPage() {
         {/* Order Overview */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {/* Order Number */}
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Order Number</p>
-            <p className="mt-2 text-lg font-semibold text-white">{order.order_number}</p>
+          <div className="surface-glass h-full rounded-lg p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Order Number</p>
+            <p className="mt-2 text-lg font-semibold text-foreground">{order.order_number}</p>
           </div>
 
           {/* Status */}
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Status</p>
+          <div className="surface-glass h-full rounded-lg p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Status</p>
             <div className="mt-2">
-              <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusColors[order.status]}`}>
+              <span className={`inline-flex min-h-6 items-center rounded-full px-3 py-1 text-xs font-semibold ${statusColors[order.status] ?? statusColors.draft}`}>
                 {order.status.replace('_', ' ')}
               </span>
             </div>
           </div>
 
           {/* Value */}
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Package Value</p>
-            <p className="mt-2 flex items-center gap-1 text-lg font-semibold text-emerald-300">
+          <div className="surface-glass h-full rounded-lg p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Package Value</p>
+            <p className="mt-2 flex items-center gap-1 text-lg font-semibold tabular-nums text-foreground">
               <DollarSign className="h-4 w-4" />₹{order.package_value?.toLocaleString('en-IN')}
             </p>
           </div>
 
           {/* Created Date */}
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">Created</p>
-            <p className="mt-2 flex items-center gap-1 text-sm text-slate-300">
+          <div className="surface-glass h-full rounded-lg p-5">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Created</p>
+            <p className="mt-2 flex items-center gap-1 text-sm text-foreground">
               <Calendar className="h-4 w-4" />
               {formatDate(order.created_at, 'short')}
             </p>
@@ -153,48 +153,48 @@ export default function OrderDetailPage() {
 
         {/* Location Info */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2">
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
+          <div className="surface-glass rounded-lg p-5">
             <div className="mb-3 flex items-center gap-2">
-              <div className="rounded-lg bg-cyan-500/20 p-2">
-                <MapPin className="h-5 w-5 text-cyan-300" />
+              <div className="rounded-md bg-primary/10 p-2 text-primary">
+                <MapPin className="h-5 w-5" />
               </div>
-              <h3 className="font-semibold text-white">Pickup Location</h3>
+              <h3 className="font-semibold text-foreground">Pickup Location</h3>
             </div>
-            <p className="text-slate-300">{order.pickup_location}</p>
+            <p className="text-foreground">{order.pickup_location}</p>
           </div>
 
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-6">
+          <div className="surface-glass rounded-lg p-5">
             <div className="mb-3 flex items-center gap-2">
-              <div className="rounded-lg bg-emerald-500/20 p-2">
-                <MapPin className="h-5 w-5 text-emerald-300" />
+              <div className="rounded-md bg-success p-2 text-success-foreground">
+                <MapPin className="h-5 w-5" />
               </div>
-              <h3 className="font-semibold text-white">Delivery Location</h3>
+              <h3 className="font-semibold text-foreground">Delivery Location</h3>
             </div>
-            <p className="text-slate-300">{order.delivery_location}</p>
+            <p className="text-foreground">{order.delivery_location}</p>
           </div>
         </div>
 
         {/* Package Details */}
-        <div className="surface-glass mb-8 rounded-2xl border border-slate-700/50 p-6">
+        <div className="surface-glass mb-8 rounded-lg p-6">
           <div className="mb-4 flex items-center gap-2">
-            <div className="rounded-lg bg-violet-500/20 p-2">
-              <Package className="h-5 w-5 text-violet-300" />
+            <div className="rounded-md bg-info p-2 text-info-foreground">
+              <Package className="h-5 w-5" />
             </div>
-            <h3 className="font-semibold text-white">Package Details</h3>
+            <h3 className="font-semibold text-foreground">Package Details</h3>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="text-sm text-slate-400">Description</p>
-              <p className="mt-1 text-white">{order.package_description}</p>
+              <p className="text-sm text-muted-foreground">Description</p>
+              <p className="mt-1 text-foreground">{order.package_description}</p>
             </div>
             <div>
-              <p className="text-sm text-slate-400">Priority</p>
-              <p className="mt-1 text-white">{order.priority || 'Normal'}</p>
+              <p className="text-sm text-muted-foreground">Priority</p>
+              <p className="mt-1 text-foreground">{order.priority || 'Normal'}</p>
             </div>
             {order.special_instructions && (
               <div className="sm:col-span-2">
-                <p className="text-sm text-slate-400">Special Instructions</p>
-                <p className="mt-1 text-white">{order.special_instructions}</p>
+                <p className="text-sm text-muted-foreground">Special Instructions</p>
+                <p className="mt-1 text-foreground">{order.special_instructions}</p>
               </div>
             )}
           </div>
@@ -202,8 +202,8 @@ export default function OrderDetailPage() {
 
         {/* Edit Form */}
         <div className="mb-8">
-          <h2 className="mb-4 text-2xl font-bold text-white">Edit Order</h2>
-          <div className="surface-glass rounded-2xl border border-slate-700/50 p-8">
+          <h2 className="mb-4 text-xl font-semibold text-foreground">Edit Order</h2>
+          <div className="surface-glass rounded-lg p-6 sm:p-8">
             <OrderForm initialOrder={order} onSubmit={handleSubmit} isLoading={isLoading} />
           </div>
         </div>

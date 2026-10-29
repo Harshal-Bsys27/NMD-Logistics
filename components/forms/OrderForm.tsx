@@ -59,25 +59,25 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
   };
 
   return (
-    <Card className="border-slate-800 bg-slate-900/60 p-6 shadow-lg shadow-slate-950/20">
+    <Card className="p-6">
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-6">
         {successMessage && (
-          <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-            <p className="text-sm text-emerald-300">{successMessage}</p>
+          <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success p-4 text-success-foreground">
+            <CheckCircle2 className="h-5 w-5" />
+            <p className="text-sm">{successMessage}</p>
           </div>
         )}
 
         {errorMessage && (
-          <div className="flex items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4">
-            <AlertCircle className="h-5 w-5 text-red-400" />
-            <p className="text-sm text-red-300">{errorMessage}</p>
+          <div className="flex items-center gap-3 rounded-lg border border-danger/30 bg-danger p-4 text-danger-foreground">
+            <AlertCircle className="h-5 w-5" />
+            <p className="text-sm">{errorMessage}</p>
           </div>
         )}
 
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium text-slate-200">Client Name</label>
+            <label className="block text-sm font-medium text-foreground">Client Name</label>
             <Input
               {...register('client_name')}
               aria-invalid={!!errors.client_name}
@@ -85,12 +85,12 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
               placeholder="John Doe"
             />
             {errors.client_name && (
-              <p className="mt-1 text-xs text-red-400">{errors.client_name.message}</p>
+              <p className="mt-1 text-xs text-danger-foreground">{errors.client_name.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-200">Phone</label>
+            <label className="block text-sm font-medium text-foreground">Phone</label>
             <Input
               {...register('client_phone')}
               aria-invalid={!!errors.client_phone}
@@ -98,12 +98,12 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
               placeholder="9876543210"
             />
             {errors.client_phone && (
-              <p className="mt-1 text-xs text-red-400">{errors.client_phone.message}</p>
+              <p className="mt-1 text-xs text-danger-foreground">{errors.client_phone.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-200">Email (Optional)</label>
+            <label className="block text-sm font-medium text-foreground">Email (Optional)</label>
             <Input
               {...register('client_email')}
               aria-invalid={!!errors.client_email}
@@ -111,14 +111,14 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
               placeholder="john@example.com"
             />
             {errors.client_email && (
-              <p className="mt-1 text-xs text-red-400">{errors.client_email.message}</p>
+              <p className="mt-1 text-xs text-danger-foreground">{errors.client_email.message}</p>
             )}
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-200">Pickup Location</label>
+            <label className="block text-sm font-medium text-foreground">Pickup Location</label>
             <Input
               {...register('pickup_location')}
               aria-invalid={!!errors.pickup_location}
@@ -126,12 +126,12 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
               placeholder="123 Main St, Mumbai"
             />
             {errors.pickup_location && (
-              <p className="mt-1 text-xs text-red-400">{errors.pickup_location.message}</p>
+              <p className="mt-1 text-xs text-danger-foreground">{errors.pickup_location.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-200">Delivery Location</label>
+            <label className="block text-sm font-medium text-foreground">Delivery Location</label>
             <Input
               {...register('delivery_location')}
               aria-invalid={!!errors.delivery_location}
@@ -139,14 +139,14 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
               placeholder="456 Oak Ave, Mumbai"
             />
             {errors.delivery_location && (
-              <p className="mt-1 text-xs text-red-400">{errors.delivery_location.message}</p>
+              <p className="mt-1 text-xs text-danger-foreground">{errors.delivery_location.message}</p>
             )}
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-200">Description</label>
+            <label className="block text-sm font-medium text-foreground">Description</label>
             <Input
               {...register('package_description')}
               aria-invalid={!!errors.package_description}
@@ -154,12 +154,12 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
               placeholder="Electronics - Laptop"
             />
             {errors.package_description && (
-              <p className="mt-1 text-xs text-red-400">{errors.package_description.message}</p>
+              <p className="mt-1 text-xs text-danger-foreground">{errors.package_description.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-200">Package Value (₹)</label>
+            <label className="block text-sm font-medium text-foreground">Package Value (₹)</label>
             <Input
               {...register('package_value', { valueAsNumber: true })}
               aria-invalid={!!errors.package_value}
@@ -167,26 +167,26 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
               placeholder="50000"
             />
             {errors.package_value && (
-              <p className="mt-1 text-xs text-red-400">{errors.package_value.message}</p>
+              <p className="mt-1 text-xs text-danger-foreground">{errors.package_value.message}</p>
             )}
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-200">Priority</label>
+            <label className="block text-sm font-medium text-foreground">Priority</label>
             <Select {...register('priority')} aria-invalid={!!errors.priority}>
               <option value="normal">Normal</option>
               <option value="high">High</option>
               <option value="urgent">Urgent</option>
             </Select>
             {errors.priority && (
-              <p className="mt-1 text-xs text-red-400">{errors.priority.message}</p>
+              <p className="mt-1 text-xs text-danger-foreground">{errors.priority.message}</p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-200">Special Instructions</label>
+            <label className="block text-sm font-medium text-foreground">Special Instructions</label>
             <Input
               {...register('special_instructions')}
               aria-invalid={!!errors.special_instructions}
@@ -194,7 +194,7 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
               placeholder="Leave at door if not home"
             />
             {errors.special_instructions && (
-              <p className="mt-1 text-xs text-red-400">{errors.special_instructions.message}</p>
+              <p className="mt-1 text-xs text-danger-foreground">{errors.special_instructions.message}</p>
             )}
           </div>
         </div>

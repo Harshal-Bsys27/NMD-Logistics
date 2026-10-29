@@ -33,24 +33,24 @@ export default function CreateOrderPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
+    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => router.back()}
-            className="mb-6 flex items-center gap-2 text-cyan-300 transition hover:text-cyan-200"
+            className="mb-6 inline-flex min-h-11 items-center gap-2 rounded-md text-sm text-muted-foreground transition hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>
 
-          <h1 className="text-4xl font-bold text-white">Create New Order</h1>
-          <p className="mt-3 text-slate-400">Add a new delivery order to the system</p>
+          <h1 className="text-3xl font-semibold text-foreground">Create New Order</h1>
+          <p className="mt-2 text-muted-foreground">Add a new delivery order to the system</p>
         </div>
 
         {/* Form Container */}
-        <div className="surface-glass rounded-2xl border border-slate-700/50 p-8">
+        <div className="surface-glass rounded-lg p-6 sm:p-8">
           <OrderForm onSubmit={handleSubmit} isLoading={isLoading} />
         </div>
       </div>

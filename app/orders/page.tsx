@@ -6,22 +6,22 @@ import { useMockOrders } from '@/services/mockData';
 import { cn, formatDate, toTitleCase } from '@/utils/helpers';
 import { ChevronRight, Package, Search, Filter, Plus } from 'lucide-react';
 
-const statusColors: Record<string, { bg: string; text: string; badge: string }> = {
-  draft: { bg: 'bg-slate-500/10', text: 'text-slate-300', badge: 'bg-slate-700' },
-  confirmed: { bg: 'bg-blue-500/10', text: 'text-blue-300', badge: 'bg-blue-700' },
-  assigned: { bg: 'bg-cyan-500/10', text: 'text-cyan-300', badge: 'bg-cyan-700' },
-  picked_up: { bg: 'bg-amber-500/10', text: 'text-amber-300', badge: 'bg-amber-700' },
-  in_transit: { bg: 'bg-violet-500/10', text: 'text-violet-300', badge: 'bg-violet-700' },
-  delivered: { bg: 'bg-emerald-500/10', text: 'text-emerald-300', badge: 'bg-emerald-700' },
-  failed: { bg: 'bg-rose-500/10', text: 'text-rose-300', badge: 'bg-rose-700' },
-  cancelled: { bg: 'bg-slate-500/10', text: 'text-slate-400', badge: 'bg-slate-700' },
+const statusColors: Record<string, string> = {
+  draft: 'bg-muted text-muted-foreground',
+  confirmed: 'bg-info text-info-foreground',
+  assigned: 'bg-primary/10 text-primary',
+  picked_up: 'bg-warning text-warning-foreground',
+  in_transit: 'bg-info text-info-foreground',
+  delivered: 'bg-success text-success-foreground',
+  failed: 'bg-danger text-danger-foreground',
+  cancelled: 'bg-muted text-muted-foreground',
 };
 
 const priorityColors: Record<string, string> = {
-  low: 'bg-slate-700 text-slate-200',
-  normal: 'bg-blue-700 text-blue-200',
-  high: 'bg-orange-700 text-orange-200',
-  urgent: 'bg-rose-700 text-rose-200',
+  low: 'bg-muted text-muted-foreground',
+  normal: 'bg-info text-info-foreground',
+  high: 'bg-warning text-warning-foreground',
+  urgent: 'bg-danger text-danger-foreground',
 };
 
 export default function OrdersPage() {
@@ -48,17 +48,17 @@ export default function OrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-8">
+    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="w-full space-y-6">
         {/* Header */}
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div>
-            <h1 className="text-4xl font-bold text-white">Orders</h1>
-            <p className="mt-2 text-slate-400">Manage all delivery orders and track their status</p>
+            <h1 className="text-3xl font-semibold text-foreground">Orders</h1>
+            <p className="mt-2 text-muted-foreground">Manage all delivery orders and track their status</p>
           </div>
           <button
             onClick={() => router.push('/orders/create')}
-            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-600 hover:to-blue-600"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Plus className="h-5 w-5" />
             New Order
@@ -73,16 +73,16 @@ export default function OrdersPage() {
               key={status}
               onClick={() => setFilterStatus(filterStatus === status ? null : status)}
               className={cn(
-                'surface-glass rounded-2xl border p-6 transition',
+                'surface-glass min-h-24 rounded-lg border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 filterStatus === status
-                  ? 'border-cyan-500/50 bg-cyan-500/10'
-                  : 'border-slate-700/50 hover:border-slate-600/50'
+                  ? 'border-primary/50 bg-primary/10'
+                  : 'border-border hover:border-ring/50'
               )}
             >
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                 {status.replace('_', ' ')}
               </p>
-              <p className="mt-2 text-2xl font-bold text-white">{count}</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">{count}</p>
             </button>
           ))}
         </div>
@@ -90,83 +90,83 @@ export default function OrdersPage() {
         {/* Search & Filter */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-3.5 h-5 w-5 text-slate-400" />
+            <Search className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search by order #, client name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-12 py-3 text-sm text-white placeholder-slate-500 transition focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+              className="min-h-11 w-full rounded-lg border border-input bg-background px-12 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
-          <button className="surface-glass flex items-center gap-2 rounded-xl border border-slate-700/50 px-4 py-3 text-sm text-slate-300 transition hover:border-slate-600/50">
+          <button className="surface-glass flex min-h-11 items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm text-foreground transition hover:border-ring/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <Filter className="h-4 w-4" />
             More Filters
           </button>
         </div>
 
         {/* Orders Table */}
-        <div className="surface-glass rounded-2xl border border-slate-700/50 overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="surface-glass overflow-hidden rounded-lg border border-border">
+          <div className="max-h-[min(70vh,720px)] overflow-auto rounded-md">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-700/50 bg-slate-800/50">
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                <tr className="sticky top-0 z-10 border-b border-border bg-muted">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                     Order
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                     Client
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                     Status
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                     Priority
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                     Value
                   </th>
-                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                     Created
                   </th>
                   <th className="px-6 py-4"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <tbody className="divide-y divide-border">
                 {filteredOrders.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center">
-                      <p className="text-slate-400">No orders found matching your filters</p>
+                      <p className="text-muted-foreground">No orders found matching your filters</p>
                     </td>
                   </tr>
                 ) : (
                   filteredOrders.map((order) => {
-                    const colors = statusColors[order.status];
+                    const colors = statusColors[order.status] ?? statusColors.draft;
                     return (
                       <tr
                         key={order.id}
                         onClick={() => router.push(`/orders/${order.id}`)}
-                        className="border-b border-slate-700/50 cursor-pointer transition hover:bg-slate-800/50"
+                        className="cursor-pointer border-b border-border transition hover:bg-muted/50 focus-within:bg-muted/50"
                       >
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10">
-                              <Package className="h-5 w-5 text-cyan-300" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10">
+                              <Package className="h-5 w-5 text-primary" />
                             </div>
                             <div>
-                              <p className="font-semibold text-white">{order.order_number}</p>
-                              <p className="text-xs text-slate-400">{order.package_description}</p>
+                              <p className="font-semibold text-foreground">{order.order_number}</p>
+                              <p className="text-xs text-muted-foreground">{order.package_description}</p>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <p className="text-sm font-medium text-white">{order.client_name}</p>
-                            <p className="text-xs text-slate-400">{order.client_phone}</p>
+                            <p className="text-sm font-medium text-foreground">{order.client_name}</p>
+                            <p className="text-xs text-muted-foreground">{order.client_phone}</p>
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', colors.badge)}>
+                          <span className={cn('inline-flex min-h-6 items-center rounded-full px-3 py-1 text-xs font-semibold', colors)}>
                             {toTitleCase(order.status)}
                           </span>
                         </td>
@@ -176,14 +176,14 @@ export default function OrdersPage() {
                           </span>
                         </td>
                         <td className="px-6 py-4">
-                          <p className="font-semibold text-white">₹{order.package_value?.toLocaleString('en-IN')}</p>
+                          <p className="text-right font-semibold tabular-nums text-foreground">₹{order.package_value?.toLocaleString('en-IN')}</p>
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-400">
+                        <td className="px-6 py-4 text-sm text-muted-foreground">
                           {formatDate(order.created_at, 'short')}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <button className="inline-flex items-center justify-center rounded-lg bg-slate-800 p-2 transition hover:bg-slate-700">
-                            <ChevronRight className="h-4 w-4 text-slate-400" />
+                            <button aria-label={`View ${order.order_number}`} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                              <ChevronRight className="h-4 w-4" />
                           </button>
                         </td>
                       </tr>
@@ -197,15 +197,15 @@ export default function OrdersPage() {
 
         {/* Pagination */}
         <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-slate-400">
-            Showing <span className="font-semibold text-white">{filteredOrders.length}</span> of{' '}
-            <span className="font-semibold text-white">{orders.length}</span> orders
+          <p className="text-sm text-muted-foreground">
+            Showing <span className="font-semibold tabular-nums text-foreground">{filteredOrders.length}</span> of{' '}
+            <span className="font-semibold tabular-nums text-foreground">{orders.length}</span> orders
           </p>
           <div className="flex gap-2">
-            <button className="rounded-lg border border-slate-800 bg-slate-950 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-700 disabled:opacity-50">
+            <button className="min-h-11 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground transition hover:bg-muted disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Previous
             </button>
-            <button className="rounded-lg border border-slate-800 bg-slate-950 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-700">
+            <button className="min-h-11 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Next
             </button>
           </div>
