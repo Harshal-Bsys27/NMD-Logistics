@@ -5,26 +5,26 @@ import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-md flex-col items-center justify-center text-center">
         {/* Icon */}
-        <div className="mb-6 rounded-2xl bg-rose-500/20 p-6">
-          <AlertTriangle className="mx-auto h-16 w-16 text-rose-400" />
+        <div className="mb-6 rounded-lg bg-danger p-6">
+          <AlertTriangle className="mx-auto h-16 w-16 text-danger-foreground" />
         </div>
 
         {/* Heading */}
-        <h1 className="text-5xl font-bold text-white">500</h1>
-        <h2 className="mt-2 text-2xl font-bold text-white">Something Went Wrong</h2>
+        <h1 className="text-5xl font-bold text-foreground">500</h1>
+        <h2 className="mt-2 text-2xl font-bold text-foreground">Something Went Wrong</h2>
 
         {/* Description */}
-        <p className="mt-4 text-slate-400">
+        <p className="mt-4 text-muted-foreground">
           We encountered an unexpected error. Please try again or contact support if the problem persists.
         </p>
 
         {/* Error Details */}
         {error.message && (
-          <div className="mt-6 w-full rounded-xl border border-rose-500/20 bg-rose-500/5 p-4 text-left">
-            <p className="text-sm font-mono text-rose-300">{error.message}</p>
+          <div className="mt-6 w-full rounded-md border border-danger/30 bg-danger/20 p-4 text-left">
+            <p className="break-words font-mono text-sm text-danger-foreground">{error.message}</p>
           </div>
         )}
 
@@ -32,14 +32,14 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
         <div className="mt-8 flex flex-col gap-3 sm:flex-row">
           <button
             onClick={reset}
-            className="flex items-center justify-center gap-2 rounded-xl border border-slate-700/50 bg-slate-800/50 px-6 py-3 font-semibold text-slate-300 transition hover:border-slate-600/50 hover:bg-slate-700/50"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2.5 font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <RefreshCw className="h-5 w-5" />
             Try Again
           </button>
           <Link
             href="/dashboard"
-            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-600 hover:to-blue-600"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Home className="h-5 w-5" />
             Back to Dashboard

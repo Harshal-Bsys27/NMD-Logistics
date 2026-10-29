@@ -2,12 +2,12 @@ import { CardSkeleton } from '@/components/skeletons';
 
 export default function Loading() {
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-8">
+    <div className="bg-background px-4 py-8 sm:px-6 lg:px-8">
+      <div className="w-full space-y-6">
         {/* Header Skeleton */}
         <div className="space-y-3 animate-pulse">
-          <div className="h-10 w-48 rounded-lg bg-slate-800" />
-          <div className="h-5 w-96 rounded-lg bg-slate-800" />
+          <div className="h-10 w-48 rounded-md bg-muted" />
+          <div className="h-5 w-96 rounded-md bg-muted" />
         </div>
 
         {/* Content Grid */}
