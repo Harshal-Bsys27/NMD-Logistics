@@ -4,47 +4,67 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.6%;
+    --background: 210 40% 96%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.6%;
+    --card-foreground: 222 47% 11%;
+    --navbar: 0 0% 100%;
+    --navbar-shadow: 222 47% 11% / 0.08;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.6%;
-    --muted: 0 0% 96.1%;
+    --popover-foreground: 222 47% 11%;
+    --muted: 210 40% 93%;
     --muted-foreground: 0 0% 45.1%;
     --accent: 0 0% 9.0%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 72% 42%;
     --destructive-foreground: 0 0% 98%;
+    --success: 145 63% 93%;
+    --success-foreground: 145 63% 24%;
+    --warning: 48 100% 92%;
+    --warning-foreground: 32 89% 28%;
+    --info: 201 94% 94%;
+    --info-foreground: 201 80% 30%;
+    --danger: 0 100% 95%;
+    --danger-foreground: 0 70% 35%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --primary: 0 0% 9.0%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9.0%;
+    --primary: 190 90% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 93%;
+    --secondary-foreground: 222 47% 11%;
     --ring: 0 0% 3.7%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 0 0% 3.6%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.6%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.6%;
-    --popover-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
+    --background: 222 47% 7%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --navbar: 222 47% 11%;
+    --navbar-shadow: 0 0% 0% / 0;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+    --muted: 222 35% 16%;
     --muted-foreground: 0 0% 63.9%;
     --accent: 0 0% 98%;
     --accent-foreground: 0 0% 9.0%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
+    --success: 145 45% 22%;
+    --success-foreground: 145 75% 82%;
+    --warning: 38 62% 22%;
+    --warning-foreground: 48 95% 80%;
+    --info: 201 70% 22%;
+    --info-foreground: 197 90% 82%;
+    --danger: 0 48% 23%;
+    --danger-foreground: 0 90% 83%;
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9.0%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
+    --primary: 187 90% 65%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 222 35% 16%;
+    --secondary-foreground: 210 40% 98%;
     --ring: 0 0% 83.3%;
   }
 }
@@ -59,22 +79,7 @@
   }
 
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
-    background-color: #f3f7f8;
-    background-image: linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px),
-      radial-gradient(circle at 85% -10%, rgba(20, 184, 166, 0.2), transparent 32%);
-    background-size: 32px 32px, 32px 32px, auto;
-  }
-
-  .dark body {
-    @apply bg-slate-950 text-slate-100;
-    background-color: #061016;
-    background-image: linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px),
-      radial-gradient(circle at 85% -10%, rgba(34, 211, 238, 0.16), transparent 30%),
-      linear-gradient(135deg, #061016 0%, #0b1720 55%, #071116 100%);
-    background-size: 32px 32px, 32px 32px, auto, auto;
+    @apply bg-background text-foreground antialiased;
   }
 
   #root {
@@ -145,7 +150,7 @@
   }
 
   .card-base {
-    @apply rounded-lg border bg-card p-6 shadow-sm;
+    @apply rounded-xl border border-border bg-card p-6 text-card-foreground shadow-sm;
   }
 
   .text-truncate {
@@ -174,10 +179,6 @@
   }
 
   .surface-glass {
-    @apply border border-slate-200/80 bg-white/75 shadow-xl shadow-slate-900/5 backdrop-blur-xl;
-  }
-
-  .dark .surface-glass {
-    @apply border-slate-800/80 bg-slate-900/65 shadow-black/20;
+    @apply border border-border bg-card text-card-foreground shadow-sm;
   }
 }
