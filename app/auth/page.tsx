@@ -21,9 +21,9 @@ export default function AuthRootPage() {
   }, [user, loading, router]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-      <div className="mx-auto max-w-md rounded-3xl border border-slate-800 bg-slate-900/90 p-8 shadow-2xl shadow-slate-950/40 backdrop-blur-xl">
-        <p className="text-center text-lg font-semibold text-slate-200">Redirecting you to the right place...</p>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
+      <div className="surface-glass mx-auto max-w-md rounded-lg border border-border p-8">
+        <p className="text-center text-lg font-semibold text-foreground">Redirecting you to the right place...</p>
       </div>
     </div>
   );

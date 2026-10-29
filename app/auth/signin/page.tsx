@@ -69,16 +69,16 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container-main flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-        <div className="w-full max-w-2xl rounded-[2rem] border border-slate-800 bg-slate-900/95 p-10 shadow-[0_35px_120px_-40px_rgba(15,23,42,0.75)] backdrop-blur-xl sm:p-12">
+        <div className="surface-glass w-full max-w-2xl rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-xl sm:p-10">
           <div className="mb-8 flex flex-col gap-4 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/20">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <ArrowRight className="h-7 w-7" />
             </div>
             <div>
-              <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Sign in to NMD Logistics</h1>
-              <p className="mt-2 text-sm text-slate-400 sm:text-base">
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Sign in to NMD Logistics</h1>
+              <p className="mt-2 text-sm text-muted-foreground sm:text-base">
                 Secure access for administrators and logistics supervisors.
               </p>
             </div>
@@ -88,73 +88,73 @@ export default function SignInPage() {
             type="button"
             onClick={onGoogleSignIn}
             disabled={loading || googleLoading}
-            className="inline-flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-700 bg-slate-950/70 px-5 py-4 text-sm font-semibold text-white transition hover:border-slate-500 hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-3 rounded-md border border-border bg-background px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           >
             <span aria-hidden="true" className="text-lg font-bold text-blue-400">G</span>
             {googleLoading ? 'Connecting to Google…' : 'Continue with Google'}
           </button>
 
-          <div className="my-6 flex items-center gap-4 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
-            <span className="h-px flex-1 bg-slate-800" />
+          <div className="my-6 flex items-center gap-4 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
             <span>Or use email</span>
-            <span className="h-px flex-1 bg-slate-800" />
+            <span className="h-px flex-1 bg-border" />
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="group relative block rounded-3xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-slate-700">
-                <span className="text-xs uppercase tracking-[0.24em] text-slate-500">Email</span>
+              <label className="group relative block rounded-lg border border-border bg-background p-4 transition hover:border-ring/50">
+                <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Email</span>
                 <div className="mt-2 flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-slate-400" />
+                  <Mail className="h-4 w-4 text-muted-foreground" />
                   <input
                     type="email"
                     {...register('email')}
                     className={cn(
-                      'w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500',
-                      errors.email ? 'border-red-500' : ''
+                      'min-h-8 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring',
+                      errors.email ? 'text-danger-foreground' : ''
                     )}
                     placeholder="name@example.com"
                   />
                 </div>
-                {errors.email && <p className="mt-2 text-xs text-rose-400">{errors.email.message}</p>}
+                {errors.email && <p className="mt-2 text-xs text-danger-foreground">{errors.email.message}</p>}
               </label>
-              <label className="group relative block rounded-3xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-slate-700">
-                <span className="text-xs uppercase tracking-[0.24em] text-slate-500">Password</span>
+              <label className="group relative block rounded-lg border border-border bg-background p-4 transition hover:border-ring/50">
+                <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Password</span>
                 <div className="mt-2 flex items-center gap-3">
-                  <Lock className="h-4 w-4 text-slate-400" />
+                  <Lock className="h-4 w-4 text-muted-foreground" />
                   <input
                     type="password"
                     {...register('password')}
                     className={cn(
-                      'w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500',
-                      errors.password ? 'border-red-500' : ''
+                      'min-h-8 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring',
+                      errors.password ? 'text-danger-foreground' : ''
                     )}
                     placeholder="Enter your password"
                   />
                 </div>
-                {errors.password && <p className="mt-2 text-xs text-rose-400">{errors.password.message}</p>}
+                {errors.password && <p className="mt-2 text-xs text-danger-foreground">{errors.password.message}</p>}
               </label>
             </div>
 
-            {formError && <p className="rounded-3xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{formError}</p>}
+            {formError && <p role="alert" className="rounded-md border border-danger/30 bg-danger px-4 py-3 text-sm text-danger-foreground">{formError}</p>}
 
             <button
               type="submit"
               disabled={loading || googleLoading}
-              className="inline-flex w-full items-center justify-center rounded-3xl bg-gradient-to-r from-blue-500 to-cyan-400 px-5 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Signing in…' : 'Continue'}
             </button>
           </form>
 
-          <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-slate-800 pt-6 text-sm sm:flex-row">
-            <p className="text-slate-500">New to NMD Logistics?</p>
-            <a href="/auth/signup" className="font-semibold text-white hover:text-cyan-300">
+          <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-border pt-6 text-sm sm:flex-row">
+            <p className="text-muted-foreground">New to NMD Logistics?</p>
+            <a href="/auth/signup" className="min-h-11 inline-flex items-center font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Create an account
             </a>
           </div>
-          <div className="mt-4 text-center text-sm text-slate-500">
-            <a href="/auth/forgot-password" className="hover:text-cyan-300">Forgot password?</a>
+          <div className="mt-4 text-center text-sm text-muted-foreground">
+            <a href="/auth/forgot-password" className="inline-flex min-h-11 items-center text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Forgot password?</a>
           </div>
         </div>
       </div>

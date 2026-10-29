@@ -39,49 +39,49 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container-main flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-        <div className="w-full max-w-xl rounded-[2rem] border border-slate-800 bg-slate-900/95 p-10 shadow-[0_35px_120px_-40px_rgba(15,23,42,0.75)] backdrop-blur-xl sm:p-12">
+        <div className="surface-glass w-full max-w-xl rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-xl sm:p-10">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/20">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
               <ShieldCheck className="h-7 w-7" />
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">Reset your password</h1>
-            <p className="mt-3 text-sm leading-6 text-slate-400 sm:text-base">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Reset your password</h1>
+            <p className="mt-3 text-sm leading-6 text-muted-foreground sm:text-base">
               Enter your email and we’ll send a secure reset link so you can get back into your account.
             </p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
-            <label className="group block rounded-3xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-slate-700">
-              <span className="text-xs uppercase tracking-[0.24em] text-slate-500">Email</span>
+            <label className="group block rounded-lg border border-border bg-background p-4 transition hover:border-ring/50">
+              <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Email</span>
               <div className="mt-2 flex items-center gap-3">
-                <Mail className="h-4 w-4 text-slate-400" />
+                <Mail className="h-4 w-4 text-muted-foreground" />
                 <input
                   type="email"
                   {...register('email')}
-                  className={cn('w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500')}
+                  className={cn('min-h-8 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring')}
                   placeholder="name@example.com"
                 />
               </div>
-              {errors.email && <p className="mt-2 text-xs text-rose-400">{errors.email.message}</p>}
+              {errors.email && <p className="mt-2 text-xs text-danger-foreground">{errors.email.message}</p>}
             </label>
 
-            {formError && <p className="rounded-3xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{formError}</p>}
-            {successMessage && <p className="rounded-3xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">{successMessage}</p>}
+            {formError && <p role="alert" className="rounded-md border border-danger/30 bg-danger px-4 py-3 text-sm text-danger-foreground">{formError}</p>}
+            {successMessage && <p role="status" className="rounded-md border border-success/30 bg-success px-4 py-3 text-sm text-success-foreground">{successMessage}</p>}
 
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex w-full items-center justify-center rounded-3xl bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Sending reset link…' : 'Send reset link'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Remembered your password?{' '}
-            <a href="/auth/signin" className="font-semibold text-white hover:text-cyan-300">
+            <a href="/auth/signin" className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Sign in
             </a>
           </p>

@@ -69,16 +69,16 @@ export default function GettingStartedPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl space-y-12">
+    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-cyan-500/20 px-4 py-2 text-sm font-semibold text-cyan-300">
+          <div className="inline-flex min-h-9 items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary">
             <Rocket className="h-4 w-4" />
             Getting Started
           </div>
-          <h1 className="mt-4 text-5xl font-bold text-white">Welcome to NMD Logistics</h1>
-          <p className="mt-4 text-xl text-slate-400">
+          <h1 className="mt-4 text-3xl font-semibold text-foreground sm:text-4xl">Welcome to NMD Logistics</h1>
+          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
             Follow these steps to set up your logistics operations and start managing deliveries
           </p>
         </div>
@@ -91,8 +91,8 @@ export default function GettingStartedPage() {
                 <div
                   className={`flex h-12 w-12 items-center justify-center rounded-full font-bold text-lg transition ${
                     completedSteps.includes(step)
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-slate-800 text-slate-400'
+                      ? 'bg-success text-success-foreground'
+                      : 'bg-muted text-muted-foreground'
                   }`}
                 >
                   {completedSteps.includes(step) ? <CheckCircle2 className="h-6 w-6" /> : step}
@@ -100,7 +100,7 @@ export default function GettingStartedPage() {
                 {i < 3 && (
                   <div
                     className={`h-1 flex-1 transition ${
-                      completedSteps.includes(step) ? 'bg-emerald-500' : 'bg-slate-800'
+                      completedSteps.includes(step) ? 'bg-success-foreground' : 'bg-muted'
                     }`}
                   />
                 )}
@@ -116,71 +116,75 @@ export default function GettingStartedPage() {
             const isCompleted = completedSteps.includes(step.number);
 
             return (
-              <button
+              <div
                 key={step.number}
-                onClick={() => toggleStep(step.number)}
-                className="w-full text-left"
-              >
-                <div
-                  className={`surface-glass rounded-2xl border p-6 transition ${
+                className={`surface-glass relative rounded-lg border p-5 transition ${
                     isCompleted
-                      ? 'border-emerald-500/50 bg-emerald-500/10'
-                      : 'border-slate-700/50 hover:border-slate-600/50'
+                      ? 'border-success/50 bg-success/30'
+                      : 'border-border hover:border-ring/50'
                   }`}
+              >
+                <button
+                  type="button"
+                  aria-expanded={isCompleted}
+                  aria-label={`${step.title}: ${isCompleted ? 'mark incomplete' : 'mark complete'}`}
+                  onClick={() => toggleStep(step.number)}
+                  className="w-full rounded-md text-left pr-14 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
                       <div
                         className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition ${
                           isCompleted
-                            ? 'bg-emerald-500/20'
-                            : 'bg-cyan-500/20'
+                            ? 'bg-success text-success-foreground'
+                            : 'bg-primary/10 text-primary'
                         }`}
                       >
-                        <Icon className={`h-6 w-6 ${isCompleted ? 'text-emerald-300' : 'text-cyan-300'}`} />
+                        <Icon className="h-6 w-6" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                          <span className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
                             Step {step.number}
                           </span>
                           {isCompleted && (
-                            <span className="text-xs font-bold text-emerald-400">✓ Completed</span>
+                            <span className="text-xs font-bold text-success-foreground">✓ Completed</span>
                           )}
                         </div>
-                        <h3 className="mt-1 text-xl font-bold text-white">{step.title}</h3>
-                        <p className="mt-1 text-slate-400">{step.description}</p>
+                        <h3 className="mt-1 text-lg font-semibold text-foreground">{step.title}</h3>
+                        <p className="mt-1 text-muted-foreground">{step.description}</p>
                       </div>
                     </div>
-                    <Link
-                      href={step.href}
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex-shrink-0 rounded-lg bg-cyan-500/20 p-2 text-cyan-300 transition hover:bg-cyan-500/30"
-                    >
-                      <ArrowRight className="h-5 w-5" />
-                    </Link>
                   </div>
 
                   {/* Features */}
                   {isCompleted && (
-                    <div className="mt-4 space-y-2 border-t border-slate-700/50 pt-4">
+                    <div className="mt-4 space-y-2 border-t border-border pt-4">
                       {step.features.map((feature, i) => (
-                        <div key={i} className="flex items-center gap-2 text-sm text-slate-300">
-                          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                        <div key={i} className="flex items-center gap-2 text-sm text-foreground">
+                          <CheckCircle2 className="h-4 w-4 text-success-foreground" />
                           {feature}
                         </div>
                       ))}
                     </div>
                   )}
-                </div>
-              </button>
+                </button>
+                <Link
+                  href={step.href}
+                  aria-label={`${step.action}: ${step.title}`}
+                  title={step.action}
+                  className="absolute right-5 top-5 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md bg-primary/10 p-2 text-primary transition hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+              </div>
             );
           })}
         </div>
 
         {/* Quick Tips */}
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-white">Quick Tips</h2>
+          <h2 className="text-xl font-semibold text-foreground">Quick Tips</h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {[
@@ -193,29 +197,29 @@ export default function GettingStartedPage() {
             ].map((tip) => (
               <div
                 key={tip.title}
-                className="surface-glass rounded-xl border border-slate-700/50 p-4"
+                className="surface-glass h-full rounded-lg border border-border p-4"
               >
-                <h4 className="font-semibold text-white">{tip.title}</h4>
-                <p className="mt-1 text-sm text-slate-400">{tip.description}</p>
+                <h4 className="font-semibold text-foreground">{tip.title}</h4>
+                <p className="mt-1 text-sm text-muted-foreground">{tip.description}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* CTA */}
-        <div className="surface-glass rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 p-8 text-center">
-          <h3 className="text-2xl font-bold text-white">Ready to get started?</h3>
-          <p className="mt-2 text-slate-400">Follow the steps above to set up your operations</p>
+        <div className="surface-glass rounded-lg border border-primary/30 bg-primary/5 p-6 text-center sm:p-8">
+          <h3 className="text-xl font-semibold text-foreground">Ready to get started?</h3>
+          <p className="mt-2 text-muted-foreground">Follow the steps above to set up your operations</p>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link
               href="/dashboard"
-              className="rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:from-cyan-600 hover:to-blue-600"
+              className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               Go to Dashboard
             </Link>
             <Link
               href="/help"
-              className="rounded-xl border border-slate-700/50 bg-slate-800/50 px-6 py-3 font-semibold text-slate-300 transition hover:border-slate-600/50 hover:bg-slate-700/50"
+              className="inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-background px-4 py-2.5 font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               View Documentation
             </Link>

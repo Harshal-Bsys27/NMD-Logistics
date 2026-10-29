@@ -47,23 +47,23 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container-main flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
-        <div className="w-full max-w-3xl rounded-[2rem] border border-slate-800 bg-slate-900/95 p-10 shadow-[0_35px_120px_-40px_rgba(15,23,42,0.75)] backdrop-blur-xl sm:p-12">
+        <div className="surface-glass w-full max-w-3xl rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-xl sm:p-10">
           <div className="mb-8 grid gap-6 sm:grid-cols-[1fr_280px] sm:items-center">
             <div>
-              <p className="text-sm uppercase tracking-[0.28em] text-cyan-300/80">Create your account</p>
-              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">Start managing logistics with NMD</h1>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400 sm:text-base">
+              <p className="text-sm uppercase tracking-[0.16em] text-primary">Create your account</p>
+              <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Start managing logistics with NMD</h1>
+              <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
                 Create an account and access the operations dashboard for orders, assignments, and driver performance.
               </p>
             </div>
-            <div className="rounded-3xl bg-slate-950/80 p-5 text-sm text-slate-400 shadow-inner shadow-slate-950/40">
-              <div className="flex items-center gap-3 text-cyan-300">
+            <div className="rounded-lg border border-border bg-muted/50 p-5 text-sm text-muted-foreground">
+              <div className="flex items-center gap-3 text-primary">
                 <ArrowRight className="h-5 w-5" />
                 <span>Fast setup with role-based access</span>
               </div>
-              <p className="mt-4 text-xs leading-5 text-slate-500">
+              <p className="mt-4 text-xs leading-5 text-muted-foreground">
                 After signup, you can create driver records and assign delivery tasks from the dashboard.
               </p>
             </div>
@@ -71,77 +71,77 @@ export default function SignUpPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="group block rounded-3xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-slate-700">
-                <span className="text-xs uppercase tracking-[0.24em] text-slate-500">Full name</span>
+              <label className="group block rounded-lg border border-border bg-background p-4 transition hover:border-ring/50">
+                <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Full name</span>
                 <div className="mt-2 flex items-center gap-3">
-                  <User className="h-4 w-4 text-slate-400" />
+                  <User className="h-4 w-4 text-muted-foreground" />
                   <input
                     type="text"
                     {...register('full_name')}
-                    className={cn('w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500')}
+                    className={cn('min-h-8 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring')}
                     placeholder="John Doe"
                   />
                 </div>
-                {errors.full_name && <p className="mt-2 text-xs text-rose-400">{errors.full_name.message}</p>}
+                {errors.full_name && <p className="mt-2 text-xs text-danger-foreground">{errors.full_name.message}</p>}
               </label>
-              <label className="group block rounded-3xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-slate-700">
-                <span className="text-xs uppercase tracking-[0.24em] text-slate-500">Phone number</span>
+              <label className="group block rounded-lg border border-border bg-background p-4 transition hover:border-ring/50">
+                <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Phone number</span>
                 <div className="mt-2 flex items-center gap-3">
-                  <Smartphone className="h-4 w-4 text-slate-400" />
+                  <Smartphone className="h-4 w-4 text-muted-foreground" />
                   <input
                     type="text"
                     {...register('phone')}
-                    className={cn('w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500')}
+                    className={cn('min-h-8 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring')}
                     placeholder="9876543210"
                   />
                 </div>
-                {errors.phone && <p className="mt-2 text-xs text-rose-400">{errors.phone.message}</p>}
+                {errors.phone && <p className="mt-2 text-xs text-danger-foreground">{errors.phone.message}</p>}
               </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="group block rounded-3xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-slate-700">
-                <span className="text-xs uppercase tracking-[0.24em] text-slate-500">Email</span>
+              <label className="group block rounded-lg border border-border bg-background p-4 transition hover:border-ring/50">
+                <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Email</span>
                 <div className="mt-2 flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-slate-400" />
+                  <Mail className="h-4 w-4 text-muted-foreground" />
                   <input
                     type="email"
                     {...register('email')}
-                    className={cn('w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500')}
+                    className={cn('min-h-8 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring')}
                     placeholder="name@example.com"
                   />
                 </div>
-                {errors.email && <p className="mt-2 text-xs text-rose-400">{errors.email.message}</p>}
+                {errors.email && <p className="mt-2 text-xs text-danger-foreground">{errors.email.message}</p>}
               </label>
-              <label className="group block rounded-3xl border border-slate-800 bg-slate-950/70 p-4 transition hover:border-slate-700">
-                <span className="text-xs uppercase tracking-[0.24em] text-slate-500">Password</span>
+              <label className="group block rounded-lg border border-border bg-background p-4 transition hover:border-ring/50">
+                <span className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Password</span>
                 <div className="mt-2 flex items-center gap-3">
-                  <Lock className="h-4 w-4 text-slate-400" />
+                  <Lock className="h-4 w-4 text-muted-foreground" />
                   <input
                     type="password"
                     {...register('password')}
-                    className={cn('w-full bg-transparent text-sm text-white outline-none placeholder:text-slate-500')}
+                    className={cn('min-h-8 w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring')}
                     placeholder="Choose a secure password"
                   />
                 </div>
-                {errors.password && <p className="mt-2 text-xs text-rose-400">{errors.password.message}</p>}
+                {errors.password && <p className="mt-2 text-xs text-danger-foreground">{errors.password.message}</p>}
               </label>
             </div>
 
-            {formError && <p className="rounded-3xl bg-rose-500/10 px-4 py-3 text-sm text-rose-300">{formError}</p>}
+            {formError && <p role="alert" className="rounded-md border border-danger/30 bg-danger px-4 py-3 text-sm text-danger-foreground">{formError}</p>}
 
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex w-full items-center justify-center rounded-3xl bg-gradient-to-r from-cyan-500 to-blue-500 px-5 py-4 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'Creating account…' : 'Create account'}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500">
+          <p className="mt-6 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <a href="/auth/signin" className="font-semibold text-white hover:text-cyan-300">
+            <a href="/auth/signin" className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Sign in
             </a>
           </p>
