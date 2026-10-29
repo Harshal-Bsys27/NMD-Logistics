@@ -5,11 +5,11 @@ type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 export default function Button({ variant = 'primary', className = '', children, ...props }: ButtonProps) {
-  const base = 'inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition'
+  const base = 'inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50'
   const variants: Record<string, string> = {
-    primary: 'bg-cyan-500 hover:bg-cyan-600 text-white',
-    ghost: 'bg-transparent hover:bg-slate-800 text-white',
-    danger: 'bg-red-600 hover:bg-red-700 text-white',
+    primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
+    ghost: 'bg-transparent text-foreground hover:bg-accent/10',
+    danger: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
   }
 
   return (

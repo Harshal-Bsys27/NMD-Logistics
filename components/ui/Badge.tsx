@@ -2,16 +2,17 @@ import React from 'react'
 
 type BadgeProps = {
   children: React.ReactNode
-  variant?: 'default' | 'success' | 'warning' | 'danger'
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info'
   className?: string
 }
 
 export default function Badge({ children, variant = 'default', className = '' }: BadgeProps) {
-  const variants: Record<string, string> = {
-    default: 'bg-slate-800 text-white',
-    success: 'bg-green-600 text-white',
-    warning: 'bg-yellow-500 text-black',
-    danger: 'bg-red-600 text-white',
+  const variants: Record<NonNullable<BadgeProps['variant']>, string> = {
+    default: 'bg-muted text-muted-foreground',
+    success: 'bg-success text-success-foreground',
+    warning: 'bg-warning text-warning-foreground',
+    danger: 'bg-danger text-danger-foreground',
+    info: 'bg-info text-info-foreground',
   }
 
   return (
