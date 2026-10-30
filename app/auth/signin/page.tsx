@@ -7,7 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { signInSchema, type SignInInput } from '@/lib/validations/schemas';
 import { authService } from '@/services/auth';
 import { cn } from '@/utils/helpers';
-import { ArrowRight, Lock, Mail } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
+import Logo from '@/components/brand/Logo';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -73,9 +74,7 @@ export default function SignInPage() {
       <div className="container-main flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
         <div className="surface-glass w-full max-w-2xl rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-xl sm:p-10">
           <div className="mb-8 flex flex-col gap-4 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <ArrowRight className="h-7 w-7" />
-            </div>
+            <Logo size="md" variant="onLight" className="mx-auto" />
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">Sign in to NMD Logistics</h1>
               <p className="mt-2 text-sm text-muted-foreground sm:text-base">
