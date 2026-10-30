@@ -1,3 +1,5 @@
+DROP POLICY IF EXISTS assignments_drivers_update_own ON public.order_assignments;
+
 CREATE POLICY assignments_drivers_update_own
 ON public.order_assignments FOR UPDATE TO authenticated
 USING (
