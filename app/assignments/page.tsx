@@ -186,31 +186,60 @@ export default function AssignmentsPage() {
         )}
 
         {/* Status Filter Buttons */}
-        <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:gap-3" aria-label="Filter assignments by status">
-          {(['all', 'pending', 'accepted', 'in_progress', 'completed'] as const).map((status) => (
-            <button
-              key={status}
-              onClick={() => setSelectedStatus(status)}
-              className={`min-h-11 shrink-0 rounded-lg px-3 py-2.5 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4 ${
-                selectedStatus === status
-                  ? 'bg-primary text-primary-foreground'
-                  : 'border border-border bg-background text-foreground hover:bg-muted'
-              }`}
-            >
-              {isDriver && status === 'all' ? 'All deliveries' : isDriver && status === 'pending' ? 'New' : status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')} ({statusCounts[status]})
-            </button>
-          ))}
-        </div>
+        <section aria-label="Assignment status filters" className="surface-glass min-w-0 overflow-hidden rounded-xl border border-border p-3 sm:p-4">
+          <div className="mb-2 flex items-center justify-between gap-3 sm:mb-3">
+            <h2 className="text-sm font-semibold text-foreground">Filter assignments</h2>
+            <span className="shrink-0 text-xs text-muted-foreground">{filteredAssignments.length} shown</span>
+          </div>
+          <div
+            role="group"
+            aria-label="Filter assignments by status"
+            tabIndex={0}
+            className="flex min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-wrap sm:overflow-visible"
+          >
+            {(['all', 'pending', 'accepted', 'in_progress', 'completed'] as const).map((status) => {
+              const label = isDriver && status === 'all'
+                ? 'All deliveries'
+                : isDriver && status === 'pending'
+                  ? 'New'
+                  : status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+              const isSelected = selectedStatus === status;
+
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setSelectedStatus(status)}
+                  aria-pressed={isSelected}
+                  className={`inline-flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4 ${
+                    isSelected
+                      ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                      : 'border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  <span>{label}</span>
+                  <span className={`inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-xs tabular-nums ${
+                    isSelected ? 'bg-primary-foreground/15 text-primary-foreground' : 'bg-muted text-foreground'
+                  }`}>
+                    {statusCounts[status]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground sm:hidden">Swipe sideways to see every status.</p>
+        </section>
 
         {/* Search Bar */}
         {!isDriver && (
-          <div className="flex gap-3">
-            <div className="surface-glass min-h-11 flex-1 rounded-lg border border-border px-4 py-2.5">
+          <div className="flex min-w-0 gap-3">
+            <div className="surface-glass min-h-11 min-w-0 flex-1 rounded-lg border border-border px-4 py-2.5">
               <input
                 type="text"
                 placeholder="Search by order, driver, or assignment ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label="Search assignments"
                 className="w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
@@ -243,12 +272,12 @@ export default function AssignmentsPage() {
               const driver = getDriverInfo(assignment.personnel_id);
 
               return (
-                <div key={assignment.id} className="surface-glass min-w-0 rounded-lg border border-border p-4 transition hover:border-ring/50 sm:p-5">
+                <div key={assignment.id} className="surface-glass min-w-0 overflow-hidden rounded-lg border border-border p-3 transition hover:border-ring/50 sm:p-5">
                     <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     {/* Main Info */}
                     <div className="min-w-0 flex-1">
                       <div className="mb-3 flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
-                        <Link href={`/assignments/${assignment.id}`} className="break-words text-base font-semibold text-foreground hover:text-primary sm:text-lg">
+                        <Link href={`/assignments/${assignment.id}`} className="min-w-0 max-w-full break-words text-base font-semibold text-foreground hover:text-primary sm:text-lg">
                           {isDriver
                             ? `${order?.order_number || 'Delivery'}${order?.client_name ? ` · ${order.client_name}` : ''}`
                             : `${order?.order_number || 'Order'} → ${driver?.full_name || driver?.employee_id || 'Driver'}`}
@@ -312,9 +341,9 @@ export default function AssignmentsPage() {
 
                       {/* Assignment Notes */}
                       {assignment.notes && (
-                        <div className="mb-3 rounded-md border border-border bg-muted/50 p-3">
+                        <div className="mb-3 min-w-0 rounded-md border border-border bg-muted/50 p-3">
                           <p className="text-xs uppercase tracking-wider text-muted-foreground">Notes</p>
-                          <p className="mt-1 text-sm text-foreground">{assignment.notes}</p>
+                          <p className="mt-1 break-words text-sm text-foreground">{assignment.notes}</p>
                         </div>
                       )}
 
