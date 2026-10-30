@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks';
-import type { DeliveryPersonnel, Order, OrderStatus } from '@/types';
-import { assignmentService, driverService, orderService } from '@/services/database';
+import type { OrderStatus } from '@/types';
+import { assignmentService, orderService } from '@/services/database';
+import { useOperationsData } from '@/hooks/useOperationsData';
 import { cn, formatDate, toTitleCase } from '@/utils/helpers';
 import { AlertCircle, ChevronRight, Package, Search, Plus, ArrowRight } from 'lucide-react';
 
@@ -31,10 +32,7 @@ export default function OrdersPage() {
   const router = useRouter();
   const { user } = useAuth();
   const canManageOrders = user?.role === 'admin' || user?.role === 'supervisor';
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [drivers, setDrivers] = useState<DeliveryPersonnel[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
+  const { orders, drivers, assignments, isLoading, error: loadError, refresh } = useOperationsData();
   const [actionError, setActionError] = useState('');
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,28 +40,6 @@ export default function OrdersPage() {
   const [selectedDrivers, setSelectedDrivers] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const pageSize = 10;
-
-  const statusFlow: OrderStatus[] = ['draft', 'pending', 'confirmed', 'assigned', 'picked_up', 'in_transit', 'delivered'];
-
-  const loadData = useCallback(async (silent = false) => {
-    if (!silent) setIsLoading(true);
-    setLoadError('');
-    try {
-      const [orderResult, driverResult] = await Promise.all([orderService.getAll(), driverService.getAll()]);
-      if (orderResult.error) throw new Error(orderResult.error);
-      if (driverResult.error) throw new Error(driverResult.error);
-      setOrders(orderResult.data ?? []);
-      setDrivers(driverResult.data ?? []);
-    } catch (error) {
-      setLoadError(error instanceof Error ? error.message : 'Unable to load orders');
-    } finally {
-      if (!silent) setIsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadData();
-  }, [loadData]);
 
   useEffect(() => {
     setPage(1);
@@ -89,11 +65,7 @@ export default function OrdersPage() {
   }, [pageCount]);
 
   const advanceStatus = (currentStatus: OrderStatus): OrderStatus | null => {
-    const currentIndex = statusFlow.indexOf(currentStatus);
-    if (currentIndex === -1 || currentIndex === statusFlow.length - 1) {
-      return null;
-    }
-    return statusFlow[currentIndex + 1];
+    return currentStatus === 'draft' ? 'pending' : null;
   };
 
   const statusStats = {
@@ -108,7 +80,14 @@ export default function OrdersPage() {
     cancelled: orders.filter((o) => o.status === 'cancelled').length,
   };
 
-  const availableDrivers = useMemo(() => drivers.filter((driver) => driver.current_status === 'available'), [drivers]);
+  const availableDrivers = useMemo(() => {
+    const assignedDriverIds = new Set(
+      assignments
+        .filter((assignment) => ['pending', 'accepted', 'in_progress'].includes(assignment.status))
+        .map((assignment) => assignment.personnel_id)
+    );
+    return drivers.filter((driver) => driver.current_status === 'available' && !assignedDriverIds.has(driver.id));
+  }, [assignments, drivers]);
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
     setBusyOrderId(orderId);
@@ -116,7 +95,7 @@ export default function OrdersPage() {
     try {
       const { error } = await orderService.updateStatus(orderId, status);
       if (error) throw new Error(error);
-      await loadData(true);
+      await refresh(true);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'Unable to update order status');
     } finally {
@@ -142,7 +121,7 @@ export default function OrdersPage() {
       });
       if (assignment.error || !assignment.data) throw new Error(assignment.error || 'Unable to create assignment');
 
-      await loadData(true);
+      await refresh(true);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'Unable to assign this order');
     } finally {
@@ -212,7 +191,7 @@ export default function OrdersPage() {
             <div className="min-w-0 flex-1">
               <p className="text-sm">{loadError || actionError}</p>
               {loadError && (
-                <button type="button" onClick={() => void loadData()} className="mt-2 text-sm font-semibold underline">
+                <button type="button" onClick={() => void refresh()} className="mt-2 text-sm font-semibold underline">
                   Try again
                 </button>
               )}
@@ -317,7 +296,7 @@ export default function OrdersPage() {
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex flex-col items-end justify-center gap-2">
-                            {canManageOrders && order.status === 'pending' && (
+                            {canManageOrders && ['pending', 'confirmed'].includes(order.status) && (
                               <div className="flex items-center gap-2">
                                 <select
                                   value={selectedDrivers[order.id] ?? availableDrivers[0]?.id ?? ''}
@@ -334,7 +313,7 @@ export default function OrdersPage() {
                                   ) : (
                                     availableDrivers.map((driver) => (
                                       <option key={driver.id} value={driver.id}>
-                                        {driver.employee_id}
+                                        {driver.full_name || driver.employee_id} ({driver.employee_id})
                                       </option>
                                     ))
                                   )}
@@ -352,7 +331,7 @@ export default function OrdersPage() {
                                 </button>
                               </div>
                             )}
-                            {canManageOrders && nextStatus && order.status !== 'pending' && (
+                            {canManageOrders && nextStatus && (
                               <button
                                 onClick={(event) => {
                                   event.stopPropagation();
@@ -361,7 +340,7 @@ export default function OrdersPage() {
                                 disabled={busyOrderId === order.id}
                                 className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary transition hover:bg-primary/10"
                               >
-                                {busyOrderId === order.id ? 'Saving…' : 'Advance'}
+                                {busyOrderId === order.id ? 'Saving…' : 'Ready for dispatch'}
                                 <ArrowRight className="h-3 w-3" />
                               </button>
                             )}

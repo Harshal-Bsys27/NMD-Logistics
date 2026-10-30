@@ -129,7 +129,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
             <div>
               <div className="text-sm uppercase tracking-widest text-muted-foreground">Assignment ID: {assignment.id.slice(0, 8)}</div>
               <h1 className="mt-2 text-3xl font-semibold text-foreground">
-                {order.order_number} → {driver.employee_id}
+                {order.order_number} → {driver.full_name || driver.employee_id}
               </h1>
               <p className="mt-2 text-muted-foreground">Assigned {formatDate(assignment.assigned_at)}</p>
             </div>
@@ -283,7 +283,8 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
             <div className="flex-1 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground">Employee ID</p>
-                <p className="font-semibold text-foreground">{driver.employee_id}</p>
+                <p className="font-semibold text-foreground">{driver.full_name || driver.employee_id}</p>
+                {driver.full_name && <p className="text-xs text-muted-foreground">ID: {driver.employee_id}</p>}
               </div>
               <div className="flex items-center justify-between">
                 <p className="text-muted-foreground">Vehicle</p>

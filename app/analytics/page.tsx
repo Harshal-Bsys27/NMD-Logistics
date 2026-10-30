@@ -90,6 +90,7 @@ export default function AnalyticsPage() {
     () => drivers
       .map((driver) => ({
         id: driver.employee_id,
+        name: driver.full_name || driver.employee_id,
         deliveries: driver.total_deliveries_completed,
         rating: driver.rating,
         status: driver.current_status.replace(/_/g, ' '),
@@ -211,7 +212,7 @@ export default function AnalyticsPage() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Driver ID</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Driver</th>
                   <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Deliveries</th>
                   <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Rating</th>
                   <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Status</th>
@@ -223,7 +224,8 @@ export default function AnalyticsPage() {
                 ) : driverPerformance.map((driver) => (
                   <tr key={driver.id} className="transition hover:bg-muted/50">
                     <td className="px-4 py-4">
-                      <span className="inline-flex rounded-md bg-info px-3 py-1 text-sm font-semibold text-info-foreground">{driver.id}</span>
+                      <span className="block font-semibold text-foreground">{driver.name}</span>
+                      <span className="mt-1 inline-flex rounded-md bg-info px-3 py-1 text-xs font-semibold text-info-foreground">ID: {driver.id}</span>
                     </td>
                     <td className="px-4 py-4 text-right text-sm font-semibold tabular-nums text-foreground">{driver.deliveries}</td>
                     <td className="px-4 py-4 text-right">

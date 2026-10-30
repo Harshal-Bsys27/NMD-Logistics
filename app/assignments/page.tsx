@@ -27,6 +27,7 @@ export default function AssignmentsPage() {
         assignment.id.toLowerCase().includes(search) ||
         order?.order_number.toLowerCase().includes(search) ||
         order?.client_name.toLowerCase().includes(search) ||
+        driver?.full_name?.toLowerCase().includes(search) ||
         driver?.employee_id.toLowerCase().includes(search);
       return matchesStatus && matchesSearch;
     });
@@ -137,7 +138,7 @@ export default function AssignmentsPage() {
                     <div className="flex-1">
                       <div className="mb-3 flex items-center gap-3">
                         <Link href={`/assignments/${assignment.id}`} className="text-lg font-semibold text-foreground hover:text-primary">
-                          {order?.order_number || 'Order'} → {driver?.employee_id || 'Driver'}
+                          {order?.order_number || 'Order'} → {driver?.full_name || driver?.employee_id || 'Driver'}
                         </Link>
                         <span className={`inline-flex min-h-6 items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeColors[assignment.status]}`}>
                           {assignment.status.replace('_', ' ')}
@@ -157,7 +158,8 @@ export default function AssignmentsPage() {
 
                         <div className="rounded-md bg-muted/50 p-3">
                           <p className="text-xs uppercase tracking-wider text-muted-foreground">Driver</p>
-                          <p className="mt-1 text-sm text-foreground">{driver?.employee_id}</p>
+                          <p className="mt-1 text-sm text-foreground">{driver?.full_name || driver?.employee_id}</p>
+                          {driver?.full_name && <p className="mt-1 text-xs text-muted-foreground">ID: {driver.employee_id}</p>}
                           <p className="mt-1 text-xs text-muted-foreground">
                             {driver && (driver.vehicle_type.charAt(0).toUpperCase() + driver.vehicle_type.slice(1))} •{' '}
                             {driver?.vehicle_number}

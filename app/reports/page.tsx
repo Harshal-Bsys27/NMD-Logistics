@@ -109,6 +109,7 @@ export default function ReportsPage() {
         : drivers.map((driver) => {
             const counts = assignmentCounts[driver.id] ?? { total: 0, completed: 0, active: 0 };
             return {
+              driver_name: driver.full_name || driver.employee_id,
               employee_id: driver.employee_id,
               vehicle_number: driver.vehicle_number,
               driver_status: driver.current_status,
