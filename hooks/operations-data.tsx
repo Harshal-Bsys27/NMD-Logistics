@@ -19,6 +19,7 @@ interface OperationsData {
 interface PendingRefresh {
   userId: string;
   promise: Promise<void>;
+  refreshAgain: boolean;
 }
 
 const OperationsDataContext = createContext<OperationsData | null>(null);
@@ -41,7 +42,10 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
     if (!userId) return Promise.resolve();
 
     const pending = pendingRefreshRef.current;
-    if (pending?.userId === userId) return pending.promise;
+    if (pending?.userId === userId) {
+      pending.refreshAgain = true;
+      return pending.promise;
+    }
 
     const refreshUserId = userId;
     if (!silent && loadedUserIdRef.current !== refreshUserId) setIsLoading(true);
@@ -76,9 +80,15 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
       }
     })();
 
-    pendingRefreshRef.current = { userId: refreshUserId, promise };
+    pendingRefreshRef.current = { userId: refreshUserId, promise, refreshAgain: false };
     void promise.finally(() => {
-      if (pendingRefreshRef.current?.promise === promise) pendingRefreshRef.current = null;
+      const completedRefresh = pendingRefreshRef.current;
+      if (completedRefresh?.promise === promise) {
+        pendingRefreshRef.current = null;
+        if (completedRefresh.refreshAgain && currentUserIdRef.current === refreshUserId) {
+          void refresh(true);
+        }
+      }
     });
     return promise;
   }, [userId]);
@@ -132,14 +142,22 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
     const refreshIfStale = () => {
       if (
         document.visibilityState === 'visible' &&
-        Date.now() - lastRefreshAtRef.current >= 60_000
+        Date.now() - lastRefreshAtRef.current >= 30_000
+      ) {
+        void refresh(true);
+      }
+    };
+    const refreshOnResume = () => {
+      if (
+        document.visibilityState === 'visible' &&
+        Date.now() - lastRefreshAtRef.current >= 5_000
       ) {
         void refresh(true);
       }
     };
     const pollTimer = window.setInterval(refreshIfStale, 30_000);
-    document.addEventListener('visibilitychange', refreshIfStale);
-    window.addEventListener('focus', refreshIfStale);
+    document.addEventListener('visibilitychange', refreshOnResume);
+    window.addEventListener('focus', refreshOnResume);
 
     void refresh();
 
@@ -147,8 +165,8 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
       active = false;
       window.clearTimeout(refreshTimer);
       window.clearInterval(pollTimer);
-      document.removeEventListener('visibilitychange', refreshIfStale);
-      window.removeEventListener('focus', refreshIfStale);
+      document.removeEventListener('visibilitychange', refreshOnResume);
+      window.removeEventListener('focus', refreshOnResume);
       void supabase.removeChannel(channel);
     };
   }, [authLoading, refresh, userId]);

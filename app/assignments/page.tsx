@@ -1,24 +1,30 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { assignmentService } from '@/services/database';
 import { useOperationsData } from '@/hooks/useOperationsData';
 import { useAuth } from '@/hooks';
 import { formatDate } from '@/utils/helpers';
-import { Clock, AlertCircle, CheckCircle2, MapPin, Phone, Truck, UserRound } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle2, MapPin, Phone, RefreshCw, Truck, UserRound } from 'lucide-react';
 
 import type { AssignmentStatus } from '@/types';
 
 export default function AssignmentsPage() {
   const { user } = useAuth();
-  const { assignments, orders, drivers, isLoading, error, refresh } = useOperationsData();
+  const { assignments, orders, drivers, isLoading, error, realtimeStatus, refresh } = useOperationsData();
   const [selectedStatus, setSelectedStatus] = useState<AssignmentStatus | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [actionError, setActionError] = useState('');
   const [busyAssignmentId, setBusyAssignmentId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const isDriver = user?.role === 'delivery_personnel';
   const driverProfile = isDriver ? drivers.find((driver) => driver.user_id === user.id) : undefined;
+
+  useEffect(() => {
+    if (isDriver) void refresh(true);
+  }, [isDriver, refresh]);
+
   const visibleAssignments = useMemo(
     () => isDriver
       ? assignments.filter((assignment) => assignment.personnel_id === driverProfile?.id)
@@ -62,6 +68,18 @@ export default function AssignmentsPage() {
     in_progress: visibleAssignments.filter((a) => a.status === 'in_progress').length,
     completed: visibleAssignments.filter((a) => a.status === 'completed').length,
   };
+  const completedDeliveryCount = driverProfile
+    ? Math.max(driverProfile.total_deliveries_completed, statusCounts.completed)
+    : 0;
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refresh(true);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleStatusUpdate = async (assignmentId: string, status: AssignmentStatus) => {
     setBusyAssignmentId(assignmentId);
@@ -88,10 +106,26 @@ export default function AssignmentsPage() {
             <p className="mt-2 text-sm text-muted-foreground">{isDriver ? 'Your deliveries, vehicle details, and progress in one place.' : 'Track and manage delivery assignments.'}</p>
           </div>
           {isDriver && (
-            <Link href="/settings" className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto">
-              <UserRound className="h-4 w-4" />
-              My profile
-            </Link>
+            <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:items-end">
+              <div className="flex w-full gap-2 sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => void handleRefresh()}
+                  disabled={isRefreshing}
+                  className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60 sm:flex-none"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+                <Link href="/settings" className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none">
+                  <UserRound className="h-4 w-4" />
+                  My profile
+                </Link>
+              </div>
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                {realtimeStatus === 'live' ? 'Live updates enabled' : 'Updates sync when you refresh or return to this page'}
+              </p>
+            </div>
           )}
         </div>
 
@@ -141,11 +175,11 @@ export default function AssignmentsPage() {
               </div>
               <div className="surface-glass min-w-0 rounded-xl border border-border p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Completed</p>
-                <p className="mt-2 text-2xl font-bold tabular-nums text-success-foreground">{driverProfile.total_deliveries_completed}</p>
+                <p className="mt-2 text-2xl font-bold tabular-nums text-success-foreground">{completedDeliveryCount}</p>
               </div>
               <div className="surface-glass col-span-2 min-w-0 rounded-xl border border-border p-4 sm:col-span-1">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Your rating</p>
-                <p className="mt-2 text-2xl font-bold tabular-nums text-warning-foreground">{driverProfile.rating > 0 ? `${driverProfile.rating.toFixed(1)} / 5` : 'New driver'}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Customer rating</p>
+                <p className="mt-2 text-2xl font-bold tabular-nums text-warning-foreground">{driverProfile.rating > 0 ? `${driverProfile.rating.toFixed(1)} / 5` : 'Not rated yet'}</p>
               </div>
             </section>
           </>
@@ -376,7 +410,8 @@ export default function AssignmentsPage() {
                   </div>
                 ))}
               </div>
-              <button type="button" onClick={() => void refresh(true)} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <button type="button" onClick={() => void handleRefresh()} disabled={isRefreshing} className="mt-5 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60">
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                 Refresh deliveries
               </button>
             </div>
