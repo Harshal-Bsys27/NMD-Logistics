@@ -4,7 +4,6 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Activity, BarChart3, FileCode2, FileText, HelpCircle, LayoutDashboard, LogOut, Menu, Package, Settings, Truck, X, Zap, Route, Users } from 'lucide-react'
-import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import ThemeToggle from '@/components/layout/ThemeToggle'
 import { useAuth } from '@/hooks'
@@ -14,10 +13,10 @@ const mobileGroups = [
   {
     label: 'Management',
     links: [
-      { href: '/orders', label: 'Orders', icon: Package, badge: '4' },
-      { href: '/drivers', label: 'Drivers', icon: Truck, badge: '3' },
+      { href: '/orders', label: 'Orders', icon: Package },
+      { href: '/drivers', label: 'Drivers', icon: Truck },
       { href: '/users', label: 'Invites & staff', icon: Users, adminOnly: true },
-      { href: '/assignments', label: 'Assignments', icon: Zap, badge: '2' },
+      { href: '/assignments', label: 'Assignments', icon: Zap },
       { href: '/dispatch', label: 'Dispatch', icon: Route },
       { href: '/reports', label: 'Reports', icon: FileText },
       { href: '/analytics', label: 'Analytics', icon: BarChart3 },
@@ -97,7 +96,6 @@ export default function MobileSidebar() {
                           className={`flex min-h-11 items-center justify-between rounded-md px-3 py-2.5 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${active ? 'bg-primary/10 font-semibold text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
                         >
                           <span className="flex items-center gap-3"><Icon className="h-5 w-5" />{item.label}</span>
-                          {'badge' in item && item.badge && <Badge>{item.badge}</Badge>}
                         </Link>
                       )
                     })}
@@ -107,7 +105,7 @@ export default function MobileSidebar() {
               })}
             </nav>
             <div className="shrink-0 space-y-1 border-t border-border bg-background pt-3">
-              {!loading && user && user.role !== 'delivery_personnel' && <Link href="/settings" onClick={() => setOpen(false)} className="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"><Settings className="h-5 w-5" />Settings</Link>}
+              {!loading && user && <Link href="/settings" onClick={() => setOpen(false)} className="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"><Settings className="h-5 w-5" />{user.role === 'delivery_personnel' ? 'My profile' : 'Settings'}</Link>}
               {!loading && user && user.role !== 'delivery_personnel' && <Link href="/help" onClick={() => setOpen(false)} className="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"><HelpCircle className="h-5 w-5" />Help & Support</Link>}
               <div className="flex items-center justify-between px-3 pt-2">
                 <button onClick={handleSignOut} className="inline-flex min-h-11 items-center gap-2 text-sm text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"><LogOut className="h-5 w-5" />Sign out</button>
