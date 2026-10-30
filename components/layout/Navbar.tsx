@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
+import Logo from '@/components/brand/Logo';
 import Breadcrumbs from '@/components/layout/Breadcrumbs';
 import GlobalSearch from '@/components/layout/GlobalSearch';
 import ThemeToggle from '@/components/layout/ThemeToggle';
@@ -16,60 +16,61 @@ interface NavbarProps {
 
 export default function Navbar({ collapsed, onToggleSidebar }: NavbarProps) {
   return (
-    <header className="sticky top-0 z-40 h-16 w-full border-b border-border bg-navbar/95 text-foreground backdrop-blur-sm shadow-[0_1px_3px_rgba(15,23,42,0.08)] dark:border-border dark:shadow-none">
-      <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-primary via-primary/80 to-cyan-500/80" aria-hidden="true" />
-      <div className="relative flex h-full items-center justify-between gap-3 px-4 md:px-6 xl:px-8">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div className="flex items-center gap-2 lg:hidden">
+    <header className="sticky top-0 z-50 h-16 w-full bg-[image:var(--navbar-gradient)] text-on-brand shadow-nav backdrop-blur-sm sm:h-[72px] lg:h-20">
+      <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-accent via-warning to-brand-500" aria-hidden="true" />
+      <div className="relative flex h-full items-center gap-2 px-3 sm:gap-3 sm:px-5 xl:px-8">
+        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+          <div className="lg:hidden">
             <MobileSidebar />
-            <Link href="/dashboard" className="flex items-center gap-2 rounded-lg px-1 py-1">
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-sm font-semibold text-primary-foreground">N</span>
-            </Link>
+          </div>
+          <Logo size="sm" compact className="lg:hidden" />
+
+          <div className="hidden shrink-0 items-center gap-2 border-r border-on-brand/15 pr-2 lg:flex">
+            <Logo size="md" className="shrink-0" />
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-on-brand/80 transition-colors duration-150 hover:bg-on-brand/10 hover:text-on-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="hidden h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring lg:inline-flex"
-          >
-            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </button>
-
-          <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
-            <div className="min-w-0 flex-1">
-              <Breadcrumbs />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-1 justify-center md:flex-initial">
-          <div className="w-full max-w-[520px] min-w-0">
-            <GlobalSearch />
+          <div className="hidden min-w-0 flex-1 xl:block">
+            <Breadcrumbs />
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="hidden min-w-0 max-w-xl flex-1 justify-center lg:flex">
+          <GlobalSearch />
+        </div>
+        <div className="lg:hidden">
+          <GlobalSearch compact />
+        </div>
+
+        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
-            className="hidden items-center gap-2 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:inline-flex"
+            aria-label="Create new order"
+            title="New Order"
+            className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-xl bg-accent text-accent-foreground shadow-accent-button transition-all duration-150 hover:-translate-y-0.5 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand sm:w-auto sm:px-3 sm:text-sm sm:font-semibold"
           >
             <Plus className="h-4 w-4" />
-            <span className="hidden lg:inline">New Order</span>
-            <span className="lg:hidden">New</span>
+            <span className="hidden sm:inline">New Order</span>
           </button>
 
           <div className="hidden items-center gap-2 sm:flex">
-            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+            <span className="inline-flex min-h-8 items-center gap-2 rounded-full border border-success-on-brand/40 bg-success-on-brand/15 px-3 text-[13px] font-medium text-success-on-brand shadow-[0_0_0_1px_rgba(255,255,255,0.06)]">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-success-on-brand motion-reduce:animate-none" />
               Live
             </span>
           </div>
 
-          <ThemeToggle />
+          <div className="hidden lg:block"><ThemeToggle /></div>
           <NotificationsMenu />
-          <div className="hidden h-6 w-px bg-border lg:block" />
+          <div className="hidden h-7 w-px bg-on-brand/20 lg:block" />
           <ProfileMenu />
         </div>
       </div>

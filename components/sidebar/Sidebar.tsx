@@ -15,6 +15,7 @@ import {
   FileText,
   Settings,
   HelpCircle,
+  Route,
 } from 'lucide-react';
 import { cn } from '@/utils/helpers';
 
@@ -29,6 +30,7 @@ const navigationGroups = [
       { href: '/orders', label: 'Orders', icon: Package, badge: '4' },
       { href: '/drivers', label: 'Drivers', icon: Truck, badge: '3' },
       { href: '/assignments', label: 'Assignments', icon: Zap, badge: '2' },
+      { href: '/dispatch', label: 'Dispatch', icon: Route },
       { href: '/reports', label: 'Reports', icon: FileText },
       { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     ],
@@ -56,20 +58,13 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
   return (
     <aside className={cn(
-      'fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-border bg-card text-card-foreground transition-[width] duration-200 lg:flex',
-      collapsed ? 'w-[72px]' : 'w-64'
+      'fixed bottom-0 left-0 top-[var(--navbar-height)] z-40 hidden flex-col border-r border-on-brand/10 bg-brand-900 text-on-brand transition-[width] duration-200 dark:bg-brand-950 lg:flex',
+      collapsed ? 'w-[76px]' : 'w-[264px]'
     )}>
-      <div className={cn('flex h-16 shrink-0 items-center border-b border-border', collapsed ? 'justify-center px-2' : 'justify-start px-4')}>
-        <Link href="/dashboard" className="flex min-w-0 items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary font-bold text-primary-foreground">N</span>
-          {!collapsed && <span className="truncate text-sm font-semibold">NMD Logistics</span>}
-        </Link>
-      </div>
-
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-4" aria-label="Main navigation">
+      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-5" aria-label="Main navigation">
         {navigationGroups.map((group) => (
           <div key={group.label}>
-            {!collapsed && <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{group.label}</p>}
+            {!collapsed && <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-on-brand/75">{group.label}</p>}
             <div className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
@@ -82,16 +77,16 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                     title={collapsed ? item.label : undefined}
                     aria-label={collapsed ? item.label : undefined}
                     className={cn(
-                      'relative flex min-h-11 items-center rounded-md text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      'relative flex min-h-11 items-center rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
                       collapsed ? 'justify-center px-2' : 'justify-between px-3',
-                      isActive ? 'bg-primary/10 text-primary before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      isActive ? 'bg-on-brand/10 text-on-brand before:absolute before:inset-y-2 before:left-0 before:w-[3px] before:rounded-full before:bg-accent' : 'text-on-brand/75 hover:bg-on-brand/10 hover:text-on-brand'
                     )}
                   >
                     <span className="flex min-w-0 items-center gap-3">
                       <Icon className="h-5 w-5 shrink-0" />
                       {!collapsed && <span className="truncate">{item.label}</span>}
                     </span>
-                    {!collapsed && 'badge' in item && item.badge && <Badge className="ml-2 shrink-0">{item.badge}</Badge>}
+                    {!collapsed && 'badge' in item && item.badge && <Badge className="ml-2 shrink-0 !bg-on-brand/15 !text-on-brand">{item.badge}</Badge>}
                   </Link>
                 );
               })}
@@ -100,7 +95,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         ))}
       </nav>
 
-      <div className="mt-auto border-t border-border p-3">
+      <div className="mt-auto border-t border-on-brand/10 p-3 pb-14">
         <nav className="space-y-1" aria-label="Workspace settings">
           {bottomItems.map((item) => {
             const Icon = item.icon;
@@ -110,12 +105,14 @@ export default function Sidebar({ collapsed }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
+                title={collapsed ? item.label : undefined}
+                aria-label={collapsed ? item.label : undefined}
                 className={cn(
-                  'flex min-h-11 items-center rounded-md text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'flex min-h-11 items-center rounded-lg text-sm font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
                   collapsed ? 'justify-center px-2' : 'gap-3 px-3',
                   isActive
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-muted-foreground hover:bg-accent/10 hover:text-foreground'
+                    ? 'bg-on-brand/10 text-on-brand'
+                    : 'text-on-brand/75 hover:bg-on-brand/10 hover:text-on-brand'
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -126,17 +123,17 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         </nav>
 
         <div className={cn(
-          'mt-3 rounded-xl border border-border bg-muted/40 p-2',
+          'mt-3 rounded-lg border border-on-brand/10 bg-on-brand/10 p-2',
           collapsed && 'px-1.5'
         )}>
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-cyan-500 text-xs font-semibold text-primary-foreground">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-warning text-xs font-semibold text-accent-foreground">
               HB
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-foreground">Harshal</p>
-                <p className="text-[11px] text-muted-foreground">Admin</p>
+                <p className="truncate text-sm font-semibold text-on-brand">Harshal</p>
+                <p className="text-[11px] text-on-brand/75">Admin</p>
               </div>
             )}
           </div>
