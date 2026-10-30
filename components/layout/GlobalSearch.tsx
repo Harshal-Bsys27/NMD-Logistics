@@ -19,7 +19,7 @@ const pages: SearchResult[] = [
   { label: 'Settings', detail: 'Workspace preferences', href: '/settings', icon: Settings },
 ];
 
-export default function GlobalSearch() {
+export default function GlobalSearch({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const rootRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
@@ -71,39 +71,31 @@ export default function GlobalSearch() {
 
   return (
     <div ref={rootRef} className="relative min-w-0 flex-1">
-      <div className="relative hidden md:block">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          onFocus={() => setOpen(true)}
-          placeholder="Search..."
-          aria-label="Search orders, drivers, and pages"
-          aria-expanded={open}
-          aria-controls="global-search-results"
-          className="hidden w-full min-w-[280px] max-w-[520px] rounded-lg border border-border bg-background pl-10 pr-16 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:block"
-        />
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          onFocus={() => setOpen(true)}
-          placeholder="Search..."
-          aria-label="Search orders, drivers, and pages"
-          aria-expanded={open}
-          aria-controls="global-search-results"
-          className="block w-full min-w-[280px] max-w-[520px] rounded-lg border border-border bg-background pl-10 pr-16 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring xl:hidden"
-        />
-        <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">{shortcut}</kbd>
-      </div>
-      <button
-        type="button"
-        aria-label="Open search"
-        title="Search"
-        onClick={() => setOpen(true)}
-        className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
-      >
-        <Search className="h-5 w-5" />
-      </button>
+      {compact ? (
+        <button
+          type="button"
+          aria-label="Open search"
+          title="Search"
+          onClick={() => setOpen(true)}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-on-brand/80 transition-colors duration-150 hover:bg-on-brand/10 hover:text-on-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <Search className="h-5 w-5" />
+        </button>
+      ) : (
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-brand/70" />
+          <input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onFocus={() => setOpen(true)}
+            placeholder="Search..."
+            aria-label="Search orders, drivers, and pages"
+            aria-controls="global-search-results"
+            className="h-11 w-full min-w-[280px] rounded-xl border border-on-brand/20 bg-on-brand/10 pl-10 pr-16 text-sm text-on-brand placeholder:text-on-brand/70 backdrop-blur focus-visible:bg-on-brand/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          />
+          <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md border border-on-brand/10 bg-on-brand/15 px-1.5 py-1 text-[10px] text-on-brand/80">{shortcut}</kbd>
+        </div>
+      )}
 
       {open && (
         <div id="global-search-results" role="dialog" aria-label="Search logistics records" className="absolute right-0 top-[calc(100%+8px)] z-[60] w-[min(520px,calc(100vw-32px))] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl">

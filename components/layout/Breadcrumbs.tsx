@@ -41,11 +41,11 @@ export default function Breadcrumbs() {
       <ol className="flex min-w-0 items-center gap-2 text-sm">
         {crumbs.map((crumb, index) => (
           <li key={crumb.href} className="flex min-w-0 items-center gap-2">
-            {index > 0 && <span aria-hidden="true" className="text-muted-foreground">/</span>}
+            {index > 0 && <span aria-hidden="true" className="text-on-brand/60">/</span>}
             {index === crumbs.length - 1 ? (
-              <span aria-current="page" className="truncate font-semibold text-foreground">{crumb.label}</span>
+              <span aria-current="page" className="truncate font-semibold text-on-brand">{crumb.label}</span>
             ) : (
-              <Link href={crumb.href} className="truncate text-muted-foreground transition hover:text-foreground">
+              <Link href={crumb.href} className="truncate text-on-brand/75 transition hover:text-on-brand">
                 {crumb.label}
               </Link>
             )}

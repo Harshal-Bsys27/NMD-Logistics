@@ -42,11 +42,11 @@ export default function NotificationsMenu() {
         aria-label="Notifications"
         title="Notifications"
         onClick={() => setOpen((current) => !current)}
-        className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg text-on-brand/85 transition-colors duration-150 hover:bg-on-brand/10 hover:text-on-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
-          <span className="absolute -right-1 -top-1 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+          <span className="absolute -right-0.5 -top-0.5 inline-flex min-h-4 min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold text-destructive-foreground ring-2 ring-brand-900 dark:ring-brand-950">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
