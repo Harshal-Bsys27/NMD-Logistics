@@ -2,18 +2,83 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ArrowRight, BellRing, CheckCircle2, Clock3, Route } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BellRing, CheckCircle2, Clock3, Package, Route, Search } from 'lucide-react';
+import { useAuth } from '@/hooks';
 import { assignmentService } from '@/services/database';
 import { useOperationsData } from '@/hooks/useOperationsData';
 import { cn } from '@/utils/helpers';
 
 type DispatchFilter = 'all' | 'queued' | 'on_route' | 'delayed';
 
+const priorityRank: Record<string, number> = {
+  urgent: 0,
+  high: 1,
+  normal: 2,
+  low: 3,
+};
+
 export default function DispatchPage() {
+  const { user } = useAuth();
   const { assignments, orders, drivers, isLoading, error, refresh } = useOperationsData();
+  const canManageDispatch = user?.role === 'admin' || user?.role === 'supervisor';
   const [filter, setFilter] = useState<DispatchFilter>('all');
+  const [routeSearch, setRouteSearch] = useState('');
   const [actionError, setActionError] = useState('');
   const [busyAssignmentId, setBusyAssignmentId] = useState<string | null>(null);
+  const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+  const [readyOrderSearch, setReadyOrderSearch] = useState('');
+  const [selectedDrivers, setSelectedDrivers] = useState<Record<string, string>>({});
+
+  const activeAssignmentOrderIds = useMemo(
+    () => new Set(
+      assignments
+        .filter((assignment) => ['pending', 'accepted', 'in_progress'].includes(assignment.status))
+        .map((assignment) => assignment.order_id)
+    ),
+    [assignments]
+  );
+
+  const availableDrivers = useMemo(() => {
+    const activeDriverIds = new Set(
+      assignments
+        .filter((assignment) => ['pending', 'accepted', 'in_progress'].includes(assignment.status))
+        .map((assignment) => assignment.personnel_id)
+    );
+    return drivers.filter(
+      (driver) => driver.current_status === 'available' && !activeDriverIds.has(driver.id)
+    );
+  }, [assignments, drivers]);
+
+  const readyOrders = useMemo(() => {
+    const priorityTime = (order: (typeof orders)[number]) =>
+      order.expected_delivery_time
+        ? new Date(order.expected_delivery_time).getTime()
+        : new Date(order.created_at).getTime();
+
+    return orders
+      .filter(
+        (order) =>
+          ['pending', 'confirmed'].includes(order.status) &&
+          !activeAssignmentOrderIds.has(order.id)
+      )
+      .sort((left, right) => {
+        const priorityDifference =
+          (priorityRank[left.priority ?? 'normal'] ?? 2) -
+          (priorityRank[right.priority ?? 'normal'] ?? 2);
+        return priorityDifference || priorityTime(left) - priorityTime(right);
+      });
+  }, [activeAssignmentOrderIds, orders]);
+
+  const filteredReadyOrders = useMemo(() => {
+    const search = readyOrderSearch.trim().toLowerCase();
+    if (!search) return readyOrders;
+    return readyOrders.filter(
+      (order) =>
+        order.order_number.toLowerCase().includes(search) ||
+        order.client_name.toLowerCase().includes(search) ||
+        order.client_phone.toLowerCase().includes(search)
+    );
+  }, [readyOrderSearch, readyOrders]);
 
   const dispatcherData = useMemo(() => {
     return assignments
@@ -57,13 +122,25 @@ export default function DispatchPage() {
           status,
         };
       })
-      .sort((a, b) => Number(a.delay > b.delay) - Number(a.delay < b.delay));
+      .sort((a, b) => b.delay - a.delay);
   }, [assignments, drivers, orders]);
 
   const visibleAssignments = useMemo(() => {
-    if (filter === 'all') return dispatcherData;
-    return dispatcherData.filter((item) => item.status === filter || (filter === 'delayed' && item.delay > 0));
-  }, [dispatcherData, filter]);
+    const search = routeSearch.trim().toLowerCase();
+    return dispatcherData.filter((item) => {
+      const matchesFilter =
+        filter === 'all' ||
+        item.status === filter ||
+        (filter === 'delayed' && item.delay > 0);
+      const matchesSearch =
+        !search ||
+        item.orderNumber.toLowerCase().includes(search) ||
+        item.customer.toLowerCase().includes(search) ||
+        item.driverName.toLowerCase().includes(search) ||
+        item.route.toLowerCase().includes(search);
+      return matchesFilter && matchesSearch;
+    });
+  }, [dispatcherData, filter, routeSearch]);
 
   const summary = useMemo(() => {
     const activeRoutes = dispatcherData.filter((item) => item.status === 'on_route').length;
@@ -101,6 +178,38 @@ export default function DispatchPage() {
       setActionError(updateError instanceof Error ? updateError.message : 'Unable to update dispatch status');
     } finally {
       setBusyAssignmentId(null);
+    }
+  };
+
+  const handleAssignOrder = async (orderId: string) => {
+    const order = orders.find((item) => item.id === orderId);
+    const selectedDriverId = selectedDrivers[orderId] ?? availableDrivers[0]?.id;
+    if (!order) {
+      setActionError('This order is no longer available. Refresh the dispatch board and try again.');
+      return;
+    }
+    if (!selectedDriverId || !availableDrivers.some((driver) => driver.id === selectedDriverId)) {
+      setActionError('Select an available driver before assigning this order.');
+      return;
+    }
+
+    setBusyOrderId(orderId);
+    setActionError('');
+    try {
+      const result = await assignmentService.create({
+        order_id: order.id,
+        personnel_id: selectedDriverId,
+        estimated_duration_minutes: 45,
+        notes: `Assigned from dispatch for ${order.order_number}`,
+      });
+      if (result.error || !result.data) {
+        throw new Error(result.error || 'Unable to create assignment');
+      }
+      await refresh(true);
+    } catch (assignError) {
+      setActionError(assignError instanceof Error ? assignError.message : 'Unable to assign this order');
+    } finally {
+      setBusyOrderId(null);
     }
   };
 
@@ -161,17 +270,149 @@ export default function DispatchPage() {
         </div>
         <p className="-mt-4 text-[11px] text-muted-foreground md:hidden">Swipe sideways to browse dispatch totals.</p>
 
+        {canManageDispatch && (
+          <section aria-label="Orders ready for assignment" className="surface-glass min-w-0 rounded-xl border border-border p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-primary" />
+                  <h2 className="text-xl font-semibold text-foreground">Ready to assign</h2>
+                  <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold tabular-nums text-primary">
+                    {readyOrders.length}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Urgent and high-priority orders appear first. Assignments update the order workflow automatically.
+                </p>
+              </div>
+              <label className="relative block w-full sm:max-w-xs">
+                <span className="sr-only">Search ready orders</span>
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="search"
+                  value={readyOrderSearch}
+                  onChange={(event) => setReadyOrderSearch(event.target.value)}
+                  placeholder="Search order or customer"
+                  className="min-h-11 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </label>
+            </div>
+
+            {readyOrders.length > 0 && availableDrivers.length === 0 && (
+              <p role="status" className="mt-4 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning-foreground">
+                No available drivers are free to take these orders. Complete or release an active assignment first.
+              </p>
+            )}
+
+            {isLoading ? (
+              <p role="status" className="mt-4 rounded-lg border border-dashed border-border p-5 text-center text-sm text-muted-foreground">
+                Loading orders ready for assignment…
+              </p>
+            ) : filteredReadyOrders.length === 0 ? (
+              <p className="mt-4 rounded-lg border border-dashed border-border p-5 text-center text-sm text-muted-foreground">
+                {readyOrders.length === 0
+                  ? 'No pending or confirmed orders are waiting for assignment.'
+                  : 'No ready orders match this search.'}
+              </p>
+            ) : (
+              <div className="mt-4 grid min-w-0 gap-3 lg:grid-cols-2">
+                {filteredReadyOrders.map((order) => {
+                  const selectedDriverId = availableDrivers.some(
+                    (driver) => driver.id === selectedDrivers[order.id]
+                  )
+                    ? selectedDrivers[order.id]
+                    : availableDrivers[0]?.id ?? '';
+                  const priority = order.priority || 'normal';
+                  const priorityTone =
+                    priority === 'urgent'
+                      ? 'bg-danger/10 text-danger-foreground'
+                      : priority === 'high'
+                        ? 'bg-warning/10 text-warning-foreground'
+                        : 'bg-muted text-muted-foreground';
+
+                  return (
+                    <article key={order.id} className="min-w-0 rounded-lg border border-border bg-background p-3 sm:p-4">
+                      <div className="flex min-w-0 items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-foreground">{order.order_number}</p>
+                          <p className="mt-1 truncate text-sm text-muted-foreground">{order.client_name}</p>
+                        </div>
+                        <span className={cn('shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide', priorityTone)}>
+                          {priority}
+                        </span>
+                      </div>
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <p className="min-w-0 rounded-md bg-muted/40 p-2">
+                          <span className="block font-semibold uppercase tracking-wide text-muted-foreground">Pickup</span>
+                          <span className="mt-1 block line-clamp-2 break-words text-foreground">{order.pickup_location}</span>
+                        </p>
+                        <p className="min-w-0 rounded-md bg-muted/40 p-2">
+                          <span className="block font-semibold uppercase tracking-wide text-muted-foreground">Delivery</span>
+                          <span className="mt-1 block line-clamp-2 break-words text-foreground">{order.delivery_location}</span>
+                        </p>
+                      </div>
+                      <div className="mt-3 flex min-w-0 flex-col gap-2 sm:flex-row">
+                        <select
+                          aria-label={`Select driver for ${order.order_number}`}
+                          value={selectedDriverId}
+                          onChange={(event) =>
+                            setSelectedDrivers((current) => ({ ...current, [order.id]: event.target.value }))
+                          }
+                          disabled={availableDrivers.length === 0 || busyOrderId !== null}
+                          className="min-h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+                        >
+                          {availableDrivers.length === 0 ? (
+                            <option value="">No available drivers</option>
+                          ) : (
+                            availableDrivers.map((driver) => (
+                              <option key={driver.id} value={driver.id}>
+                                {driver.full_name || driver.employee_id} ({driver.employee_id})
+                              </option>
+                            ))
+                          )}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => void handleAssignOrder(order.id)}
+                          disabled={availableDrivers.length === 0 || busyOrderId !== null}
+                          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {busyOrderId === order.id ? 'Assigning…' : 'Assign driver'}
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
         <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
           <section className="min-w-0 space-y-5">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">Live route queue</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Current dispatch operations and exceptions.</p>
+            <div className="space-y-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">Live route queue</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">Current dispatch operations and exceptions.</p>
+                </div>
+                <label className="relative block w-full sm:max-w-xs">
+                  <span className="sr-only">Search live routes</span>
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="search"
+                    value={routeSearch}
+                    onChange={(event) => setRouteSearch(event.target.value)}
+                    placeholder="Search order, customer, driver, route"
+                    className="min-h-11 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </label>
               </div>
               <div
                 role="group"
                 aria-label="Filter dispatch routes"
-                className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap"
+                className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap"
               >
                 {(['all', 'queued', 'on_route', 'delayed'] as DispatchFilter[]).map((option) => (
                   <button
