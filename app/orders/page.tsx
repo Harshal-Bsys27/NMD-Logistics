@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMockOrders } from '@/services/mockData';
+import { useAuth } from '@/hooks';
+import type { DeliveryPersonnel, Order, OrderStatus } from '@/types';
+import { assignmentService, driverService, orderService } from '@/services/database';
 import { cn, formatDate, toTitleCase } from '@/utils/helpers';
-import { ChevronRight, Package, Search, Filter, Plus } from 'lucide-react';
+import { AlertCircle, ChevronRight, Package, Search, Plus, ArrowRight } from 'lucide-react';
 
 const statusColors: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
+  pending: 'bg-warning text-warning-foreground',
   confirmed: 'bg-info text-info-foreground',
   assigned: 'bg-primary/10 text-primary',
   picked_up: 'bg-warning text-warning-foreground',
@@ -26,25 +29,125 @@ const priorityColors: Record<string, string> = {
 
 export default function OrdersPage() {
   const router = useRouter();
-  const { orders } = useMockOrders();
+  const { user } = useAuth();
+  const canManageOrders = user?.role === 'admin' || user?.role === 'supervisor';
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [drivers, setDrivers] = useState<DeliveryPersonnel[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
+  const [selectedDrivers, setSelectedDrivers] = useState<Record<string, string>>({});
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch =
-      order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.client_name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !filterStatus || order.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const statusFlow: OrderStatus[] = ['draft', 'pending', 'confirmed', 'assigned', 'picked_up', 'in_transit', 'delivered'];
+
+  const loadData = useCallback(async (silent = false) => {
+    if (!silent) setIsLoading(true);
+    setLoadError('');
+    try {
+      const [orderResult, driverResult] = await Promise.all([orderService.getAll(), driverService.getAll()]);
+      if (orderResult.error) throw new Error(orderResult.error);
+      if (driverResult.error) throw new Error(driverResult.error);
+      setOrders(orderResult.data ?? []);
+      setDrivers(driverResult.data ?? []);
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : 'Unable to load orders');
+    } finally {
+      if (!silent) setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm, filterStatus]);
+
+  const filteredOrders = useMemo(() => {
+    const search = searchTerm.trim().toLowerCase();
+    return orders.filter((order) => {
+      const matchesSearch =
+        !search ||
+        order.order_number.toLowerCase().includes(search) ||
+        order.client_name.toLowerCase().includes(search) ||
+        order.client_phone.toLowerCase().includes(search);
+      const matchesStatus = !filterStatus || order.status === filterStatus;
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchTerm, filterStatus]);
+  const pageCount = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+  const visibleOrders = filteredOrders.slice((page - 1) * pageSize, page * pageSize);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, pageCount));
+  }, [pageCount]);
+
+  const advanceStatus = (currentStatus: OrderStatus): OrderStatus | null => {
+    const currentIndex = statusFlow.indexOf(currentStatus);
+    if (currentIndex === -1 || currentIndex === statusFlow.length - 1) {
+      return null;
+    }
+    return statusFlow[currentIndex + 1];
+  };
 
   const statusStats = {
     draft: orders.filter((o) => o.status === 'draft').length,
+    pending: orders.filter((o) => o.status === 'pending').length,
     confirmed: orders.filter((o) => o.status === 'confirmed').length,
     assigned: orders.filter((o) => o.status === 'assigned').length,
     picked_up: orders.filter((o) => o.status === 'picked_up').length,
     in_transit: orders.filter((o) => o.status === 'in_transit').length,
     delivered: orders.filter((o) => o.status === 'delivered').length,
+    failed: orders.filter((o) => o.status === 'failed').length,
+    cancelled: orders.filter((o) => o.status === 'cancelled').length,
+  };
+
+  const availableDrivers = useMemo(() => drivers.filter((driver) => driver.current_status === 'available'), [drivers]);
+
+  const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    setBusyOrderId(orderId);
+    setActionError('');
+    try {
+      const { error } = await orderService.updateStatus(orderId, status);
+      if (error) throw new Error(error);
+      await loadData(true);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Unable to update order status');
+    } finally {
+      setBusyOrderId(null);
+    }
+  };
+
+  const handleAssignDriver = async (orderId: string) => {
+    const order = orders.find((item) => item.id === orderId);
+    if (!order) return;
+
+    const driverId = selectedDrivers[orderId] || availableDrivers[0]?.id;
+    if (!driverId) return;
+
+    setBusyOrderId(orderId);
+    setActionError('');
+    try {
+      const assignment = await assignmentService.create({
+        order_id: orderId,
+        personnel_id: driverId,
+        estimated_duration_minutes: 45,
+        notes: `Assigned for ${order.order_number}`,
+      });
+      if (assignment.error || !assignment.data) throw new Error(assignment.error || 'Unable to create assignment');
+
+      await loadData(true);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Unable to assign this order');
+    } finally {
+      setBusyOrderId(null);
+    }
   };
 
   return (
@@ -56,18 +159,20 @@ export default function OrdersPage() {
             <h1 className="text-3xl font-semibold text-foreground">Orders</h1>
             <p className="mt-2 text-muted-foreground">Manage all delivery orders and track their status</p>
           </div>
-          <button
-            onClick={() => router.push('/orders/create')}
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <Plus className="h-5 w-5" />
-            New Order
-          </button>
+          {canManageOrders && (
+            <button
+              onClick={() => router.push('/orders/create')}
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Plus className="h-5 w-5" />
+              New Order
+            </button>
+          )}
         </div>
 
 
         {/* Stats Row */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-9">
           {Object.entries(statusStats).map(([status, count]) => (
             <button
               key={status}
@@ -99,16 +204,26 @@ export default function OrdersPage() {
               className="min-h-11 w-full rounded-lg border border-input bg-background px-12 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
-          <button className="surface-glass flex min-h-11 items-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm text-foreground transition hover:border-ring/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <Filter className="h-4 w-4" />
-            More Filters
-          </button>
         </div>
+
+        {(loadError || actionError) && (
+          <div role="alert" className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger/10 p-4 text-danger-foreground">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm">{loadError || actionError}</p>
+              {loadError && (
+                <button type="button" onClick={() => void loadData()} className="mt-2 text-sm font-semibold underline">
+                  Try again
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Orders Table */}
         <div className="surface-glass overflow-hidden rounded-lg border border-border">
           <div className="max-h-[min(70vh,720px)] overflow-auto rounded-md">
-            <table className="w-full">
+            <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="sticky top-0 z-10 border-b border-border bg-muted">
                   <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
@@ -133,19 +248,36 @@ export default function OrdersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {filteredOrders.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground" aria-live="polite">
+                      Loading orders…
+                    </td>
+                  </tr>
+                ) : visibleOrders.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center">
-                      <p className="text-muted-foreground">No orders found matching your filters</p>
+                      <p className="text-muted-foreground">
+                        {orders.length === 0 ? 'No orders yet. Create an order to get started.' : 'No orders found matching your filters.'}
+                      </p>
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((order) => {
+                  visibleOrders.map((order) => {
                     const colors = statusColors[order.status] ?? statusColors.draft;
+                    const nextStatus = advanceStatus(order.status);
                     return (
                       <tr
                         key={order.id}
                         onClick={() => router.push(`/orders/${order.id}`)}
+                        onKeyDown={(event) => {
+                          if (event.target !== event.currentTarget) return;
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            router.push(`/orders/${order.id}`);
+                          }
+                        }}
+                        tabIndex={0}
                         className="cursor-pointer border-b border-border transition hover:bg-muted/50 focus-within:bg-muted/50"
                       >
                         <td className="px-6 py-4">
@@ -166,9 +298,11 @@ export default function OrdersPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={cn('inline-flex min-h-6 items-center rounded-full px-3 py-1 text-xs font-semibold', colors)}>
-                            {toTitleCase(order.status)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className={cn('inline-flex min-h-6 items-center rounded-full px-3 py-1 text-xs font-semibold', colors)}>
+                              {toTitleCase(order.status)}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <span className={cn('rounded-full px-3 py-1 text-xs font-semibold', priorityColors[order.priority || 'normal'])}>
@@ -182,9 +316,67 @@ export default function OrdersPage() {
                           {formatDate(order.created_at, 'short')}
                         </td>
                         <td className="px-6 py-4 text-right">
-                            <button aria-label={`View ${order.order_number}`} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                          <div className="flex flex-col items-end justify-center gap-2">
+                            {canManageOrders && order.status === 'pending' && (
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={selectedDrivers[order.id] ?? availableDrivers[0]?.id ?? ''}
+                                  disabled={availableDrivers.length === 0 || busyOrderId === order.id}
+                                  onClick={(event) => event.stopPropagation()}
+                                  onChange={(event) => {
+                                    event.stopPropagation();
+                                    setSelectedDrivers((current) => ({ ...current, [order.id]: event.target.value }));
+                                  }}
+                                  className="min-h-9 rounded-md border border-border bg-background px-2 py-1 text-[10px] text-foreground"
+                                >
+                                  {availableDrivers.length === 0 ? (
+                                    <option value="">No drivers</option>
+                                  ) : (
+                                    availableDrivers.map((driver) => (
+                                      <option key={driver.id} value={driver.id}>
+                                        {driver.employee_id}
+                                      </option>
+                                    ))
+                                  )}
+                                </select>
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleAssignDriver(order.id);
+                                  }}
+                                  disabled={availableDrivers.length === 0 || busyOrderId === order.id}
+                                  className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary transition hover:bg-primary/10"
+                                >
+                                  {busyOrderId === order.id ? 'Saving…' : 'Assign'}
+                                  <ArrowRight className="h-3 w-3" />
+                                </button>
+                              </div>
+                            )}
+                            {canManageOrders && nextStatus && order.status !== 'pending' && (
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void updateOrderStatus(order.id, nextStatus);
+                                }}
+                                disabled={busyOrderId === order.id}
+                                className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary transition hover:bg-primary/10"
+                              >
+                                {busyOrderId === order.id ? 'Saving…' : 'Advance'}
+                                <ArrowRight className="h-3 w-3" />
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              aria-label={`View ${order.order_number}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                router.push(`/orders/${order.id}`);
+                              }}
+                              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
                               <ChevronRight className="h-4 w-4" />
-                          </button>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -198,14 +390,27 @@ export default function OrdersPage() {
         {/* Pagination */}
         <div className="mt-6 flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Showing <span className="font-semibold tabular-nums text-foreground">{filteredOrders.length}</span> of{' '}
-            <span className="font-semibold tabular-nums text-foreground">{orders.length}</span> orders
+            Showing <span className="font-semibold tabular-nums text-foreground">{visibleOrders.length}</span> of{' '}
+            <span className="font-semibold tabular-nums text-foreground">{filteredOrders.length}</span> matching orders
           </p>
           <div className="flex gap-2">
-            <button className="min-h-11 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground transition hover:bg-muted disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+              disabled={page === 1}
+              className="min-h-11 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               Previous
             </button>
-            <button className="min-h-11 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <span className="flex min-h-11 items-center px-2 text-sm tabular-nums text-muted-foreground" aria-live="polite">
+              {page} / {pageCount}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
+              disabled={page >= pageCount}
+              className="min-h-11 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
               Next
             </button>
           </div>
