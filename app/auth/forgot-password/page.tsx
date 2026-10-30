@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { resetPasswordSchema, type ResetPasswordInput } from '@/lib/validations/schemas';
@@ -81,9 +82,9 @@ export default function ForgotPasswordPage() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Remembered your password?{' '}
-            <a href="/auth/signin" className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Link href="/auth/signin" className="inline-flex min-h-11 items-center font-semibold text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Sign in
-            </a>
+            </Link>
           </p>
         </div>
       </div>

@@ -2,12 +2,17 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import AppShell from '@/components/layout/AppShell';
+import { AuthProvider } from '@/hooks';
+import { OperationsDataProvider } from '@/hooks/useOperationsData';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'NMD Logistics Management System',
-  description: 'Production-ready logistics operations management platform',
+  title: {
+    default: 'NMD Logistics | Connected Delivery Operations',
+    template: '%s | NMD Logistics',
+  },
+  description: 'Coordinate orders, dispatch, drivers, and delivery performance in one logistics operations workspace.',
   icons: {
     icon: '/favicon.ico',
   },
@@ -34,7 +39,11 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <div id="root">
-          <AppShell>{children}</AppShell>
+          <AuthProvider>
+            <OperationsDataProvider>
+              <AppShell>{children}</AppShell>
+            </OperationsDataProvider>
+          </AuthProvider>
         </div>
       </body>
     </html>

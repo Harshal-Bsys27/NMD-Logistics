@@ -1,134 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
-import type { User } from '@/types';
-
-const getFallbackUser = (sessionUser: any): User | null => {
-  if (!sessionUser) return null;
-
-  return {
-    id: sessionUser.id,
-    email: sessionUser.email ?? '',
-    full_name: sessionUser.user_metadata?.full_name ?? 'NMD User',
-    phone: sessionUser.user_metadata?.phone ?? undefined,
-    role: sessionUser.user_metadata?.role ?? 'supervisor',
-    status: 'active',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  };
-};
-
-/**
- * Hook to get current user and auth state
- */
-export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const syncUser = async (sessionUser: any) => {
-      if (!sessionUser) {
-        if (isMounted) setUser(null);
-        return;
-      }
-
-      const fallbackUser = getFallbackUser(sessionUser);
-      if (fallbackUser && isMounted) {
-        setUser(fallbackUser);
-      }
-
-      try {
-        const { data: profileData } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', sessionUser.id)
-          .maybeSingle();
-
-        if (profileData && isMounted) {
-          setUser(profileData as User);
-        }
-      } catch {
-        if (fallbackUser && isMounted) {
-          setUser(fallbackUser);
-        }
-      }
-    };
-
-    const initAuth = async () => {
-      try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
-
-        if (sessionError) {
-          throw sessionError;
-        }
-
-        if (!isMounted) return;
-
-        if (session?.user) {
-          await syncUser(session.user);
-        } else {
-          setUser(null);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err : new Error('Auth error'));
-          setUser(null);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    initAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted) return;
-
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-        if (session?.user) {
-          await syncUser(session.user);
-          setLoading(false);
-        }
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      subscription?.unsubscribe();
-    };
-  }, []);
-
-  return { user, loading, error };
-}
+import React, { useCallback, useEffect, useState } from 'react';
+import { useAuth } from './auth';
+export { AuthProvider, useAuth } from './auth';
 
 /**
  * Hook to check if user has required role
  */
 export function useRequireRole(allowedRoles: string[]) {
   const { user, loading } = useAuth();
-  const [hasAccess, setHasAccess] = useState(false);
-
-  useEffect(() => {
-    if (!loading && user) {
-      setHasAccess(allowedRoles.includes(user.role));
-    }
-  }, [user, loading, allowedRoles]);
-
-  return { hasAccess, loading };
+  return { hasAccess: !loading && !!user && allowedRoles.includes(user.role), loading };
 }
 
 /**
@@ -250,5 +131,3 @@ export function usePrevious<T>(value: T): T | undefined {
 
   return ref.current;
 }
-
-import React from 'react';
