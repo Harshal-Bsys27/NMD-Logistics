@@ -12,6 +12,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isAuthRoute = pathname === '/auth' || pathname.startsWith('/auth/');
+  const isPublicLanding = pathname === '/';
 
   useEffect(() => {
     setSidebarCollapsed(localStorage.getItem('nmd-sidebar-collapsed') === 'true');
@@ -27,15 +28,17 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      {isAuthRoute ? (
+      {isAuthRoute || isPublicLanding ? (
         <main>{children}</main>
       ) : (
         <div className="min-h-screen bg-background text-foreground">
           <Navbar collapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
           <Sidebar collapsed={sidebarCollapsed} />
           <main className={cn(
-            'min-h-[calc(100vh-var(--navbar-height))] min-w-0 px-4 py-6 transition-[margin] duration-200 md:px-6 xl:px-8 min-[1920px]:max-w-[1800px]',
-            sidebarCollapsed ? 'lg:ml-[76px]' : 'lg:ml-[264px]',
+            'min-h-[calc(100vh-var(--navbar-height))] min-w-0 w-full px-3 py-4 transition-[margin,width] duration-200 sm:px-4 sm:py-5 md:px-6 md:py-6 xl:px-8',
+            sidebarCollapsed
+              ? 'lg:ml-[76px] lg:w-[calc(100%-76px)]'
+              : 'lg:ml-[264px] lg:w-[calc(100%-264px)]',
           )}>
             {children}
           </main>

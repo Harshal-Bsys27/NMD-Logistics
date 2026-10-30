@@ -12,7 +12,7 @@ const themeOptions: Array<{ value: ThemeMode; label: string; icon: typeof Sun }>
   { value: 'system', label: 'System', icon: Monitor },
 ];
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ appearance = 'brand' }: { appearance?: 'brand' | 'surface' }) {
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>('system');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -62,10 +62,16 @@ export default function ThemeToggle() {
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        aria-label="Theme options"
+        aria-label={`Theme options, currently ${theme}`}
+        aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
         title="Theme options"
-        className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-on-brand/85 transition-colors duration-150 hover:bg-on-brand/10 hover:text-on-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className={cn(
+          'inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2',
+          appearance === 'brand'
+            ? 'text-on-brand/85 hover:bg-on-brand/10 hover:text-on-brand focus-visible:ring-accent'
+            : 'border border-border bg-background text-foreground shadow-sm hover:bg-muted focus-visible:ring-ring'
+        )}
       >
         <CurrentIcon className="h-4 w-4" />
       </button>

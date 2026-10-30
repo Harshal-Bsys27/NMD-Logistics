@@ -18,12 +18,17 @@ export default function Navbar({ collapsed, onToggleSidebar }: NavbarProps) {
   return (
     <header className="sticky top-0 z-50 h-16 w-full bg-[image:var(--navbar-gradient)] text-on-brand shadow-nav backdrop-blur-sm sm:h-[72px] lg:h-20">
       <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-accent via-warning to-brand-500" aria-hidden="true" />
-      <div className="relative flex h-full items-center gap-2 px-3 sm:gap-3 sm:px-5 xl:px-8">
+      <div className="relative flex h-full items-center gap-1.5 px-2.5 sm:gap-3 sm:px-5 xl:px-8">
         <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
           <div className="lg:hidden">
             <MobileSidebar />
           </div>
-          <Logo size="sm" compact className="lg:hidden" />
+          <Logo
+            size="sm"
+            compact={false}
+            wordmarkClassName="hidden min-[380px]:block max-[479px]:[&>span:first-child]:text-[14px] max-[479px]:[&>span:last-child]:hidden"
+            className="lg:hidden gap-2"
+          />
 
           <div className="hidden shrink-0 items-center gap-2 border-r border-on-brand/15 pr-2 lg:flex">
             <Logo size="md" className="shrink-0" />
@@ -50,12 +55,12 @@ export default function Navbar({ collapsed, onToggleSidebar }: NavbarProps) {
           <GlobalSearch compact />
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-2">
           <button
             type="button"
             aria-label="Create new order"
             title="New Order"
-            className="inline-flex h-10 w-10 items-center justify-center gap-2 rounded-xl bg-accent text-accent-foreground shadow-accent-button transition-all duration-150 hover:-translate-y-0.5 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand sm:w-auto sm:px-3 sm:text-sm sm:font-semibold"
+            className="hidden h-10 w-10 items-center justify-center gap-2 rounded-xl bg-accent text-accent-foreground shadow-accent-button transition-all duration-150 hover:-translate-y-0.5 hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-on-brand sm:inline-flex sm:w-auto sm:px-3 sm:text-sm sm:font-semibold"
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">New Order</span>
@@ -68,7 +73,7 @@ export default function Navbar({ collapsed, onToggleSidebar }: NavbarProps) {
             </span>
           </div>
 
-          <div className="hidden lg:block"><ThemeToggle /></div>
+          <div className="block"><ThemeToggle /></div>
           <NotificationsMenu />
           <div className="hidden h-7 w-px bg-on-brand/20 lg:block" />
           <ProfileMenu />

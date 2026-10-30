@@ -3,7 +3,7 @@ import { cn } from '@/utils/helpers';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg';
-  variant?: 'onDark' | 'onLight';
+  variant?: 'onDark' | 'onLight' | 'adaptive';
   href?: string;
   className?: string;
   compact?: boolean;
@@ -30,12 +30,21 @@ export default function Logo({
   compact = false,
   wordmarkClassName,
 }: LogoProps) {
-  const onDark = variant === 'onDark';
+  const wordmarkColor = variant === 'adaptive'
+    ? 'text-brand-900 dark:text-on-brand'
+    : variant === 'onDark'
+      ? 'text-on-brand'
+      : 'text-brand-900';
+  const subtitleColor = variant === 'adaptive'
+    ? 'text-brand-600 dark:text-accent'
+    : variant === 'onDark'
+      ? 'text-accent'
+      : 'text-brand-600';
 
   return (
     <Link
       href={href}
-      aria-label="NMD Logistics dashboard"
+      aria-label={href === '/' ? 'NMD Logistics home' : 'NMD Logistics dashboard'}
       className={cn('group inline-flex min-w-0 items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-card', className)}
     >
       <span className={cn(
@@ -52,10 +61,10 @@ export default function Logo({
         </svg>
       </span>
       <span className={cn('min-w-0 leading-none', compact && 'hidden', wordmarkClassName)}>
-          <span className={cn('block whitespace-nowrap font-extrabold tracking-tight', wordmarkSizes[size], onDark ? 'text-on-brand' : 'text-brand-900')}>
-            NMD <span className={cn('font-medium', onDark ? 'text-on-brand/85' : 'text-brand-700')}>Logistics</span>
+          <span className={cn('block whitespace-nowrap font-extrabold tracking-tight', wordmarkSizes[size], wordmarkColor)}>
+            NMD <span className={cn('font-medium', variant === 'adaptive' ? 'text-brand-700 dark:text-on-brand/85' : variant === 'onDark' ? 'text-on-brand/85' : 'text-brand-700')}>Logistics</span>
           </span>
-          <span className={cn('mt-1.5 block whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.2em]', onDark ? 'text-accent' : 'text-brand-600')}>
+          <span className={cn('mt-1.5 block whitespace-nowrap text-[9px] font-semibold uppercase tracking-[0.2em]', subtitleColor)}>
             Operations Platform
           </span>
       </span>
