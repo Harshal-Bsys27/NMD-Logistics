@@ -1,16 +1,14 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks';
 import { orderService } from '@/services/database';
+import { useOperationsData } from '@/hooks/useOperationsData';
 import { OrderForm } from '@/components/forms/OrderForm';
 import { CreateOrderInput } from '@/lib/validations/schemas';
 import { formatDate } from '@/utils/helpers';
 import { ArrowLeft, AlertCircle, MapPin, Calendar, DollarSign, Package, ArrowRight } from 'lucide-react';
-import type { Order, OrderStatus } from '@/types';
-
-const statusFlow: OrderStatus[] = ['draft', 'pending', 'confirmed', 'assigned', 'picked_up', 'in_transit', 'delivered'];
 
 export default function OrderDetailPage() {
   const router = useRouter();
@@ -18,45 +16,12 @@ export default function OrderDetailPage() {
   const orderId = params.id as string;
   const { user } = useAuth();
   const canManageOrders = user?.role === 'admin' || user?.role === 'supervisor';
+  const { orders, isLoading: loadingOrder, error: loadError, refresh } = useOperationsData();
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [order, setOrder] = useState<Order | null>(null);
-  const [loadError, setLoadError] = useState('');
   const [actionError, setActionError] = useState('');
-  const [loadingOrder, setLoadingOrder] = useState(true);
-
-  useEffect(() => {
-    let active = true;
-    const loadOrder = async () => {
-      try {
-        const { data, error } = await orderService.getById(orderId);
-        if (!active) return;
-        if (error) {
-          setLoadError(error);
-        } else if (data) {
-          setOrder(data);
-        } else {
-          setLoadError('Order not found');
-        }
-      } catch (error) {
-        if (active) setLoadError(error instanceof Error ? error.message : 'Unable to load order');
-      } finally {
-        if (active) setLoadingOrder(false);
-      }
-    };
-
-    void loadOrder();
-    return () => {
-      active = false;
-    };
-  }, [orderId]);
-
-  const nextStatus = useMemo(() => {
-    if (!order) return null;
-    const index = statusFlow.indexOf(order.status);
-    if (index === -1 || index === statusFlow.length - 1) return null;
-    return statusFlow[index + 1];
-  }, [order]);
+  const order = orders.find((item) => item.id === orderId) ?? null;
+  const nextStatus = order?.status === 'draft' ? 'pending' : null;
 
   const updateStatus = async () => {
     if (!order || !nextStatus) return;
@@ -65,7 +30,8 @@ export default function OrderDetailPage() {
     try {
       const { data, error } = await orderService.updateStatus(order.id, nextStatus);
       if (error) throw new Error(error);
-      if (data) setOrder(data);
+      if (!data) throw new Error('The order status update returned no order');
+      await refresh(true);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'Unable to update order status');
     } finally {
@@ -114,7 +80,7 @@ export default function OrderDetailPage() {
     try {
       const { data: updatedOrder, error } = await orderService.update(orderId, data);
       if (error) throw new Error(error);
-      if (updatedOrder) setOrder(updatedOrder);
+      if (!updatedOrder) throw new Error('The order update returned no order');
       router.push('/orders');
     } catch (error) {
       console.error('Failed to update order:', error);
@@ -250,7 +216,7 @@ export default function OrderDetailPage() {
                 disabled={isUpdatingStatus}
                 className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isUpdatingStatus ? 'Updating…' : `Advance to ${nextStatus.replace('_', ' ')}`}
+                {isUpdatingStatus ? 'Updating…' : 'Mark ready for dispatch'}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>

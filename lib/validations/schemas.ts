@@ -78,6 +78,16 @@ export const createDeliveryPersonnelSchema = z.object({
   license_number: z.string().optional(),
 });
 
+export const createDriverAccountSchema = z.object({
+  full_name: z.string().min(2, 'Full name must be at least 2 characters').max(100),
+  email: z.string().email('Enter a valid email address'),
+  phone: z.string().regex(/^[6-9]\d{9}$/, 'Enter a valid 10-digit Indian phone number'),
+  employee_id: z.string().trim().min(3).max(32),
+  vehicle_type: z.enum(['bike', 'auto', 'car', 'van', 'truck']),
+  vehicle_number: z.string().trim().min(3).max(20),
+  license_number: z.string().trim().max(50).optional(),
+});
+
 export const updateDeliveryPersonnelSchema = createDeliveryPersonnelSchema.partial();
 
 export const updatePersonnelStatusSchema = z.object({
@@ -138,6 +148,7 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type UpdateOrderInput = z.infer<typeof updateOrderSchema>;
 export type CreateDeliveryPersonnelInput = z.infer<typeof createDeliveryPersonnelSchema>;
+export type CreateDriverAccountInput = z.infer<typeof createDriverAccountSchema>;
 export type UpdateDeliveryPersonnelInput = z.infer<typeof updateDeliveryPersonnelSchema>;
 export type CreateAssignmentInput = z.infer<typeof createAssignmentSchema>;
 export type UpdateAssignmentStatusInput = z.infer<typeof updateAssignmentStatusSchema>;

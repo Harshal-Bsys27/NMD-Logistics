@@ -51,7 +51,7 @@ export default function DispatchPage() {
           orderNumber: order?.order_number ?? assignment.order_id.slice(0, 6).toUpperCase(),
           customer: order?.client_name ?? 'Customer',
           route: order?.pickup_location ?? 'Metro route',
-          driverName: driver ? driver.employee_id : 'Unassigned',
+          driverName: driver ? `${driver.full_name || driver.employee_id} (${driver.employee_id})` : 'Unassigned',
           eta,
           delay,
           status,

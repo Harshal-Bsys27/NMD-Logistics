@@ -3,16 +3,18 @@
 import { driverService } from '@/services/database';
 import { useOperationsData } from '@/hooks/useOperationsData';
 import { useAuth } from '@/hooks';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn, toTitleCase } from '@/utils/helpers';
-import { AlertCircle, Award, MapPin, TrendingUp, Users, Search } from 'lucide-react';
+import { AlertCircle, Award, MapPin, TrendingUp, Users, Search, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
-const statusColors: Record<string, { bg: string; text: string; badge: string }> = {
-  available: { bg: 'bg-success', text: 'text-success-foreground', badge: 'bg-success text-success-foreground' },
-  on_delivery: { bg: 'bg-info', text: 'text-info-foreground', badge: 'bg-info text-info-foreground' },
-  on_break: { bg: 'bg-warning', text: 'text-warning-foreground', badge: 'bg-warning text-warning-foreground' },
-  off_duty: { bg: 'bg-muted', text: 'text-muted-foreground', badge: 'bg-muted text-muted-foreground' },
+const statusColors: Record<string, string> = {
+  available: 'bg-success text-success-foreground',
+  assigned: 'bg-primary/10 text-primary',
+  on_delivery: 'bg-info text-info-foreground',
+  on_break: 'bg-warning text-warning-foreground',
+  off_duty: 'bg-muted text-muted-foreground',
 };
 
 const vehicleEmojis: Record<string, string> = {
@@ -26,13 +28,14 @@ const vehicleEmojis: Record<string, string> = {
 export default function DriversPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const canManageDrivers = user?.role === 'admin' || user?.role === 'supervisor';
+  const canManageDrivers = user?.role === 'admin';
   const { drivers, assignments, isLoading, error, refresh } = useOperationsData();
   const [searchTerm, setSearchTerm] = useState('');
   const [actionError, setActionError] = useState('');
   const [busyDriverId, setBusyDriverId] = useState<string | null>(null);
 
   const filteredDrivers = drivers.filter((driver) =>
+    (driver.full_name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     driver.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     driver.vehicle_number.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -42,7 +45,12 @@ export default function DriversPage() {
   };
 
   const avgRating = drivers.length > 0 ? (drivers.reduce((sum, d) => sum + d.rating, 0) / drivers.length).toFixed(1) : 0;
-  const availableCount = drivers.filter((d) => d.current_status === 'available').length;
+  const assignedDriverIds = new Set(
+    assignments
+      .filter((assignment) => ['pending', 'accepted', 'in_progress'].includes(assignment.status))
+      .map((assignment) => assignment.personnel_id)
+  );
+  const availableCount = drivers.filter((d) => d.current_status === 'available' && !assignedDriverIds.has(d.id)).length;
   const onDeliveryCount = drivers.filter((d) => d.current_status === 'on_delivery').length;
 
   const handleStatusUpdate = async (driverId: string, status: 'available' | 'on_delivery') => {
@@ -64,8 +72,21 @@ export default function DriversPage() {
       <div className="w-full space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-semibold text-foreground">Drivers & Assignments</h1>
-          <p className="mt-2 text-muted-foreground">Manage your delivery personnel and track active assignments</p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-3xl font-semibold text-foreground">Drivers & Assignments</h1>
+              <p className="mt-2 text-muted-foreground">Manage your delivery personnel and track active assignments</p>
+            </div>
+            {canManageDrivers && (
+              <Link
+                href="/users?role=delivery_personnel"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <UserPlus className="h-4 w-4" />
+                Add driver
+              </Link>
+            )}
+          </div>
         </div>
 
         {(error || actionError) && (
@@ -152,9 +173,12 @@ export default function DriversPage() {
               Loading drivers…
             </div>
           ) : filteredDrivers.map((driver) => {
-            const colors = statusColors[driver.current_status];
             const driverAssignments = getDriverAssignments(driver.id);
             const activeAssignment = driverAssignments.find((a) => a.status === 'in_progress');
+            const hasActiveAssignment = driverAssignments.some((a) => ['pending', 'accepted', 'in_progress'].includes(a.status));
+            const displayedStatus = hasActiveAssignment && driver.current_status === 'available'
+              ? 'assigned'
+              : driver.current_status;
 
             return (
               <div
@@ -176,12 +200,13 @@ export default function DriversPage() {
                       {vehicleEmojis[driver.vehicle_type]}
                     </div>
                     <div>
-                      <p className="font-semibold text-foreground">{driver.employee_id}</p>
+                      <p className="font-semibold text-foreground">{driver.full_name || driver.employee_id}</p>
+                      <p className="text-xs text-muted-foreground">ID: {driver.employee_id}</p>
                       <p className="text-xs text-muted-foreground">{toTitleCase(driver.vehicle_type)} Driver</p>
                     </div>
                   </div>
-                  <span className={cn('inline-flex min-h-6 items-center rounded-full px-3 py-1 text-xs font-semibold', colors.badge)}>
-                    {toTitleCase(driver.current_status)}
+                  <span className={cn('inline-flex min-h-6 items-center rounded-full px-3 py-1 text-xs font-semibold', statusColors[displayedStatus])}>
+                    {toTitleCase(displayedStatus)}
                   </span>
                 </div>
 
@@ -238,7 +263,7 @@ export default function DriversPage() {
                           e.stopPropagation();
                           void handleStatusUpdate(driver.id, 'available');
                         }}
-                        disabled={busyDriverId === driver.id}
+                        disabled={busyDriverId === driver.id || driver.current_status === 'available' || hasActiveAssignment}
                         className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted disabled:opacity-50"
                       >
                         Available
@@ -248,7 +273,7 @@ export default function DriversPage() {
                           e.stopPropagation();
                           void handleStatusUpdate(driver.id, 'on_delivery');
                         }}
-                        disabled={busyDriverId === driver.id}
+                        disabled={busyDriverId === driver.id || !activeAssignment || driver.current_status === 'on_delivery'}
                         className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted disabled:opacity-50"
                       >
                         On delivery

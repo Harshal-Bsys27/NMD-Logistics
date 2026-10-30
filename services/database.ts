@@ -144,11 +144,17 @@ export const driverService = {
     try {
       const { data, error } = await supabase
         .from('delivery_personnel')
-        .select('*')
+        .select('*, user:users!delivery_personnel_user_id_fkey(full_name)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return { data: data || [], error: null };
+      return {
+        data: (data || []).map(({ user, ...driver }) => ({
+          ...driver,
+          full_name: user?.full_name ?? '',
+        })),
+        error: null,
+      };
     } catch (error: any) {
       return { data: [], error: error.message };
     }
@@ -159,12 +165,13 @@ export const driverService = {
     try {
       const { data, error } = await supabase
         .from('delivery_personnel')
-        .select('*')
+        .select('*, user:users!delivery_personnel_user_id_fkey(full_name)')
         .eq('id', driverId)
         .single();
 
       if (error) throw error;
-      return { data, error: null };
+      const { user, ...driver } = data;
+      return { data: { ...driver, full_name: user?.full_name ?? '' }, error: null };
     } catch (error: any) {
       return { data: null, error: error.message };
     }

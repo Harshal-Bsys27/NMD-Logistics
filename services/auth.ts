@@ -1,44 +1,8 @@
-import { supabase } from '@/lib/supabase/client';
+import { supabase, supabaseAnonKey, supabaseUrl } from '@/lib/supabase/client';
 import type { User, UserRole, UserStatus } from '@/types';
 
 // Authentication Functions
 export const authService = {
-  // Sign up with email and password
-  async signUp(email: string, password: string, userData: Partial<User>) {
-    try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          full_name: userData.full_name,
-          phone: userData.phone,
-          role: userData.role || 'supervisor',
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result?.error || 'Unable to register account.');
-      }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      return { user: data.session?.user ?? null, error: null };
-    } catch (error) {
-      return { user: null, error: error instanceof Error ? error : new Error('Registration failed') };
-    }
-  },
-
   // Sign in with email and password
   async signIn(email: string, password: string) {
     try {
@@ -66,6 +30,51 @@ export const authService = {
       return { data, error: null };
     } catch (error) {
       return { data: null, error };
+    }
+  },
+
+  async getGoogleProviderStatus(): Promise<{ enabled: boolean; message: string | null }> {
+    try {
+      const response = await fetch(`${supabaseUrl}/auth/v1/settings`, {
+        headers: { apikey: supabaseAnonKey },
+        cache: 'no-store',
+      });
+
+      if (!response.ok) {
+        return {
+          enabled: false,
+          message: 'Google sign-in availability could not be checked. Contact your administrator.',
+        };
+      }
+
+      const settings: unknown = await response.json();
+      if (!settings || typeof settings !== 'object' || !('external' in settings)) {
+        return {
+          enabled: false,
+          message: 'Google sign-in availability could not be checked. Contact your administrator.',
+        };
+      }
+
+      const external = settings.external;
+      if (!external || typeof external !== 'object' || !('google' in external)) {
+        return {
+          enabled: false,
+          message: 'Google sign-in is not enabled for this workspace. Configure Google under Supabase Authentication providers.',
+        };
+      }
+
+      const enabled = external.google === true;
+      return {
+        enabled,
+        message: enabled
+          ? null
+          : 'Google sign-in is not enabled for this workspace. Configure Google under Supabase Authentication providers.',
+      };
+    } catch {
+      return {
+        enabled: false,
+        message: 'Google sign-in availability could not be checked. Contact your administrator.',
+      };
     }
   },
 
@@ -132,6 +141,16 @@ export const authService = {
       return { error: null };
     } catch (error) {
       return { error };
+    }
+  },
+
+  async refreshSession() {
+    try {
+      const { error } = await supabase.auth.refreshSession();
+      if (error) throw error;
+      return { error: null };
+    } catch (error) {
+      return { error: error instanceof Error ? error : new Error('Unable to refresh your session.') };
     }
   },
 };

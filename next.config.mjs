@@ -2,12 +2,6 @@
 const nextConfig = {
   reactStrictMode: true,
   outputFileTracingRoot: process.cwd(),
-  webpack: (config, { dev }) => {
-    if (dev) {
-      config.cache = false;
-    }
-    return config;
-  },
   typescript: {
     tsconfigPath: './tsconfig.json',
   },

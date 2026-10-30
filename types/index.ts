@@ -23,6 +23,7 @@ export type PersonnelStatus = 'available' | 'on_delivery' | 'on_break' | 'off_du
 export interface DeliveryPersonnel {
   id: string;
   user_id: string;
+  full_name?: string;
   employee_id: string;
   vehicle_type: VehicleType;
   vehicle_number: string;

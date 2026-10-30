@@ -19,40 +19,37 @@ export async function GET(request: Request) {
         const admin = getSupabaseAdmin();
         const { data: profile, error: profileLookupError } = await admin
           .from('users')
-          .select('id')
+          .select('id, status')
           .eq('id', user.id)
           .maybeSingle();
 
-        if (!profileLookupError && !profile) {
-          const metadataName = user.user_metadata?.full_name ?? user.user_metadata?.name;
-          const fullName = typeof metadataName === 'string' ? metadataName : user.email.split('@')[0];
-          const { error: profileCreateError } = await admin.from('users').insert({
-            id: user.id,
-            email: user.email,
-            full_name: fullName,
-            role: 'supervisor',
-            status: 'active',
-          });
-
-          if (profileCreateError) {
-            await supabase.auth.signOut();
-            return redirectToSignIn(requestUrl.origin);
-          }
-        } else if (profileLookupError) {
+        if (profileLookupError) {
           await supabase.auth.signOut();
-          return redirectToSignIn(requestUrl.origin);
+          return redirectToSignIn(requestUrl.origin, 'access');
         }
 
-        return NextResponse.redirect(new URL('/dashboard', requestUrl.origin));
+        if (!profile || !user.email_confirmed_at) {
+          await supabase.auth.signOut();
+          return redirectToSignIn(requestUrl.origin, 'invite');
+        }
+
+        const isPendingInvite = user.app_metadata?.invite_pending === true && profile.status === 'inactive';
+        if (!isPendingInvite && profile.status !== 'active') {
+          await supabase.auth.signOut();
+          return redirectToSignIn(requestUrl.origin, 'access');
+        }
+
+        const destination = isPendingInvite ? '/auth/accept-invite' : '/dashboard';
+        return NextResponse.redirect(new URL(destination, requestUrl.origin));
       }
     }
   }
 
-  return redirectToSignIn(requestUrl.origin);
+  return redirectToSignIn(requestUrl.origin, 'google');
 }
 
-function redirectToSignIn(origin: string) {
+function redirectToSignIn(origin: string, reason: 'google' | 'invite' | 'access') {
   const signInUrl = new URL('/auth/signin', origin);
-  signInUrl.searchParams.set('error', 'google');
+  signInUrl.searchParams.set('error', reason);
   return NextResponse.redirect(signInUrl);
 }

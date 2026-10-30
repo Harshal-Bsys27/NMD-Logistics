@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks';
 import { useOperationsData } from '@/hooks/useOperationsData';
@@ -39,6 +40,7 @@ import {
   DollarSign,
   PackageCheck,
   Route,
+  UserPlus,
 } from 'lucide-react';
 
 const chartTheme = {
@@ -66,12 +68,22 @@ export default function DashboardPage() {
   const router = useRouter();
   const [dateRange, setDateRange] = useState('30');
   const { user, loading } = useAuth();
-  const { orders, drivers, assignments, isLoading: isLoadingOperations, error: operationsError, refresh } = useOperationsData();
+  const {
+    orders,
+    drivers,
+    assignments,
+    isLoading: isLoadingOperations,
+    error: operationsError,
+    realtimeStatus,
+    refresh,
+  } = useOperationsData();
 
   const filteredOrders = useMemo(() => {
     if (dateRange === 'all') return orders;
-    const cutoff = Date.now() - Number(dateRange) * 24 * 60 * 60 * 1000;
-    return orders.filter((order) => new Date(order.created_at).getTime() >= cutoff);
+    const cutoff = new Date();
+    cutoff.setHours(0, 0, 0, 0);
+    cutoff.setDate(cutoff.getDate() - Number(dateRange) + 1);
+    return orders.filter((order) => new Date(order.created_at).getTime() >= cutoff.getTime());
   }, [orders, dateRange]);
 
   const exportOrders = () => {
@@ -108,6 +120,7 @@ export default function DashboardPage() {
     const firstName = user?.full_name?.trim().split(/\s+/)[0]?.slice(0, 24);
     return firstName ? `Welcome back, ${firstName}` : 'Welcome back';
   }, [user?.full_name]);
+  const canManageOperations = user?.role === 'admin' || user?.role === 'supervisor';
 
   const orderStats = useMemo(() => {
     return {
@@ -119,66 +132,100 @@ export default function DashboardPage() {
     };
   }, [orders]);
 
+  const activeDriverIds = useMemo(
+    () => new Set(
+      assignments
+        .filter((assignment) => ['pending', 'accepted', 'in_progress'].includes(assignment.status))
+        .map((assignment) => assignment.personnel_id)
+    ),
+    [assignments]
+  );
+
   const driverStats = useMemo(() => {
     return {
       total: drivers.length,
-      available: drivers.filter((d) => d.current_status === 'available').length,
+      available: drivers.filter((d) => d.current_status === 'available' && !activeDriverIds.has(d.id)).length,
       onDelivery: drivers.filter((d) => d.current_status === 'on_delivery').length,
       avgRating: drivers.length
         ? (drivers.reduce((sum, d) => sum + d.rating, 0) / drivers.length).toFixed(1)
         : '—',
     };
-  }, [drivers]);
+  }, [activeDriverIds, drivers]);
 
-  const orderCompletionData = useMemo(() => {
-    const today = new Date();
-    return Array.from({ length: 7 }, (_, index) => {
-      const date = new Date(today);
-      date.setDate(today.getDate() - (6 - index));
-      const dayOrders = orders.filter((order) => new Date(order.created_at).toDateString() === date.toDateString());
-      return {
-        day: date.toLocaleDateString('en-IN', { weekday: 'short' }),
-        completed: dayOrders.filter((order) => order.status === 'delivered').length,
-        failed: dayOrders.filter((order) => order.status === 'failed').length,
-        pending: dayOrders.filter((order) => ['draft', 'pending', 'confirmed', 'assigned'].includes(order.status)).length,
-      };
-    });
-  }, [orders]);
-
-  const revenueData = useMemo(() => {
-    const today = new Date();
-    return Array.from({ length: 4 }, (_, index) => {
-      const start = new Date(today);
-      start.setDate(today.getDate() - (3 - index) * 7 - 6);
+  const orderTrendData = useMemo(() => {
+    const unit = dateRange === 'all' ? 'month' : Number(dateRange) <= 30 ? 'day' : 'week';
+    const startOfPeriod = (date: Date) => {
+      const start = new Date(date);
       start.setHours(0, 0, 0, 0);
-      const end = new Date(start);
-      end.setDate(start.getDate() + 7);
-      const declaredValue = orders
-        .filter((order) => {
-          const createdAt = new Date(order.created_at).getTime();
-          return createdAt >= start.getTime() && createdAt < end.getTime();
-        })
-        .reduce((sum, order) => sum + (order.package_value ?? 0), 0);
-      return { week: `Week ${index + 1}`, declaredValue };
-    });
-  }, [orders]);
+      if (unit === 'week') {
+        start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+      } else if (unit === 'month') {
+        start.setDate(1);
+      }
+      return start;
+    };
+    const now = new Date();
+    const firstOrderDate = filteredOrders.reduce<Date | null>((first, order) => {
+      const createdAt = new Date(order.created_at);
+      return !first || createdAt < first ? createdAt : first;
+    }, null);
+    const rangeStart = dateRange === 'all'
+      ? startOfPeriod(firstOrderDate ?? now)
+      : startOfPeriod(new Date(new Date().setDate(now.getDate() - Number(dateRange) + 1)));
+    const buckets = new Map<string, {
+      date: Date;
+      completed: number;
+      failed: number;
+      active: number;
+      cancelled: number;
+      declaredValue: number;
+    }>();
+
+    for (const date = new Date(rangeStart); date <= now;) {
+      const key = date.toISOString().slice(0, 10);
+      buckets.set(key, { date: new Date(date), completed: 0, failed: 0, active: 0, cancelled: 0, declaredValue: 0 });
+      if (unit === 'day') date.setDate(date.getDate() + 1);
+      else if (unit === 'week') date.setDate(date.getDate() + 7);
+      else date.setMonth(date.getMonth() + 1);
+    }
+
+    for (const order of filteredOrders) {
+      const createdAt = new Date(order.created_at);
+      const bucket = buckets.get(startOfPeriod(createdAt).toISOString().slice(0, 10));
+      if (!bucket) continue;
+
+      bucket.declaredValue += order.package_value ?? 0;
+      if (order.status === 'delivered') bucket.completed += 1;
+      else if (order.status === 'failed') bucket.failed += 1;
+      else if (order.status === 'cancelled') bucket.cancelled += 1;
+      else bucket.active += 1;
+    }
+
+    return Array.from(buckets.values()).map((bucket) => ({
+      period: unit === 'day'
+        ? bucket.date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+        : unit === 'week'
+          ? `Week of ${bucket.date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}`
+          : bucket.date.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
+      ...bucket,
+    }));
+  }, [filteredOrders, dateRange]);
 
   const deliveryTimeData = useMemo(() => {
-    const statuses = ['pending', 'accepted', 'in_progress', 'completed'];
-    const activeAssignments = assignments.filter((assignment) => statuses.includes(assignment.status));
+    const statuses = ['pending', 'accepted', 'in_progress', 'completed', 'rejected', 'cancelled'];
     return statuses.map((status) => {
-      const count = activeAssignments.filter((assignment) => assignment.status === status).length;
+      const count = assignments.filter((assignment) => assignment.status === status).length;
       return {
         range: status.replace(/_/g, ' '),
         count,
-        percentage: activeAssignments.length ? (count / activeAssignments.length) * 100 : 0,
+        percentage: assignments.length ? (count / assignments.length) * 100 : 0,
       };
     }).filter((entry) => entry.count > 0);
   }, [assignments]);
 
   const driverPerformanceData = useMemo(
     () => drivers
-      .map((driver) => ({ name: driver.employee_id, deliveries: driver.total_deliveries_completed, rating: driver.rating }))
+      .map((driver) => ({ name: driver.full_name || driver.employee_id, deliveries: driver.total_deliveries_completed, rating: driver.rating }))
       .sort((left, right) => right.deliveries - left.deliveries)
       .slice(0, 10),
     [drivers]
@@ -187,15 +234,20 @@ export default function DashboardPage() {
   const routeHealth = useMemo(() => {
     const statuses = [
       { key: 'available', label: 'Available', tone: 'text-success-foreground', bar: 'bg-success-foreground' },
+      { key: 'assigned', label: 'Assigned', tone: 'text-primary', bar: 'bg-primary' },
       { key: 'on_delivery', label: 'On delivery', tone: 'text-info-foreground', bar: 'bg-info-foreground' },
       { key: 'on_break', label: 'On break', tone: 'text-warning-foreground', bar: 'bg-warning-foreground' },
       { key: 'off_duty', label: 'Off duty', tone: 'text-muted-foreground', bar: 'bg-muted-foreground' },
     ];
     return statuses.map((status) => {
-      const count = drivers.filter((driver) => driver.current_status === status.key).length;
+      const count = status.key === 'assigned'
+        ? drivers.filter((driver) => driver.current_status === 'available' && activeDriverIds.has(driver.id)).length
+        : status.key === 'available'
+          ? drivers.filter((driver) => driver.current_status === 'available' && !activeDriverIds.has(driver.id)).length
+          : drivers.filter((driver) => driver.current_status === status.key).length;
       return { ...status, value: drivers.length ? Math.round((count / drivers.length) * 100) : 0, count };
     });
-  }, [drivers]);
+  }, [activeDriverIds, drivers]);
 
   const priorityAlerts = useMemo(() => [
     { title: 'Unassigned orders', count: orders.filter((order) => ['draft', 'pending', 'confirmed'].includes(order.status)).length, level: 'High', border: 'border-l-danger bg-danger/5', badge: 'bg-danger/10 text-danger-foreground' },
@@ -218,7 +270,7 @@ export default function DashboardPage() {
       return {
         id: order?.order_number ?? assignment.id.slice(0, 8).toUpperCase(),
         zone: order?.pickup_location ?? 'Metro route',
-        driver: driver ? driver.employee_id : 'Unassigned',
+        driver: driver ? `${driver.full_name || driver.employee_id} (${driver.employee_id})` : 'Unassigned',
         eta: assignment.status === 'completed' ? 'Delivered' : assignment.status === 'in_progress' ? 'In progress' : 'Awaiting start',
         status: assignment.status === 'completed' ? 'Completed' : assignment.status === 'in_progress' ? 'On route' : 'Queued',
       };
@@ -235,29 +287,51 @@ export default function DashboardPage() {
 
   return (
     <div className="bg-background text-foreground">
-      <div className="flex w-full flex-col gap-6">
+      <div className="flex w-full min-w-0 flex-col gap-4 sm:gap-6">
         <header className="order-1 flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <h1 className="text-[28px] font-bold tracking-tight text-foreground">{welcomeTitle}</h1>
+            <h1 className="break-words text-2xl font-bold tracking-tight text-foreground sm:text-[28px]">{welcomeTitle}</h1>
             <p className="mt-1 text-sm text-muted-foreground">Today’s orders, fleet status, and delivery performance.</p>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-3">
-            <label className="relative inline-flex h-11 items-center gap-2 rounded-xl border border-input bg-card pl-3 pr-2 text-sm text-foreground shadow-sm focus-within:ring-2 focus-within:ring-ring">
+          <div className="flex w-full shrink-0 gap-2 sm:w-auto sm:flex-wrap sm:items-center sm:gap-3">
+            <label className="relative inline-flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl border border-input bg-card pl-3 pr-2 text-sm text-foreground shadow-sm focus-within:ring-2 focus-within:ring-ring sm:flex-none">
               <CalendarDays className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <span className="sr-only">Recent order date range</span>
-              <select value={dateRange} onChange={(event) => setDateRange(event.target.value)} aria-label="Recent order date range" className="h-full min-w-32 bg-transparent pr-2 text-sm focus:outline-none [color-scheme:light] dark:[color-scheme:dark]">
+              <select value={dateRange} onChange={(event) => setDateRange(event.target.value)} aria-label="Recent order date range" className="h-full min-w-0 flex-1 bg-transparent pr-2 text-sm focus:outline-none [color-scheme:light] dark:[color-scheme:dark] sm:min-w-32 sm:flex-none">
                 <option value="7">Last 7 days</option>
                 <option value="30">Last 30 days</option>
                 <option value="90">Last 90 days</option>
                 <option value="all">All time</option>
               </select>
             </label>
-            <button type="button" onClick={exportOrders} className="inline-flex h-11 items-center gap-2 rounded-xl border border-input bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <button type="button" onClick={exportOrders} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-input bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none">
               <Download className="h-4 w-4" />
               Export
             </button>
           </div>
         </header>
+
+        {user?.role === 'admin' ? (
+          <section className="order-1 flex flex-col gap-4 rounded-xl border border-primary/20 bg-primary/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <UserPlus className="h-5 w-5" />
+              </span>
+              <div>
+                <h2 className="font-semibold text-foreground">Invite your team</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Send a role-based invite to a supervisor or delivery team member.</p>
+              </div>
+            </div>
+            <Link href="/users" className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:w-auto">
+              <UserPlus className="h-4 w-4" />
+              Invite team member
+            </Link>
+          </section>
+        ) : user ? (
+          <p className="order-1 rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            Team invitations are available to administrators only. Your current role is <span className="font-semibold text-foreground">{user.role === 'delivery_personnel' ? 'Delivery personnel' : 'Supervisor'}</span>. If you own this project and need to send invites, ask the project owner to promote your account to admin in Supabase.
+          </p>
+        ) : null}
 
         {operationsError && (
           <div role="alert" className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger/10 p-4 text-danger-foreground">
@@ -272,18 +346,18 @@ export default function DashboardPage() {
         )}
         {isLoadingOperations && <p role="status" className="text-sm text-muted-foreground">Loading operations data…</p>}
 
-        <div className="order-2 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="order-2 grid grid-cols-2 gap-3 sm:gap-6 xl:grid-cols-4">
           {statStyles.map((stat, index) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className={cn('surface-glass flex h-full min-h-[160px] items-start justify-between gap-4 rounded-xl border border-t-[3px] p-4 transition hover:border-ring/50', stat.border)}>
+              <div key={stat.label} className={cn('surface-glass flex h-full min-h-[132px] min-w-0 items-start justify-between gap-2 rounded-xl border border-t-[3px] p-3 transition hover:border-ring/50 sm:min-h-[160px] sm:gap-4 sm:p-4', stat.border)}>
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <div className={cn('mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl', stat.accent)}>
+                  <div className={cn('mb-2 inline-flex h-9 w-9 items-center justify-center rounded-xl sm:mb-3 sm:h-10 sm:w-10', stat.accent)}>
                     <Icon className="h-5 w-5" />
                   </div>
-                  <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">{stat.label}</p>
+                  <p className="text-[10px] font-medium uppercase leading-4 tracking-[0.08em] text-muted-foreground sm:text-xs sm:tracking-[0.12em]">{stat.label}</p>
                   <div className="mt-3 flex items-end gap-2">
-                    <p className="text-3xl font-bold tabular-nums text-foreground">{dashboardStats[index].toLocaleString('en-IN')}</p>
+                    <p className="text-2xl font-bold tabular-nums text-foreground sm:text-3xl">{dashboardStats[index].toLocaleString('en-IN')}</p>
                   </div>
                 </div>
               </div>
@@ -291,49 +365,69 @@ export default function DashboardPage() {
           })}
         </div>
 
-        <div className="order-3 grid grid-cols-12 gap-6">
-          <section className="surface-glass col-span-12 rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4 md:p-5 xl:col-span-8">
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-500"><Activity className="h-5 w-5" /></span>
+        <div className="order-3 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6">
+          <section className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4 md:p-5 xl:col-span-8">
+            <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-500"><Activity className="h-5 w-5" /></span>
                 <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Operations overview</p>
-                <h2 className="mt-2 text-xl font-semibold text-foreground">Service performance</h2>
+                <h2 className="mt-2 text-lg font-semibold text-foreground sm:text-xl">Order status by created date</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Current status of orders created in the selected period</p>
                 </div>
               </div>
-              <span className="inline-flex min-h-7 items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground">
+              <span className="inline-flex min-h-7 w-fit max-w-full items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-semibold text-muted-foreground sm:shrink-0">
                 <TrendingUp className="h-3.5 w-3.5" />
                 {orderStats.total.toLocaleString('en-IN')} total orders
               </span>
             </div>
+            <p className="mb-3 text-xs text-muted-foreground" role="status">
+              {realtimeStatus === 'live'
+                ? 'Live updates enabled'
+                : realtimeStatus === 'polling'
+                  ? 'Live connection unavailable; refreshing every 30 seconds'
+                  : 'Connecting to live updates…'}
+            </p>
 
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={orderCompletionData} margin={{ top: 12, right: 20, left: 0, bottom: 8 }}>
-                <defs>
-                  <linearGradient id="serviceCompleted" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={chartTheme.colors[0]} stopOpacity={0.28} />
-                    <stop offset="95%" stopColor={chartTheme.colors[0]} stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="serviceFailed" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={chartTheme.colors[3]} stopOpacity={0.24} />
-                    <stop offset="95%" stopColor={chartTheme.colors[3]} stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} vertical={false} />
-                <XAxis dataKey="day" stroke={chartTheme.label} tickLine={false} axisLine={false} tickMargin={8} />
-                <YAxis stroke={chartTheme.label} width={32} tickLine={false} axisLine={false} tickMargin={8} />
-                <Tooltip
-                  cursor={{ stroke: chartTheme.grid, strokeWidth: 1 }}
-                  contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground, borderRadius: '0.75rem' }}
-                />
-                <Legend wrapperStyle={{ paddingTop: 12, fontSize: '12px' }} />
-                <Area type="monotone" dataKey="completed" name="Completed" stroke={chartTheme.colors[0]} fill="url(#serviceCompleted)" strokeWidth={2.5} />
-                <Area type="monotone" dataKey="failed" name="Failed" stroke={chartTheme.colors[3]} fill="url(#serviceFailed)" strokeWidth={2.5} />
-              </AreaChart>
-            </ResponsiveContainer>
+            {filteredOrders.length ? (
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={orderTrendData} margin={{ top: 12, right: 20, left: 0, bottom: 8 }}>
+                  <defs>
+                    <linearGradient id="serviceCompleted" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={chartTheme.colors[0]} stopOpacity={0.28} />
+                      <stop offset="95%" stopColor={chartTheme.colors[0]} stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="serviceActive" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={chartTheme.colors[2]} stopOpacity={0.2} />
+                      <stop offset="95%" stopColor={chartTheme.colors[2]} stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="serviceFailed" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={chartTheme.colors[3]} stopOpacity={0.24} />
+                      <stop offset="95%" stopColor={chartTheme.colors[3]} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} vertical={false} />
+                  <XAxis dataKey="period" stroke={chartTheme.label} tickLine={false} axisLine={false} tickMargin={8} />
+                  <YAxis stroke={chartTheme.label} width={32} tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} />
+                  <Tooltip
+                    cursor={{ stroke: chartTheme.grid, strokeWidth: 1 }}
+                    contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground, borderRadius: '0.75rem' }}
+                  />
+                  <Legend wrapperStyle={{ paddingTop: 12, fontSize: '12px' }} />
+                  <Area type="monotone" dataKey="completed" name="Delivered" stroke={chartTheme.colors[0]} fill="url(#serviceCompleted)" strokeWidth={2.5} />
+                  <Area type="monotone" dataKey="active" name="Active" stroke={chartTheme.colors[2]} fill="url(#serviceActive)" strokeWidth={2.5} />
+                  <Area type="monotone" dataKey="failed" name="Failed" stroke={chartTheme.colors[3]} fill="url(#serviceFailed)" strokeWidth={2.5} />
+                  <Area type="monotone" dataKey="cancelled" name="Cancelled" stroke={chartTheme.label} fill={chartTheme.label} fillOpacity={0.08} strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-[240px] items-center justify-center text-sm text-muted-foreground">
+                No orders in this date range.
+              </div>
+            )}
           </section>
 
-          <section className="surface-glass col-span-12 rounded-xl border border-border border-t-[3px] border-t-danger p-4 md:p-5 xl:col-span-4">
+          <section className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-danger p-4 md:p-5 xl:col-span-4">
             <div className="mb-5 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-danger/10 text-danger dark:bg-danger/15 dark:text-danger-foreground"><BellRing className="h-5 w-5" /></span>
@@ -357,17 +451,17 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-            <a href="/dispatch" className="mt-4 inline-flex min-h-10 items-center text-sm font-semibold text-primary transition-colors hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">View all alerts <ArrowUpRight className="ml-1 h-4 w-4" /></a>
+            <Link href="/dispatch" className="mt-4 inline-flex min-h-10 items-center text-sm font-semibold text-primary transition-colors hover:text-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">View all alerts <ArrowUpRight className="ml-1 h-4 w-4" /></Link>
           </section>
         </div>
 
-        <div className="order-5 grid grid-cols-12 gap-6">
-          <div className="surface-glass col-span-12 rounded-xl border border-border border-t-[3px] border-t-info p-4 md:p-5">
+        <div className="order-5 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6">
+          <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-info p-4 md:p-5 xl:col-span-12">
             <div className="mb-6 flex items-center gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-info/10 text-info-foreground"><MapPin className="h-5 w-5" /></span>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Fleet availability</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Driver distribution by current availability status</p>
+                <p className="mt-1 text-sm text-muted-foreground">Driver distribution by availability and active assignment</p>
               </div>
             </div>
             <div className="space-y-5">
@@ -386,8 +480,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="order-6 grid grid-cols-12 gap-6">
-          <div className="surface-glass col-span-12 rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4 md:p-5 xl:col-span-6">
+        <div className="order-6 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6">
+          <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4 md:p-5 xl:col-span-6">
             <div className="mb-6 flex items-center gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-500"><DollarSign className="h-5 w-5" /></span>
               <div>
@@ -395,50 +489,69 @@ export default function DashboardPage() {
                 <p className="mt-1 text-sm text-muted-foreground">Package values are not collected revenue.</p>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={revenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-                <XAxis dataKey="week" stroke={chartTheme.label} />
-                <YAxis stroke={chartTheme.label} />
-                <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
-                <Legend />
-                <Bar dataKey="declaredValue" name="Declared package value" fill={chartTheme.colors[0]} radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {filteredOrders.length ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={orderTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                  <XAxis dataKey="period" stroke={chartTheme.label} />
+                  <YAxis stroke={chartTheme.label} />
+                  <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
+                  <Legend />
+                  <Bar dataKey="declaredValue" name="Declared package value" fill={chartTheme.colors[0]} radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
+                No order values in this date range.
+              </div>
+            )}
           </div>
 
-          <div className="surface-glass col-span-12 rounded-xl border border-border border-t-[3px] border-t-violet p-4 md:p-5 xl:col-span-6">
+          <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-violet p-4 md:p-5 xl:col-span-6">
             <div className="mb-6 flex items-center gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-violet/10 text-violet-foreground"><Clock3 className="h-5 w-5" /></span>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Assignment Status</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Distribution across active delivery work.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Distribution across all assignment outcomes.</p>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={deliveryTimeData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percentage }) => `${name} ${Math.round(percentage)}%`}
-                  outerRadius={80}
-                  fill={chartTheme.colors[0]}
-                  dataKey="percentage"
-                >
-                  {deliveryTimeData.map((entry, index) => (
-                    <Cell key={`cell-${entry.range}`} fill={chartTheme.colors[index % chartTheme.colors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {deliveryTimeData.length ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={deliveryTimeData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${Math.round((percent ?? 0) * 100)}%`}
+                    nameKey="range"
+                    outerRadius={80}
+                    fill={chartTheme.colors[0]}
+                    dataKey="percentage"
+                  >
+                    {deliveryTimeData.map((entry, index) => (
+                      <Cell key={`cell-${entry.range}`} fill={chartTheme.colors[index % chartTheme.colors.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-[300px] flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
+                <p>No assignments are visible yet.</p>
+                {canManageOperations && (
+                  <p>
+                    Add a driver, then assign a dispatch-ready order from{' '}
+                    <Link href="/orders" className="font-semibold text-primary underline">Orders</Link>.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="order-7 grid grid-cols-12 gap-6">
-          <div className="surface-glass col-span-12 rounded-xl border border-border border-t-[3px] border-t-success p-4 md:p-5 xl:col-span-6">
+        <div className="order-7 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6">
+          <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-success p-4 md:p-5 xl:col-span-6">
             <div className="mb-6 flex items-center gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success-foreground"><Truck className="h-5 w-5" /></span>
               <div>
@@ -446,20 +559,30 @@ export default function DashboardPage() {
                 <p className="mt-1 text-sm text-muted-foreground">Deliveries and customer ratings</p>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={driverPerformanceData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-                <XAxis dataKey="name" stroke={chartTheme.label} />
-                <YAxis stroke={chartTheme.label} />
-                <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
-                <Legend />
-                <Line type="monotone" dataKey="deliveries" stroke={chartTheme.colors[0]} strokeWidth={2} dot={{ fill: chartTheme.colors[0], r: 4 }} />
-                <Line type="monotone" dataKey="rating" stroke={chartTheme.colors[2]} strokeWidth={2} dot={{ fill: chartTheme.colors[2], r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            {driverPerformanceData.length ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={driverPerformanceData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
+                  <XAxis dataKey="name" stroke={chartTheme.label} />
+                  <YAxis yAxisId="deliveries" stroke={chartTheme.label} allowDecimals={false} />
+                  <YAxis yAxisId="rating" orientation="right" stroke={chartTheme.label} domain={[0, 5]} />
+                  <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
+                  <Legend />
+                  <Line yAxisId="deliveries" type="monotone" dataKey="deliveries" stroke={chartTheme.colors[0]} strokeWidth={2} dot={{ fill: chartTheme.colors[0], r: 4 }} />
+                  <Line yAxisId="rating" type="monotone" dataKey="rating" stroke={chartTheme.colors[2]} strokeWidth={2} dot={{ fill: chartTheme.colors[2], r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex h-[300px] flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
+                <p>No driver records are visible yet.</p>
+                {canManageOperations && (
+                  <Link href="/drivers" className="font-semibold text-primary underline">Add the first driver</Link>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="surface-glass col-span-12 rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4 md:p-5 xl:col-span-6">
+          <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4 md:p-5 xl:col-span-6">
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-500"><Route className="h-5 w-5" /></span>
@@ -471,7 +594,11 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-3">
-              {dispatchBoard.map((job) => (
+              {dispatchBoard.length === 0 ? (
+                <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+                  No assignments yet. Assign a ready order to a driver to start dispatch tracking.
+                </p>
+              ) : dispatchBoard.map((job) => (
                 <div key={job.id} className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">
                   <div>
                     <div className="flex items-center gap-2">
@@ -490,12 +617,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="order-4 grid grid-cols-12 gap-6">
-          <section className="col-span-12 min-w-0 space-y-4 xl:col-span-8">
+        <div className="order-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6">
+          <section className="min-w-0 space-y-4 xl:col-span-8">
             <OrdersTable orders={filteredOrders.slice(0, 5)} title="Recent orders" subtitle="Latest activity" />
           </section>
 
-          <section className="col-span-12 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:col-span-4 xl:grid-cols-1">
+          <section className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:col-span-4 xl:grid-cols-1">
             <div className="surface-glass h-full rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4">
               <h3 className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground"><span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-500"><PackageCheck className="h-5 w-5" /></span>Order Stats</h3>
               <div className="mt-6 space-y-3">

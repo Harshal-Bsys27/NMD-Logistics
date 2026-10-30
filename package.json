@@ -18,7 +18,7 @@
     "db:lint": "supabase db lint --local",
     "db:push": "supabase db push --linked",
     "db:pull": "supabase db pull",
-    "db:status": "supabase migration list"
+    "db:status": "supabase migration list --linked"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",

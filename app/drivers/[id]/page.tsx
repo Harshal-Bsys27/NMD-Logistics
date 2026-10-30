@@ -82,7 +82,7 @@ export default function DriverDetailPage() {
             <div className="flex items-center gap-4">
               <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-primary/10 text-4xl">{vehicleEmojis[driver.vehicle_type]}</div>
               <div>
-                <h1 className="text-3xl font-semibold text-foreground">{driver.employee_id}</h1>
+                <h1 className="text-3xl font-semibold text-foreground">{driver.full_name || driver.employee_id}</h1>
                 <p className="mt-1 text-muted-foreground capitalize">{driver.vehicle_type} Driver</p>
               </div>
             </div>

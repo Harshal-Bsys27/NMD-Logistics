@@ -16,8 +16,10 @@ import {
   Settings,
   HelpCircle,
   Route,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/utils/helpers';
+import { useAuth } from '@/hooks';
 
 const navigationGroups = [
   {
@@ -29,6 +31,7 @@ const navigationGroups = [
     items: [
       { href: '/orders', label: 'Orders', icon: Package, badge: '4' },
       { href: '/drivers', label: 'Drivers', icon: Truck, badge: '3' },
+      { href: '/users', label: 'Invites & staff', icon: Users, adminOnly: true },
       { href: '/assignments', label: 'Assignments', icon: Zap, badge: '2' },
       { href: '/dispatch', label: 'Dispatch', icon: Route },
       { href: '/reports', label: 'Reports', icon: FileText },
@@ -39,7 +42,7 @@ const navigationGroups = [
     label: 'System',
     items: [
       { href: '/status', label: 'Status', icon: Activity },
-      { href: '/api-docs', label: 'API Docs', icon: FileCode2 },
+      { href: '/api-docs', label: 'API Docs', icon: FileCode2, adminOnly: true },
     ],
   },
 ];
@@ -55,6 +58,21 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed }: SidebarProps) {
   const pathname = usePathname();
+  const { user, loading } = useAuth();
+  const displayName = user?.full_name || user?.email?.split('@')[0] || 'Account';
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('') || 'N';
+  const roleLabel = user?.role === 'delivery_personnel'
+    ? 'Delivery personnel'
+    : user?.role === 'supervisor'
+      ? 'Supervisor'
+      : user?.role === 'admin'
+        ? 'Admin'
+        : 'Workspace user';
 
   return (
     <aside className={cn(
@@ -62,11 +80,18 @@ export default function Sidebar({ collapsed }: SidebarProps) {
       collapsed ? 'w-[76px]' : 'w-[264px]'
     )}>
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-5" aria-label="Main navigation">
-        {navigationGroups.map((group) => (
+        {navigationGroups.map((group) => {
+          const visibleItems = group.items
+            .filter(() => !loading && !!user)
+            .filter((item) => user?.role !== 'delivery_personnel' || item.href === '/assignments')
+            .filter((item) => !('adminOnly' in item) || !item.adminOnly || user?.role === 'admin');
+          if (!visibleItems.length) return null;
+
+          return (
           <div key={group.label}>
             {!collapsed && <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-on-brand/75">{group.label}</p>}
             <div className="space-y-1">
-              {group.items.map((item) => {
+              {visibleItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -92,12 +117,13 @@ export default function Sidebar({ collapsed }: SidebarProps) {
               })}
             </div>
           </div>
-        ))}
+          );
+        })}
       </nav>
 
       <div className="mt-auto border-t border-on-brand/10 p-3 pb-14">
         <nav className="space-y-1" aria-label="Workspace settings">
-          {bottomItems.map((item) => {
+          {bottomItems.filter((item) => !loading && !!user && (user.role !== 'delivery_personnel' || item.href === '/help')).map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
 
@@ -128,12 +154,12 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         )}>
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-warning text-xs font-semibold text-accent-foreground">
-              HB
+              {loading ? '…' : initials}
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-on-brand">Harshal</p>
-                <p className="text-[11px] text-on-brand/75">Admin</p>
+                <p className="truncate text-sm font-semibold text-on-brand">{loading ? 'Loading account' : displayName}</p>
+                <p className="text-[11px] capitalize text-on-brand/75">{roleLabel}</p>
               </div>
             )}
           </div>
