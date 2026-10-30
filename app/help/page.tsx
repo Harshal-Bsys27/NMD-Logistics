@@ -54,7 +54,7 @@ const helpSections = [
     title: 'Settings',
     description: 'Configure workspace and preferences',
     topics: [
-      { title: 'Profile Settings', content: 'Update your name, email, and timezone. These settings affect notifications and reports.' },
+      { title: 'Profile Settings', content: 'Upload or change your profile photo from Profile & settings. Photos must be JPG, PNG, or WebP and no larger than 5 MB. Contact an administrator to change your name or contact details.' },
       { title: 'Notifications', content: 'View live order and assignment updates in the notification bell. Enable desktop alerts from the bell menu; notification history is saved in this browser.' },
       { title: 'Security', content: 'Change password, enable two-factor authentication (coming soon), and manage API keys.' },
       { title: 'Integrations', content: 'Connect with payment providers and courier APIs. Configure webhooks for real-time updates.' },

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown, CircleUserRound, FileCode2, HelpCircle, LogOut, Settings, UserRound } from 'lucide-react';
@@ -61,8 +62,10 @@ export default function ProfileMenu() {
         title="Profile menu"
         className="flex h-11 items-center gap-2 rounded-lg px-1.5 py-1 text-left text-on-brand transition-colors duration-150 hover:bg-on-brand/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-2"
       >
-        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-warning text-xs font-bold text-accent-foreground">
-          {loading ? '…' : initials}
+        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-accent to-warning text-xs font-bold text-accent-foreground">
+          {!loading && user?.avatar_url ? (
+            <Image src={user.avatar_url} alt="" width={44} height={44} unoptimized className="h-full w-full object-cover" />
+          ) : loading ? '…' : initials}
           <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-brand-900 bg-success" />
         </div>
         <div className="hidden min-w-0 lg:block">
@@ -75,8 +78,10 @@ export default function ProfileMenu() {
       {open && (
         <div className="absolute right-0 top-[calc(100%+8px)] z-50 w-[min(280px,calc(100vw-24px))] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl">
           <div className="flex items-center gap-3 border-b border-border p-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-primary to-cyan-500 text-sm font-semibold text-primary-foreground">
-              {initials}
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary to-cyan-500 text-sm font-semibold text-primary-foreground">
+              {user?.avatar_url ? (
+                <Image src={user.avatar_url} alt="" width={44} height={44} unoptimized className="h-full w-full object-cover" />
+              ) : initials}
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-foreground">{displayName}</p>

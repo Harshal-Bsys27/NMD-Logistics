@@ -1,10 +1,12 @@
 'use client'
 
-import { FormEvent, useEffect, useState } from 'react'
+import Image from 'next/image'
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Check, Bell, Shield, LogOut, Mail, Phone, Truck, UserRound } from 'lucide-react'
+import { Check, Bell, Camera, Loader2, Shield, LogOut, Mail, Phone, Truck, UserRound } from 'lucide-react'
 import { useAuth } from '@/hooks'
 import { useOperationsData } from '@/hooks/useOperationsData'
+import { supabase, supabaseUrl } from '@/lib/supabase/client'
 
 const preferenceDefaults = {
   timezone: 'Asia/Kolkata',
@@ -19,8 +21,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function getOwnedAvatarPath(avatarUrl: string | undefined, userId: string): string | null {
+  if (!avatarUrl) return null;
+  try {
+    const avatar = new URL(avatarUrl);
+    const project = new URL(supabaseUrl);
+    const prefix = '/storage/v1/object/public/profile-avatars/';
+    if (avatar.origin !== project.origin || !avatar.pathname.startsWith(prefix)) return null;
+    const path = decodeURIComponent(avatar.pathname.slice(prefix.length));
+    return path.startsWith(`${userId}/`) ? path : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function SettingsPage() {
-  const { user, loading } = useAuth()
+  const { user, loading, updateAvatar } = useAuth()
   const { drivers, isLoading: isLoadingOperations, error: operationsError } = useOperationsData()
   const driver = user?.role === 'delivery_personnel'
     ? drivers.find((item) => item.user_id === user.id)
@@ -28,6 +44,69 @@ export default function SettingsPage() {
   const [preferences, setPreferences] = useState(preferenceDefaults)
   const [saved, setSaved] = useState(false)
   const [preferenceError, setPreferenceError] = useState('')
+  const [avatarError, setAvatarError] = useState('')
+  const [avatarSuccess, setAvatarSuccess] = useState('')
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+
+  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || !user) return
+
+    setAvatarError('')
+    setAvatarSuccess('')
+    const extensionByType: Record<string, string> = {
+      'image/jpeg': 'jpg',
+      'image/png': 'png',
+      'image/webp': 'webp',
+    }
+    const extension = extensionByType[file.type]
+    if (!extension) {
+      setAvatarError('Choose a JPG, PNG, or WebP image.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarError('The image must be 5 MB or smaller.')
+      return
+    }
+
+    setIsUploadingAvatar(true)
+    const previousAvatarPath = getOwnedAvatarPath(user.avatar_url, user.id)
+    const objectPath = `${user.id}/${crypto.randomUUID()}.${extension}`
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('profile-avatars')
+        .upload(objectPath, file, {
+          cacheControl: '3600',
+          contentType: file.type,
+          upsert: false,
+        })
+      if (uploadError) throw new Error(`Could not upload photo: ${uploadError.message}`)
+
+      const avatarUrl = `${supabase.storage.from('profile-avatars').getPublicUrl(objectPath).data.publicUrl}?v=${Date.now()}`
+      try {
+        await updateAvatar(avatarUrl)
+      } catch (profileError) {
+        const { error: cleanupError } = await supabase.storage.from('profile-avatars').remove([objectPath])
+        if (cleanupError) console.error('Unable to remove the uploaded photo after profile update failed:', cleanupError)
+        throw profileError
+      }
+
+      if (previousAvatarPath && previousAvatarPath !== objectPath) {
+        const { error: cleanupError } = await supabase.storage
+          .from('profile-avatars')
+          .remove([previousAvatarPath])
+        if (cleanupError) console.warn('Profile photo updated, but the previous image could not be removed:', cleanupError)
+      }
+      setAvatarSuccess('Your profile photo has been updated.')
+    } catch (uploadError) {
+      console.error('Unable to update profile photo:', uploadError)
+      setAvatarError(uploadError instanceof Error ? uploadError.message : 'Unable to update your profile photo.')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
 
   useEffect(() => {
     try {
@@ -89,6 +168,45 @@ export default function SettingsPage() {
             <p role="alert" className="text-sm text-danger-foreground">Your profile could not be loaded. Sign in again to view your account information.</p>
           ) : (
             <>
+              <div className="mb-6 flex flex-col gap-4 rounded-lg border border-border bg-muted/20 p-4 sm:flex-row sm:items-center">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary to-cyan-500 text-xl font-semibold text-primary-foreground">
+                  {user.avatar_url ? (
+                    <Image
+                      src={user.avatar_url}
+                      alt={`${user.full_name || 'Your'} profile photo`}
+                      width={80}
+                      height={80}
+                      unoptimized
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    user.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || <UserRound className="h-8 w-8" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-semibold text-foreground">Profile photo</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">Upload a JPG, PNG, or WebP image up to 5 MB.</p>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => void handleAvatarChange(event)}
+                    className="sr-only"
+                    aria-label="Choose profile photo"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                    className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
+                  >
+                    {isUploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                    {isUploadingAvatar ? 'Uploading…' : user.avatar_url ? 'Change photo' : 'Upload photo'}
+                  </button>
+                </div>
+              </div>
+              {avatarError && <p role="alert" className="mb-4 rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger-foreground">{avatarError}</p>}
+              {avatarSuccess && <p role="status" className="mb-4 rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success-foreground">{avatarSuccess}</p>}
               <dl className="grid gap-3 sm:grid-cols-2">
                 {[
                   { label: 'Full name', value: user.full_name, icon: UserRound },

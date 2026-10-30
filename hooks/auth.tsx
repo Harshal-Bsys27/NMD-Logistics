@@ -8,6 +8,7 @@ interface AuthContextValue {
   user: User | null;
   loading: boolean;
   error: Error | null;
+  updateAvatar: (avatarUrl: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -16,6 +17,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  const updateAvatar = async (avatarUrl: string) => {
+    if (!user) throw new Error('You must be signed in to update your profile photo.');
+    const { data, error: updateError } = await supabase
+      .from('users')
+      .update({ avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+      .eq('id', user.id)
+      .select('id, email, full_name, phone, role, status, avatar_url, department, created_at, updated_at, created_by')
+      .single();
+
+    if (updateError) throw new Error(updateError.message);
+    setUser(data as User);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -115,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, error }}>
+    <AuthContext.Provider value={{ user, loading, error, updateAvatar }}>
       {children}
     </AuthContext.Provider>
   );
