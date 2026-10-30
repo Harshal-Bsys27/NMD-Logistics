@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ArrowRight, BellRing, CheckCircle2, Clock3, MapPin, Route, Truck } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BellRing, CheckCircle2, Clock3, Route } from 'lucide-react';
 import { assignmentService } from '@/services/database';
 import { useOperationsData } from '@/hooks/useOperationsData';
 import { cn } from '@/utils/helpers';
@@ -192,7 +192,7 @@ export default function DispatchPage() {
               </div>
             </div>
 
-            <div className="min-w-0 space-y-3">
+            <div className="w-full min-w-0 max-w-full space-y-3">
               {isLoading ? (
                 <div className="surface-glass rounded-xl border border-border p-8 text-center text-muted-foreground" aria-live="polite">
                   Loading dispatch data…
@@ -202,11 +202,11 @@ export default function DispatchPage() {
                   No assignments match this view.
                 </div>
               ) : visibleAssignments.map((assignment) => (
-                <div key={assignment.id} className="surface-glass min-w-0 overflow-hidden rounded-xl border border-border p-3 sm:p-4">
+                <div key={assignment.id} className="surface-glass w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border p-3 sm:p-4">
                   <div className="flex min-w-0 flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-                        <p className="min-w-0 max-w-full break-words text-base font-semibold text-foreground sm:text-lg">{assignment.orderNumber}</p>
+                        <p className="min-w-0 max-w-full break-all text-base font-semibold text-foreground sm:break-words sm:text-lg">{assignment.orderNumber}</p>
                         <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]', assignment.delay > 0 ? 'bg-danger/10 text-danger-foreground' : 'bg-muted text-muted-foreground')}>
                           {assignment.delay > 0
                             ? 'Delayed'
@@ -218,13 +218,22 @@ export default function DispatchPage() {
                         </span>
                       </div>
 
-                      <div className="mt-3 grid min-w-0 grid-cols-2 gap-2 text-xs text-muted-foreground sm:flex sm:flex-wrap sm:gap-4 sm:text-sm">
-                        <span className="flex min-w-0 items-start gap-1.5 rounded-md bg-muted/40 p-2 sm:bg-transparent sm:p-0"><MapPin className="mt-0.5 h-4 w-4 shrink-0" /><span className="min-w-0 break-words">{assignment.route}</span></span>
-                        <span className="flex min-w-0 items-start gap-1.5 rounded-md bg-muted/40 p-2 sm:bg-transparent sm:p-0"><Truck className="mt-0.5 h-4 w-4 shrink-0" /><span className="min-w-0 break-words">{assignment.driverName}</span></span>
-                        <span className="col-span-2 inline-flex min-w-0 items-center gap-1.5 rounded-md bg-muted/40 p-2 sm:col-span-1 sm:bg-transparent sm:p-0"><Clock3 className="h-4 w-4 shrink-0" /> <span className="min-w-0 break-words">ETA {assignment.eta}</span></span>
+                      <div className="mt-3 grid min-w-0 grid-cols-2 gap-2">
+                        <div className="min-w-0 overflow-hidden rounded-md bg-muted/40 p-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Route</p>
+                          <p className="mt-1 line-clamp-2 break-all text-xs text-foreground" title={assignment.route}>{assignment.route}</p>
+                        </div>
+                        <div className="min-w-0 overflow-hidden rounded-md bg-muted/40 p-2">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Driver</p>
+                          <p className="mt-1 line-clamp-2 break-all text-xs text-foreground" title={assignment.driverName}>{assignment.driverName}</p>
+                        </div>
+                        <div className="col-span-2 flex min-w-0 items-center gap-2 rounded-md bg-muted/40 px-2 py-1.5">
+                          <Clock3 className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <p className="min-w-0 truncate text-xs text-foreground" title={`ETA ${assignment.eta}`}>ETA <span className="font-medium">{assignment.eta}</span></p>
+                        </div>
                       </div>
 
-                      <p className="mt-2 min-w-0 break-words text-xs text-muted-foreground sm:mt-3 sm:text-sm">Customer: {assignment.customer}</p>
+                      <p className="mt-2 min-w-0 truncate text-xs text-muted-foreground sm:mt-3 sm:text-sm" title={`Customer: ${assignment.customer}`}>Customer: <span className="font-medium text-foreground">{assignment.customer}</span></p>
                     </div>
 
                     <div className="flex min-w-0 gap-2 lg:flex-wrap lg:justify-end">
