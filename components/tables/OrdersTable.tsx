@@ -95,10 +95,10 @@ export default function OrdersTable({ orders, title, subtitle, onEdit, onDelete,
   );
 
   return (
-    <div className="surface-glass w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border p-4 md:p-5">
+    <div className="surface-glass w-full min-w-0 max-w-full overflow-hidden rounded-xl border border-border p-3 sm:p-4 md:p-5">
       {(title || subtitle) && (
         <div className="mb-5 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-500"><PackageCheck className="h-5 w-5" /></span>
             <div>
               {subtitle && <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">{subtitle}</p>}
@@ -109,7 +109,7 @@ export default function OrdersTable({ orders, title, subtitle, onEdit, onDelete,
       )}
 
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
+        <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
@@ -122,7 +122,7 @@ export default function OrdersTable({ orders, title, subtitle, onEdit, onDelete,
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="h-11 flex items-center gap-2 rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [color-scheme:light] dark:[color-scheme:dark]"
+          className="h-11 w-full rounded-xl border border-input bg-background px-4 py-2.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [color-scheme:light] dark:[color-scheme:dark] sm:w-auto"
         >
           <option value="all">All statuses</option>
           <option value="draft">Draft</option>
@@ -137,8 +137,14 @@ export default function OrdersTable({ orders, title, subtitle, onEdit, onDelete,
         </select>
       </div>
 
-      <div className="w-full min-w-0 max-w-full max-h-[min(70vh,720px)] overflow-auto overscroll-x-contain rounded-lg border border-border/80">
-        <table className="w-full min-w-full table-fixed border-separate border-spacing-0 lg:min-w-[900px]">
+      <p className="mb-2 text-xs text-muted-foreground sm:hidden">Swipe the table sideways to view every order detail.</p>
+      <div
+        role="region"
+        aria-label="Scrollable orders table"
+        tabIndex={0}
+        className="w-full min-w-0 max-w-full max-h-[min(70vh,720px)] overflow-auto overscroll-x-contain rounded-lg border border-border/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <table className="w-full min-w-[980px] table-fixed border-separate border-spacing-0 lg:min-w-[1100px]">
           <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">
             <tr className="border-b border-border">
               <th className="px-4 py-3 text-left" style={{ width: '110px' }}>
@@ -147,19 +153,19 @@ export default function OrdersTable({ orders, title, subtitle, onEdit, onDelete,
               <th className="px-4 py-3 text-left">
                 <TableHeader label="Client" sortable sortKey="client_name" />
               </th>
-              <th className="hidden px-4 py-3 text-left sm:table-cell" style={{ width: '130px' }}>
+              <th className="px-4 py-3 text-left" style={{ width: '130px' }}>
                 <TableHeader label="Status" sortable sortKey="status" />
               </th>
-              <th className="hidden px-4 py-3 text-right md:table-cell" style={{ width: '110px' }}>
+              <th className="px-4 py-3 text-right" style={{ width: '110px' }}>
                 <TableHeader label="Value" />
               </th>
-              <th className="hidden px-4 py-3 text-left lg:table-cell">
+              <th className="px-4 py-3 text-left">
                 <TableHeader label="Pickup" />
               </th>
-              <th className="hidden px-4 py-3 text-left lg:table-cell">
+              <th className="px-4 py-3 text-left">
                 <TableHeader label="Delivery" />
               </th>
-              <th className="px-4 py-3 text-right" style={{ width: '80px' }}>
+              <th className="px-4 py-3 text-right" style={{ width: '150px' }}>
                 <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Actions</span>
               </th>
             </tr>
@@ -172,27 +178,26 @@ export default function OrdersTable({ orders, title, subtitle, onEdit, onDelete,
                   <tr key={order.id} className="transition hover:bg-muted/50">
                     <td className="px-4 py-4 align-middle">
                       <div className="truncate text-sm font-semibold text-foreground" title={order.order_number}>{order.order_number}</div>
-                      <div className="truncate text-xs text-muted-foreground sm:hidden" title={order.client_name}>{order.client_name}</div>
                     </td>
-                    <td className="hidden px-4 py-4 align-middle sm:table-cell">
+                    <td className="px-4 py-4 align-middle">
                       <div className="truncate text-sm text-foreground" title={order.client_name}>{order.client_name}</div>
                       <div className="truncate text-xs text-muted-foreground" title={order.client_phone}>{order.client_phone}</div>
                     </td>
-                    <td className="hidden px-4 py-4 align-middle sm:table-cell">
+                    <td className="px-4 py-4 align-middle">
                       <span className={cn('inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold', statusColor.bg, statusColor.text)}>
                         <span className="h-1.5 w-1.5 rounded-full bg-current" />
                         {statusLabels[order.status] ?? order.status.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className="hidden px-4 py-4 text-right align-middle md:table-cell">
+                    <td className="px-4 py-4 text-right align-middle">
                       <div className="truncate text-right text-sm font-semibold tabular-nums text-foreground" title={`₹${(order.package_value ?? 0).toLocaleString('en-IN')}`}>
                         ₹{(order.package_value ?? 0).toLocaleString('en-IN')}
                       </div>
                     </td>
-                    <td className="hidden px-4 py-4 align-middle lg:table-cell">
+                    <td className="px-4 py-4 align-middle">
                       <div className="truncate text-sm text-foreground" title={order.pickup_location}>{order.pickup_location}</div>
                     </td>
-                    <td className="hidden px-4 py-4 align-middle lg:table-cell">
+                    <td className="px-4 py-4 align-middle">
                       <div className="truncate text-sm text-foreground" title={order.delivery_location}>{order.delivery_location}</div>
                     </td>
                     <td className="px-4 py-4 align-middle">
@@ -240,7 +245,7 @@ export default function OrdersTable({ orders, title, subtitle, onEdit, onDelete,
         </table>
       </div>
 
-      <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-sm text-muted-foreground">
+      <div className="mt-4 flex flex-col gap-1 border-t border-border pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <span>Showing {filteredAndSortedOrders.length} of {orders.length} orders</span>
         {filteredAndSortedOrders.length > 0 && <span className="text-xs">Click column headers to sort</span>}
       </div>
