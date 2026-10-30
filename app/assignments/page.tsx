@@ -288,8 +288,8 @@ export default function AssignmentsPage() {
                       </div>
 
                       {/* Order & Driver Details */}
-                      <div className="mb-3 grid min-w-0 gap-3 sm:grid-cols-2">
-                        <div className="min-w-0 rounded-md bg-muted/50 p-3">
+                      <div className="mb-3 grid min-w-0 grid-cols-2 gap-2 sm:gap-3">
+                        <div className="min-w-0 rounded-md bg-muted/50 p-2.5 sm:p-3">
                           <p className="text-xs uppercase tracking-wider text-muted-foreground">{isDriver ? 'Delivery details' : 'Order details'}</p>
                           <p className="mt-1 break-words text-sm text-foreground">{order?.package_description || 'Package details unavailable'}</p>
                           {isDriver ? (
@@ -317,7 +317,7 @@ export default function AssignmentsPage() {
                           )}
                         </div>
 
-                        <div className="min-w-0 rounded-md bg-muted/50 p-3">
+                        <div className="min-w-0 rounded-md bg-muted/50 p-2.5 sm:p-3">
                           <p className="text-xs uppercase tracking-wider text-muted-foreground">{isDriver ? 'Customer' : 'Driver'}</p>
                           <p className="mt-1 break-words text-sm text-foreground">
                             {isDriver ? order?.client_name || 'Customer details unavailable' : driver?.full_name || driver?.employee_id}
@@ -453,31 +453,37 @@ export default function AssignmentsPage() {
 
         {/* Summary Stats */}
         {!isDriver && (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="surface-glass h-full rounded-lg border border-border p-4">
+          <div
+            role="region"
+            aria-label="Assignment summary statistics"
+            tabIndex={0}
+            className="mt-8 flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible lg:grid-cols-4"
+          >
+            <div className="surface-glass h-full w-[72vw] max-w-[220px] shrink-0 snap-start rounded-lg border border-border p-3 sm:w-auto sm:max-w-none sm:p-4">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Total Assignments</p>
-              <p className="mt-3 text-3xl font-bold tabular-nums text-foreground">{assignments.length}</p>
+              <p className="mt-2 text-2xl font-bold tabular-nums text-foreground sm:mt-3 sm:text-3xl">{assignments.length}</p>
             </div>
-            <div className="surface-glass h-full rounded-lg border border-border p-4">
+            <div className="surface-glass h-full w-[72vw] max-w-[220px] shrink-0 snap-start rounded-lg border border-border p-3 sm:w-auto sm:max-w-none sm:p-4">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">In Progress</p>
-              <p className="mt-3 text-3xl font-bold tabular-nums text-info-foreground">
+              <p className="mt-2 text-2xl font-bold tabular-nums text-info-foreground sm:mt-3 sm:text-3xl">
                 {assignments.filter((a) => a.status === 'in_progress').length}
               </p>
             </div>
-            <div className="surface-glass h-full rounded-lg border border-border p-4">
+            <div className="surface-glass h-full w-[72vw] max-w-[220px] shrink-0 snap-start rounded-lg border border-border p-3 sm:w-auto sm:max-w-none sm:p-4">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Completed</p>
-              <p className="mt-3 text-3xl font-bold tabular-nums text-success-foreground">
+              <p className="mt-2 text-2xl font-bold tabular-nums text-success-foreground sm:mt-3 sm:text-3xl">
                 {assignments.filter((a) => a.status === 'completed').length}
               </p>
             </div>
-            <div className="surface-glass h-full rounded-lg border border-border p-4">
+            <div className="surface-glass h-full w-[72vw] max-w-[220px] shrink-0 snap-start rounded-lg border border-border p-3 sm:w-auto sm:max-w-none sm:p-4">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Pending</p>
-              <p className="mt-3 text-3xl font-bold tabular-nums text-warning-foreground">
+              <p className="mt-2 text-2xl font-bold tabular-nums text-warning-foreground sm:mt-3 sm:text-3xl">
                 {assignments.filter((a) => a.status === 'pending').length}
               </p>
             </div>
           </div>
         )}
+        {!isDriver && <p className="-mt-4 text-[11px] text-muted-foreground sm:hidden">Swipe sideways to browse assignment totals.</p>}
       </div>
     </div>
   );

@@ -151,25 +151,32 @@ export default function OrdersPage() {
 
 
         {/* Stats Row */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-9">
+        <div
+          role="region"
+          aria-label="Order status summary"
+          tabIndex={0}
+          className="flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid sm:grid-cols-2 sm:gap-4 sm:overflow-visible lg:grid-cols-4 2xl:grid-cols-9"
+        >
           {Object.entries(statusStats).map(([status, count]) => (
             <button
               key={status}
               onClick={() => setFilterStatus(filterStatus === status ? null : status)}
+              aria-pressed={filterStatus === status}
               className={cn(
-                'surface-glass min-h-24 rounded-lg border p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                'surface-glass min-h-20 w-32 shrink-0 snap-start rounded-lg border p-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:min-h-24 sm:w-auto sm:p-4',
                 filterStatus === status
                   ? 'border-primary/50 bg-primary/10'
                   : 'border-border hover:border-ring/50'
               )}
             >
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-                {status.replace('_', ' ')}
+              <p className="truncate text-[11px] font-bold uppercase tracking-[0.12em] text-muted-foreground sm:text-xs sm:tracking-[0.16em]">
+                {status.replace(/_/g, ' ')}
               </p>
-              <p className="mt-2 text-2xl font-bold tabular-nums text-foreground">{count}</p>
+              <p className="mt-1 text-xl font-bold tabular-nums text-foreground sm:mt-2 sm:text-2xl">{count}</p>
             </button>
           ))}
         </div>
+        <p className="-mt-4 text-[11px] text-muted-foreground sm:hidden">Swipe sideways to browse order statuses.</p>
 
         {/* Search & Filter */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

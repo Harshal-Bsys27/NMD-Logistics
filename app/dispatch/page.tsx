@@ -133,7 +133,12 @@ export default function DispatchPage() {
           </div>
         )}
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div
+          role="region"
+          aria-label="Dispatch summary statistics"
+          tabIndex={0}
+          className="flex min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:grid md:grid-cols-2 md:gap-4 md:overflow-visible xl:grid-cols-4"
+        >
           {[
             { label: 'Active routes', value: summary.activeRoutes, icon: Route, tone: 'bg-primary/10 text-primary' },
             { label: 'Queued work', value: summary.queued, icon: Clock3, tone: 'bg-warning/10 text-warning-foreground' },
@@ -142,16 +147,19 @@ export default function DispatchPage() {
           ].map((stat) => {
             const Icon = stat.icon;
             return (
-              <div key={stat.label} className="surface-glass rounded-xl border border-border p-4">
-                <div className={cn('mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg', stat.tone)}>
+              <div key={stat.label} className="surface-glass flex min-h-24 w-[72vw] max-w-[220px] shrink-0 snap-start items-center gap-3 rounded-xl border border-border p-3 md:block md:h-auto md:w-auto md:max-w-none md:p-4">
+                <div className={cn('inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg md:mb-4', stat.tone)}>
                   <Icon className="h-5 w-5" />
                 </div>
-                <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">{stat.label}</p>
-                <p className="mt-3 text-3xl font-bold tabular-nums text-foreground">{stat.value}</p>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">{stat.label}</p>
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-foreground md:mt-3 md:text-3xl">{stat.value}</p>
+                </div>
               </div>
             );
           })}
         </div>
+        <p className="-mt-4 text-[11px] text-muted-foreground md:hidden">Swipe sideways to browse dispatch totals.</p>
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
           <section className="space-y-5">
@@ -160,14 +168,20 @@ export default function DispatchPage() {
                 <h2 className="text-xl font-semibold text-foreground">Live route queue</h2>
                 <p className="mt-1 text-sm text-muted-foreground">Current dispatch operations and exceptions.</p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div
+                role="group"
+                aria-label="Filter dispatch routes"
+                tabIndex={0}
+                className="flex min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-wrap sm:overflow-visible"
+              >
                 {(['all', 'queued', 'on_route', 'delayed'] as DispatchFilter[]).map((option) => (
                   <button
                     key={option}
                     type="button"
                     onClick={() => setFilter(option)}
+                    aria-pressed={filter === option}
                     className={cn(
-                      'rounded-full border px-3 py-1.5 text-xs font-medium uppercase tracking-[0.12em] transition',
+                      'min-h-10 shrink-0 snap-start rounded-full border px-3 text-xs font-medium uppercase tracking-[0.12em] transition',
                       filter === option
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border bg-background text-muted-foreground hover:bg-muted'
@@ -189,8 +203,8 @@ export default function DispatchPage() {
                   No assignments match this view.
                 </div>
               ) : visibleAssignments.map((assignment) => (
-                <div key={assignment.id} className="surface-glass rounded-xl border border-border p-4">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div key={assignment.id} className="surface-glass min-w-0 overflow-hidden rounded-xl border border-border p-3 sm:p-4">
+                  <div className="flex min-w-0 flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="text-lg font-semibold text-foreground">{assignment.orderNumber}</p>
@@ -205,13 +219,13 @@ export default function DispatchPage() {
                         </span>
                       </div>
 
-                      <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4" /> {assignment.route}</span>
-                        <span className="inline-flex items-center gap-2"><Truck className="h-4 w-4" /> {assignment.driverName}</span>
-                        <span className="inline-flex items-center gap-2"><Clock3 className="h-4 w-4" /> ETA {assignment.eta}</span>
+                      <div className="mt-3 grid min-w-0 grid-cols-2 gap-2 text-xs text-muted-foreground sm:flex sm:flex-wrap sm:gap-4 sm:text-sm">
+                        <span className="flex min-w-0 items-start gap-1.5"><MapPin className="mt-0.5 h-4 w-4 shrink-0" /><span className="break-words">{assignment.route}</span></span>
+                        <span className="flex min-w-0 items-start gap-1.5"><Truck className="mt-0.5 h-4 w-4 shrink-0" /><span className="break-words">{assignment.driverName}</span></span>
+                        <span className="col-span-2 inline-flex items-center gap-1.5 sm:col-span-1"><Clock3 className="h-4 w-4 shrink-0" /> ETA {assignment.eta}</span>
                       </div>
 
-                      <p className="mt-3 text-sm text-muted-foreground">Customer: {assignment.customer}</p>
+                      <p className="mt-2 break-words text-xs text-muted-foreground sm:mt-3 sm:text-sm">Customer: {assignment.customer}</p>
                     </div>
 
                     <div className="flex flex-wrap gap-2 lg:justify-end">
@@ -222,7 +236,7 @@ export default function DispatchPage() {
                               type="button"
                               onClick={() => void handleStatusUpdate(assignment.id, 'accepted')}
                               disabled={busyAssignmentId === assignment.id}
-                              className="rounded-md bg-primary px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary-foreground"
+                              className="min-h-11 flex-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary-foreground sm:flex-none"
                             >
                               Accept
                             </button>
@@ -232,7 +246,7 @@ export default function DispatchPage() {
                               type="button"
                               onClick={() => void handleStatusUpdate(assignment.id, 'in_progress')}
                               disabled={busyAssignmentId === assignment.id}
-                              className="rounded-lg bg-info px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-brand-950 transition-colors hover:bg-info/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              className="min-h-11 flex-1 rounded-lg bg-info px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-brand-950 transition-colors hover:bg-info/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none"
                             >
                               Start
                             </button>
@@ -242,7 +256,7 @@ export default function DispatchPage() {
                               type="button"
                               onClick={() => void handleStatusUpdate(assignment.id, 'completed')}
                               disabled={busyAssignmentId === assignment.id}
-                              className="rounded-lg bg-success px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-brand-950 transition-colors hover:bg-success/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              className="min-h-11 flex-1 rounded-lg bg-success px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-brand-950 transition-colors hover:bg-success/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none"
                             >
                               Complete
                             </button>
@@ -250,7 +264,7 @@ export default function DispatchPage() {
                         </>
                       )}
 
-                      <Link href={`/assignments/${assignment.id}`} className="inline-flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground transition hover:bg-muted">
+                      <Link href={`/assignments/${assignment.id}`} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground transition hover:bg-muted sm:flex-none">
                         Details <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
                     </div>
@@ -263,14 +277,20 @@ export default function DispatchPage() {
           <aside className="space-y-5">
             <div className="surface-glass rounded-xl border border-border p-4">
               <h3 className="text-lg font-semibold text-foreground">Priority alerts</h3>
-              <div className="mt-4 space-y-3">
+              <div
+                role="region"
+                aria-label="Dispatch priority alerts"
+                tabIndex={0}
+                className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-col sm:overflow-visible"
+              >
                 {alerts.map((alert) => (
-                  <div key={alert.title} className={cn('rounded-md border border-l-4 bg-muted/30 p-3', alert.accent)}>
+                  <div key={alert.title} className={cn('w-[min(78vw,280px)] shrink-0 snap-start rounded-md border border-l-4 bg-muted/30 p-3 sm:w-auto sm:shrink', alert.accent)}>
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-sm font-medium text-foreground">{alert.title}</p>
                         <p className="mt-1 text-xs text-muted-foreground">{alert.count} {alert.count === 1 ? 'item' : 'items'} in queue</p>
                       </div>
+                      <p className="mt-2 text-[11px] text-muted-foreground sm:hidden">Swipe sideways to browse alerts.</p>
                       <span className={cn('inline-flex min-h-6 items-center rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]', alert.badge)}>
                         {alert.level}
                       </span>
