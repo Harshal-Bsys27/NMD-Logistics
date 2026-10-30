@@ -6,7 +6,7 @@ import { assignmentService } from '@/services/database';
 import { useOperationsData } from '@/hooks/useOperationsData';
 import { useAuth } from '@/hooks';
 import { formatDate } from '@/utils/helpers';
-import { Clock, AlertCircle, CheckCircle2, MapPin, Phone, RefreshCw, Truck, UserRound } from 'lucide-react';
+import { Clock, AlertCircle, CheckCircle2, Download, MapPin, Phone, RefreshCw, Truck, UserRound } from 'lucide-react';
 
 import type { AssignmentStatus } from '@/types';
 
@@ -71,6 +71,57 @@ export default function AssignmentsPage() {
   const completedDeliveryCount = driverProfile
     ? Math.max(driverProfile.total_deliveries_completed, statusCounts.completed)
     : 0;
+
+  const exportAssignments = () => {
+    const escapeCell = (value: string | number | undefined) => {
+      const text = String(value ?? '');
+      const safeText = /^[\t\r ]*[=+\-@]/.test(text) ? `'${text}` : text;
+      return `"${safeText.replace(/"/g, '""')}"`;
+    };
+    const headers = [
+      'Order number',
+      'Customer',
+      'Customer phone',
+      'Driver',
+      'Employee ID',
+      'Status',
+      'Assigned at',
+      'Accepted at',
+      'Started at',
+      'Completed at',
+      'Estimated duration (minutes)',
+      'Actual duration (minutes)',
+      'Notes',
+    ];
+    const rows = filteredAssignments.map((assignment) => {
+      const order = getOrderInfo(assignment.order_id);
+      const driver = getDriverInfo(assignment.personnel_id);
+      return [
+        order?.order_number || assignment.order_id,
+        order?.client_name,
+        order?.client_phone,
+        driver?.full_name || driver?.employee_id,
+        driver?.employee_id,
+        assignment.status.replace(/_/g, ' '),
+        assignment.assigned_at ? formatDate(assignment.assigned_at, 'short') : '',
+        assignment.accepted_at ? formatDate(assignment.accepted_at, 'short') : '',
+        assignment.started_at ? formatDate(assignment.started_at, 'short') : '',
+        assignment.completed_at ? formatDate(assignment.completed_at, 'short') : '',
+        assignment.estimated_duration_minutes,
+        assignment.actual_duration_minutes,
+        assignment.notes,
+      ].map((value) => escapeCell(value));
+    });
+    const csv = `\uFEFF${[headers.map(escapeCell).join(','), ...rows.map((row) => row.join(','))].join('\r\n')}`;
+    const downloadUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `nmd-assignments-${selectedStatus}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -187,9 +238,21 @@ export default function AssignmentsPage() {
 
         {/* Status Filter Buttons */}
         <section aria-label="Assignment status filters" className="surface-glass min-w-0 overflow-hidden rounded-xl border border-border p-3 sm:p-4">
-          <div className="mb-2 flex items-center justify-between gap-3 sm:mb-3">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 sm:mb-3">
             <h2 className="text-sm font-semibold text-foreground">Filter assignments</h2>
-            <span className="shrink-0 text-xs text-muted-foreground">{filteredAssignments.length} shown</span>
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 text-xs text-muted-foreground">{filteredAssignments.length} shown</span>
+              <button
+                type="button"
+                onClick={exportAssignments}
+                disabled={isLoading || filteredAssignments.length === 0}
+                aria-label={`Export ${filteredAssignments.length} filtered assignments as CSV`}
+                className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export CSV</span>
+              </button>
+            </div>
           </div>
           <div
             role="group"

@@ -7,7 +7,7 @@ import type { OrderStatus } from '@/types';
 import { assignmentService, orderService } from '@/services/database';
 import { useOperationsData } from '@/hooks/useOperationsData';
 import { cn, formatDate, toTitleCase } from '@/utils/helpers';
-import { AlertCircle, ChevronRight, Package, Search, Plus, ArrowRight } from 'lucide-react';
+import { AlertCircle, ChevronRight, Download, Package, Search, Plus, ArrowRight } from 'lucide-react';
 
 const statusColors: Record<string, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -66,6 +66,59 @@ export default function OrdersPage() {
 
   const advanceStatus = (currentStatus: OrderStatus): OrderStatus | null => {
     return currentStatus === 'draft' ? 'pending' : null;
+  };
+
+  const exportOrders = () => {
+    const escapeCell = (value: string | number | undefined) => {
+      const text = String(value ?? '');
+      const safeText = /^[\t\r ]*[=+\-@]/.test(text) ? `'${text}` : text;
+      return `"${safeText.replace(/"/g, '""')}"`;
+    };
+    const headers = [
+      'Order number',
+      'Customer',
+      'Phone',
+      'Email',
+      'Status',
+      'Priority',
+      'Pickup location',
+      'Delivery location',
+      'Package description',
+      'Package weight',
+      'Package dimensions',
+      'Package value',
+      'Expected delivery',
+      'Delivered at',
+      'Special instructions',
+      'Created at',
+    ];
+    const rows = filteredOrders.map((order) => [
+      order.order_number,
+      order.client_name,
+      order.client_phone,
+      order.client_email,
+      order.status.replace(/_/g, ' '),
+      order.priority || 'normal',
+      order.pickup_location,
+      order.delivery_location,
+      order.package_description,
+      order.package_weight,
+      order.package_dimensions,
+      order.package_value,
+      order.expected_delivery_time ? formatDate(order.expected_delivery_time, 'short') : '',
+      order.actual_delivery_time ? formatDate(order.actual_delivery_time, 'short') : '',
+      order.special_instructions,
+      formatDate(order.created_at, 'short'),
+    ].map(escapeCell));
+    const csv = `\uFEFF${[headers.map(escapeCell).join(','), ...rows.map((row) => row.join(','))].join('\r\n')}`;
+    const downloadUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `nmd-orders-${filterStatus || 'all'}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
   };
 
   const statusStats = {
@@ -179,17 +232,28 @@ export default function OrdersPage() {
         <p className="-mt-4 text-[11px] text-muted-foreground sm:hidden">Swipe sideways to browse order statuses.</p>
 
         {/* Search & Filter */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative min-w-0 flex-1">
             <Search className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search by order #, client name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search orders by order number or customer"
               className="min-h-11 w-full rounded-lg border border-input bg-background px-12 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
+          <button
+            type="button"
+            onClick={exportOrders}
+            disabled={isLoading || filteredOrders.length === 0}
+            aria-label={`Export ${filteredOrders.length} filtered orders as CSV`}
+            className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
         </div>
 
         {(loadError || actionError) && (

@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn, toTitleCase } from '@/utils/helpers';
-import { AlertCircle, Award, MapPin, TrendingUp, Users, Search, UserPlus } from 'lucide-react';
+import { AlertCircle, Award, Download, MapPin, TrendingUp, Users, Search, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
 const statusColors: Record<string, string> = {
@@ -52,6 +52,61 @@ export default function DriversPage() {
   );
   const availableCount = drivers.filter((d) => d.current_status === 'available' && !assignedDriverIds.has(d.id)).length;
   const onDeliveryCount = drivers.filter((d) => d.current_status === 'on_delivery').length;
+
+  const exportDrivers = () => {
+    const escapeCell = (value: string | number | boolean | undefined) => {
+      const text = String(value ?? '');
+      const safeText = /^[\t\r ]*[=+\-@]/.test(text) ? `'${text}` : text;
+      return `"${safeText.replace(/"/g, '""')}"`;
+    };
+    const headers = [
+      'Driver name',
+      'Employee ID',
+      'Vehicle type',
+      'Vehicle number',
+      'License number',
+      'Status',
+      'Active assignments',
+      'Completed deliveries',
+      'Rating',
+      'Phone verified',
+      'Joined at',
+    ];
+    const rows = filteredDrivers.map((driver) => {
+      const driverAssignments = getDriverAssignments(driver.id);
+      const hasActiveAssignment = driverAssignments.some((assignment) =>
+        ['pending', 'accepted', 'in_progress'].includes(assignment.status)
+      );
+      const displayedStatus = hasActiveAssignment && driver.current_status === 'available'
+        ? 'assigned'
+        : driver.current_status;
+
+      return [
+        driver.full_name || driver.employee_id,
+        driver.employee_id,
+        toTitleCase(driver.vehicle_type),
+        driver.vehicle_number,
+        driver.license_number || '',
+        toTitleCase(displayedStatus),
+        driverAssignments.filter((assignment) =>
+          !['completed', 'cancelled', 'rejected'].includes(assignment.status)
+        ).length,
+        driver.total_deliveries_completed,
+        driver.rating,
+        driver.phone_verified ? 'Yes' : 'No',
+        driver.created_at ? new Date(driver.created_at).toLocaleDateString() : '',
+      ].map(escapeCell);
+    });
+    const csv = `\uFEFF${[headers.map(escapeCell).join(','), ...rows.map((row) => row.join(','))].join('\r\n')}`;
+    const downloadUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `nmd-drivers-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+  };
 
   const handleStatusUpdate = async (driverId: string, status: 'available' | 'on_delivery') => {
     setBusyDriverId(driverId);
@@ -161,15 +216,28 @@ export default function DriversPage() {
         </div>
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search by employee ID or vehicle number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="min-h-11 w-full rounded-lg border border-input bg-background px-12 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search by driver name, employee ID, or vehicle..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search drivers"
+              className="min-h-11 w-full rounded-lg border border-input bg-background px-12 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={exportDrivers}
+            disabled={isLoading || filteredDrivers.length === 0}
+            aria-label={`Export ${filteredDrivers.length} drivers as CSV`}
+            className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-background px-4 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
         </div>
 
         {/* Drivers Grid */}
