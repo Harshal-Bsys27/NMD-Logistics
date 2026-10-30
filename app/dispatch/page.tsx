@@ -105,8 +105,8 @@ export default function DispatchPage() {
   };
 
   return (
-    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
-      <div className="space-y-6">
+    <div className="min-w-0 bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="min-w-0 space-y-6">
         <header className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Operations / Dispatch</p>
@@ -161,8 +161,8 @@ export default function DispatchPage() {
         </div>
         <p className="-mt-4 text-[11px] text-muted-foreground md:hidden">Swipe sideways to browse dispatch totals.</p>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
-          <section className="space-y-5">
+        <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
+          <section className="min-w-0 space-y-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-xl font-semibold text-foreground">Live route queue</h2>
@@ -171,8 +171,7 @@ export default function DispatchPage() {
               <div
                 role="group"
                 aria-label="Filter dispatch routes"
-                tabIndex={0}
-                className="flex min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-wrap sm:overflow-visible"
+                className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap"
               >
                 {(['all', 'queued', 'on_route', 'delayed'] as DispatchFilter[]).map((option) => (
                   <button
@@ -181,7 +180,7 @@ export default function DispatchPage() {
                     onClick={() => setFilter(option)}
                     aria-pressed={filter === option}
                     className={cn(
-                      'min-h-10 shrink-0 snap-start rounded-full border px-3 text-xs font-medium uppercase tracking-[0.12em] transition',
+                      'inline-flex min-h-10 min-w-0 items-center justify-center rounded-full border px-2 text-[10px] font-medium uppercase tracking-[0.08em] transition sm:px-3 sm:text-xs sm:tracking-[0.12em]',
                       filter === option
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border bg-background text-muted-foreground hover:bg-muted'
@@ -193,7 +192,7 @@ export default function DispatchPage() {
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="min-w-0 space-y-3">
               {isLoading ? (
                 <div className="surface-glass rounded-xl border border-border p-8 text-center text-muted-foreground" aria-live="polite">
                   Loading dispatch data…
@@ -206,8 +205,8 @@ export default function DispatchPage() {
                 <div key={assignment.id} className="surface-glass min-w-0 overflow-hidden rounded-xl border border-border p-3 sm:p-4">
                   <div className="flex min-w-0 flex-col gap-3 sm:gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-lg font-semibold text-foreground">{assignment.orderNumber}</p>
+                      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+                        <p className="min-w-0 max-w-full break-words text-base font-semibold text-foreground sm:text-lg">{assignment.orderNumber}</p>
                         <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]', assignment.delay > 0 ? 'bg-danger/10 text-danger-foreground' : 'bg-muted text-muted-foreground')}>
                           {assignment.delay > 0
                             ? 'Delayed'
@@ -220,15 +219,15 @@ export default function DispatchPage() {
                       </div>
 
                       <div className="mt-3 grid min-w-0 grid-cols-2 gap-2 text-xs text-muted-foreground sm:flex sm:flex-wrap sm:gap-4 sm:text-sm">
-                        <span className="flex min-w-0 items-start gap-1.5"><MapPin className="mt-0.5 h-4 w-4 shrink-0" /><span className="break-words">{assignment.route}</span></span>
-                        <span className="flex min-w-0 items-start gap-1.5"><Truck className="mt-0.5 h-4 w-4 shrink-0" /><span className="break-words">{assignment.driverName}</span></span>
-                        <span className="col-span-2 inline-flex items-center gap-1.5 sm:col-span-1"><Clock3 className="h-4 w-4 shrink-0" /> ETA {assignment.eta}</span>
+                        <span className="flex min-w-0 items-start gap-1.5 rounded-md bg-muted/40 p-2 sm:bg-transparent sm:p-0"><MapPin className="mt-0.5 h-4 w-4 shrink-0" /><span className="min-w-0 break-words">{assignment.route}</span></span>
+                        <span className="flex min-w-0 items-start gap-1.5 rounded-md bg-muted/40 p-2 sm:bg-transparent sm:p-0"><Truck className="mt-0.5 h-4 w-4 shrink-0" /><span className="min-w-0 break-words">{assignment.driverName}</span></span>
+                        <span className="col-span-2 inline-flex min-w-0 items-center gap-1.5 rounded-md bg-muted/40 p-2 sm:col-span-1 sm:bg-transparent sm:p-0"><Clock3 className="h-4 w-4 shrink-0" /> <span className="min-w-0 break-words">ETA {assignment.eta}</span></span>
                       </div>
 
-                      <p className="mt-2 break-words text-xs text-muted-foreground sm:mt-3 sm:text-sm">Customer: {assignment.customer}</p>
+                      <p className="mt-2 min-w-0 break-words text-xs text-muted-foreground sm:mt-3 sm:text-sm">Customer: {assignment.customer}</p>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 lg:justify-end">
+                    <div className="flex min-w-0 gap-2 lg:flex-wrap lg:justify-end">
                       {assignment.status !== 'completed' && (
                         <>
                           {assignment.assignmentStatus === 'pending' && (
@@ -236,7 +235,7 @@ export default function DispatchPage() {
                               type="button"
                               onClick={() => void handleStatusUpdate(assignment.id, 'accepted')}
                               disabled={busyAssignmentId === assignment.id}
-                              className="min-h-11 flex-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-primary-foreground sm:flex-none"
+                              className="min-h-11 min-w-0 flex-1 rounded-md bg-primary px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary-foreground sm:flex-none sm:px-3 sm:text-xs sm:tracking-[0.12em]"
                             >
                               Accept
                             </button>
@@ -246,7 +245,7 @@ export default function DispatchPage() {
                               type="button"
                               onClick={() => void handleStatusUpdate(assignment.id, 'in_progress')}
                               disabled={busyAssignmentId === assignment.id}
-                              className="min-h-11 flex-1 rounded-lg bg-info px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-brand-950 transition-colors hover:bg-info/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none"
+                              className="min-h-11 min-w-0 flex-1 rounded-lg bg-info px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-950 transition-colors hover:bg-info/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none sm:px-3 sm:text-xs sm:tracking-[0.12em]"
                             >
                               Start
                             </button>
@@ -256,7 +255,7 @@ export default function DispatchPage() {
                               type="button"
                               onClick={() => void handleStatusUpdate(assignment.id, 'completed')}
                               disabled={busyAssignmentId === assignment.id}
-                              className="min-h-11 flex-1 rounded-lg bg-success px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-brand-950 transition-colors hover:bg-success/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none"
+                              className="min-h-11 min-w-0 flex-1 rounded-lg bg-success px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-950 transition-colors hover:bg-success/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none sm:px-3 sm:text-xs sm:tracking-[0.12em]"
                             >
                               Complete
                             </button>
@@ -264,8 +263,8 @@ export default function DispatchPage() {
                         </>
                       )}
 
-                      <Link href={`/assignments/${assignment.id}`} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-foreground transition hover:bg-muted sm:flex-none">
-                        Details <ArrowRight className="h-3.5 w-3.5" />
+                      <Link href={`/assignments/${assignment.id}`} className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground transition hover:bg-muted sm:flex-none sm:gap-2 sm:px-3 sm:text-xs sm:tracking-[0.12em]">
+                        Details <ArrowRight className="h-3.5 w-3.5 shrink-0" />
                       </Link>
                     </div>
                   </div>
@@ -286,11 +285,10 @@ export default function DispatchPage() {
                 {alerts.map((alert) => (
                   <div key={alert.title} className={cn('w-[min(78vw,280px)] shrink-0 snap-start rounded-md border border-l-4 bg-muted/30 p-3 sm:w-auto sm:shrink', alert.accent)}>
                     <div className="flex items-center justify-between gap-3">
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-medium text-foreground">{alert.title}</p>
                         <p className="mt-1 text-xs text-muted-foreground">{alert.count} {alert.count === 1 ? 'item' : 'items'} in queue</p>
                       </div>
-                      <p className="mt-2 text-[11px] text-muted-foreground sm:hidden">Swipe sideways to browse alerts.</p>
                       <span className={cn('inline-flex min-h-6 items-center rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]', alert.badge)}>
                         {alert.level}
                       </span>
@@ -298,14 +296,15 @@ export default function DispatchPage() {
                   </div>
                 ))}
               </div>
+              <p className="mt-2 text-[11px] text-muted-foreground sm:hidden">Swipe sideways to browse alerts.</p>
             </div>
 
             <div className="surface-glass rounded-xl border border-border p-4">
               <h3 className="text-lg font-semibold text-foreground">Dispatch notes</h3>
               <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-                <li className="flex gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-primary" /> Prioritize high-value and time-sensitive orders first.</li>
-                <li className="flex gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-warning" /> Re-balance drivers from queued items to delayed routes.</li>
-                <li className="flex gap-2"><span className="mt-1 h-2 w-2 rounded-full bg-success" /> Complete deliveries to free capacity before the next dispatch wave.</li>
+                <li className="flex min-w-0 gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" /><span className="min-w-0 break-words">Prioritize high-value and time-sensitive orders first.</span></li>
+                <li className="flex min-w-0 gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-warning" /><span className="min-w-0 break-words">Re-balance drivers from queued items to delayed routes.</span></li>
+                <li className="flex min-w-0 gap-2"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-success" /><span className="min-w-0 break-words">Complete deliveries to free capacity before the next dispatch wave.</span></li>
               </ul>
             </div>
           </aside>
