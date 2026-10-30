@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -14,6 +15,7 @@ import {
   FileText,
   Settings,
   HelpCircle,
+  LogOut,
   Route,
   Users,
 } from 'lucide-react';
@@ -119,7 +121,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         })}
       </nav>
 
-      <div className="mt-auto border-t border-on-brand/10 p-3 pb-14">
+      <div className="mt-auto border-t border-on-brand/10 p-3">
         <nav className="space-y-1" aria-label="Workspace settings">
           {bottomItems.filter((item) => !loading && !!user && (user.role !== 'delivery_personnel' || item.href === '/settings' || item.href === '/help')).map((item) => {
             const Icon = item.icon;
@@ -151,8 +153,10 @@ export default function Sidebar({ collapsed }: SidebarProps) {
           collapsed && 'px-1.5'
         )}>
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-warning text-xs font-semibold text-accent-foreground">
-              {loading ? '…' : initials}
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-accent to-warning text-xs font-semibold text-accent-foreground">
+              {!loading && user?.avatar_url ? (
+                <Image src={user.avatar_url} alt="" width={36} height={36} unoptimized className="h-full w-full object-cover" />
+              ) : loading ? '…' : initials}
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
@@ -162,6 +166,20 @@ export default function Sidebar({ collapsed }: SidebarProps) {
             )}
           </div>
         </div>
+        {!loading && user && (
+          <Link
+            href="/auth/signout"
+            title={collapsed ? 'Sign out' : undefined}
+            aria-label={collapsed ? 'Sign out' : undefined}
+            className={cn(
+              'mt-2 flex min-h-11 items-center rounded-lg text-sm font-medium text-on-brand/75 transition-colors duration-150 hover:bg-danger/15 hover:text-on-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
+              collapsed ? 'justify-center px-2' : 'gap-3 px-3'
+            )}
+          >
+            <LogOut className="h-5 w-5 shrink-0" />
+            {!collapsed && <span>Sign out</span>}
+          </Link>
+        )}
       </div>
     </aside>
   );

@@ -1,9 +1,10 @@
 'use client'
 
+import Image from 'next/image'
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Activity, BarChart3, FileCode2, FileText, HelpCircle, LayoutDashboard, LogOut, Menu, Package, Settings, Truck, X, Zap, Route, Users } from 'lucide-react'
+import { Activity, BarChart3, FileCode2, FileText, HelpCircle, LayoutDashboard, LogOut, Menu, Package, Settings, Truck, UserRound, X, Zap, Route, Users } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import ThemeToggle from '@/components/layout/ThemeToggle'
 import { useAuth } from '@/hooks'
@@ -70,6 +71,26 @@ export default function MobileSidebar() {
                 <X className="h-5 w-5" />
               </Button>
             </div>
+
+            {!loading && user && (
+              <Link
+                href="/settings"
+                onClick={() => setOpen(false)}
+                className="mb-4 flex min-w-0 flex-col items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-5 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary to-cyan-500 text-2xl font-semibold text-primary-foreground ring-4 ring-primary/10">
+                  {user.avatar_url ? (
+                    <Image src={user.avatar_url} alt="" width={112} height={112} unoptimized className="h-full w-full object-cover" />
+                  ) : (
+                    user.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || <UserRound className="h-9 w-9" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="break-words text-base font-semibold text-foreground">{user.full_name || user.email}</p>
+                  <p className="text-xs capitalize text-muted-foreground">{user.role.replace(/_/g, ' ')} · My profile</p>
+                </div>
+              </Link>
+            )}
 
             <nav className="min-h-0 flex-1 space-y-5 overflow-y-auto pb-4" aria-label="Mobile navigation">
               {mobileGroups.map((group) => {
