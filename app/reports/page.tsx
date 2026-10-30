@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Download, FileText, PackageCheck, Truck } from 'lucide-react';
-import { mockAssignments, mockDrivers, mockOrders } from '@/services/mockData';
+import { useOperationsData } from '@/hooks/useOperationsData';
 
 type ReportType = 'orders' | 'delivery' | 'drivers';
 type ReportRow = Record<string, string | number>;
@@ -43,11 +43,14 @@ function downloadReport(report: GeneratedReport) {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = `${report.title.toLowerCase().replace(/ /g, '-')}.csv`;
+  document.body.appendChild(anchor);
   anchor.click();
-  URL.revokeObjectURL(url);
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export default function ReportsPage() {
+  const { orders, assignments, drivers, isLoading, error: dataError } = useOperationsData();
   const [reportType, setReportType] = useState<ReportType>('orders');
   const [fromDate, setFromDate] = useState(defaultFrom);
   const [toDate, setToDate] = useState(defaultTo);
@@ -58,16 +61,16 @@ export default function ReportsPage() {
   const filteredOrders = useMemo(() => {
     const from = new Date(`${fromDate}T00:00:00`).getTime();
     const to = new Date(`${toDate}T23:59:59.999`).getTime();
-    return mockOrders.filter((order) => {
+    return orders.filter((order) => {
       const createdAt = new Date(order.created_at).getTime();
       return createdAt >= from && createdAt <= to;
     });
-  }, [fromDate, toDate]);
+  }, [orders, fromDate, toDate]);
 
   const assignmentCounts = useMemo(() => {
     const from = new Date(`${fromDate}T00:00:00`).getTime();
     const to = new Date(`${toDate}T23:59:59.999`).getTime();
-    return mockAssignments.reduce<Record<string, { total: number; completed: number; active: number }>>(
+    return assignments.reduce<Record<string, { total: number; completed: number; active: number }>>(
       (counts, assignment) => {
         const assignedAt = new Date(assignment.assigned_at).getTime();
         if (assignedAt < from || assignedAt > to) return counts;
@@ -81,7 +84,7 @@ export default function ReportsPage() {
       },
       {}
     );
-  }, [fromDate, toDate]);
+  }, [assignments, fromDate, toDate]);
 
   const handleGenerate = () => {
     if (fromDate > toDate) {
@@ -103,7 +106,7 @@ export default function ReportsPage() {
             counts[order.status] = (counts[order.status] ?? 0) + 1;
             return counts;
           }, {})).map(([status, orderCount]) => ({ status, order_count: orderCount }))
-        : mockDrivers.map((driver) => {
+        : drivers.map((driver) => {
             const counts = assignmentCounts[driver.id] ?? { total: 0, completed: 0, active: 0 };
             return {
               employee_id: driver.employee_id,
@@ -141,8 +144,8 @@ export default function ReportsPage() {
             <h1 className="mt-2 text-3xl font-semibold text-foreground">Reports</h1>
             <p className="mt-2 text-sm text-muted-foreground">Build and export operational summaries.</p>
           </div>
-          <span className="inline-flex min-h-8 w-fit items-center gap-2 rounded-full border border-warning/40 bg-warning px-3 py-1.5 text-xs font-medium text-warning-foreground">
-            Sample records
+          <span className="inline-flex min-h-8 w-fit items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-medium text-success-foreground">
+            Live records
           </span>
         </header>
 
@@ -178,10 +181,11 @@ export default function ReportsPage() {
               </label>
             </div>
 
-            {error && <p role="status" className="text-sm text-warning-foreground">{error}</p>}
+            {(dataError || error) && <p role="alert" className="text-sm text-danger-foreground">{dataError || error}</p>}
+            {isLoading && <p role="status" className="text-sm text-muted-foreground">Loading report data…</p>}
 
             <div className="flex flex-wrap gap-3">
-              <button onClick={handleGenerate} className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <button onClick={handleGenerate} disabled={isLoading} className="inline-flex min-h-11 items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50">
                 <FileText className="h-4 w-4" /> Generate report
               </button>
               <button
@@ -210,11 +214,11 @@ export default function ReportsPage() {
               </div>
               <div className="flex items-center justify-between border-b border-border py-3">
                 <span className="flex items-center gap-3 text-sm text-foreground"><Truck className="h-4 w-4 text-warning-foreground" />Drivers</span>
-                <span className="font-semibold tabular-nums text-foreground">{mockDrivers.length}</span>
+                <span className="font-semibold tabular-nums text-foreground">{drivers.length}</span>
               </div>
             </div>
             <div className="border-l-2 border-warning-foreground pl-4 text-sm leading-6 text-muted-foreground">
-              Generated reports use the project’s sample records and are kept in this browser session only.
+              Reports are generated from the currently available records. Recent exports are kept in this browser session.
             </div>
           </section>
         </div>
