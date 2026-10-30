@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Badge from '@/components/ui/Badge';
 import {
   LayoutDashboard,
   Package,
@@ -29,10 +28,10 @@ const navigationGroups = [
   {
     label: 'Management',
     items: [
-      { href: '/orders', label: 'Orders', icon: Package, badge: '4' },
-      { href: '/drivers', label: 'Drivers', icon: Truck, badge: '3' },
+      { href: '/orders', label: 'Orders', icon: Package },
+      { href: '/drivers', label: 'Drivers', icon: Truck },
       { href: '/users', label: 'Invites & staff', icon: Users, adminOnly: true },
-      { href: '/assignments', label: 'Assignments', icon: Zap, badge: '2' },
+      { href: '/assignments', label: 'Assignments', icon: Zap },
       { href: '/dispatch', label: 'Dispatch', icon: Route },
       { href: '/reports', label: 'Reports', icon: FileText },
       { href: '/analytics', label: 'Analytics', icon: BarChart3 },
@@ -111,7 +110,6 @@ export default function Sidebar({ collapsed }: SidebarProps) {
                       <Icon className="h-5 w-5 shrink-0" />
                       {!collapsed && <span className="truncate">{item.label}</span>}
                     </span>
-                    {!collapsed && 'badge' in item && item.badge && <Badge className="ml-2 shrink-0 !bg-on-brand/15 !text-on-brand">{item.badge}</Badge>}
                   </Link>
                 );
               })}
@@ -123,7 +121,7 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
       <div className="mt-auto border-t border-on-brand/10 p-3 pb-14">
         <nav className="space-y-1" aria-label="Workspace settings">
-          {bottomItems.filter((item) => !loading && !!user && (user.role !== 'delivery_personnel' || item.href === '/help')).map((item) => {
+          {bottomItems.filter((item) => !loading && !!user && (user.role !== 'delivery_personnel' || item.href === '/settings' || item.href === '/help')).map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
 

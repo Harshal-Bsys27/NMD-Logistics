@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks';
 import { cn } from '@/utils/helpers';
 
 const profileItems = [
-  { label: 'My Profile', href: '/settings', icon: UserRound, staffOnly: true },
+  { label: 'My Profile', href: '/settings', icon: UserRound },
   { label: 'Account Settings', href: '/settings', icon: Settings, staffOnly: true },
   { label: 'Preferences', href: '/settings', icon: CircleUserRound, staffOnly: true },
   { label: 'Help & Support', href: '/help', icon: HelpCircle },

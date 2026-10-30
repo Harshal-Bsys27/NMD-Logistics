@@ -618,7 +618,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="order-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6">
-          <section className="min-w-0 space-y-4 xl:col-span-8">
+          <section className="min-w-0 max-w-full space-y-4 overflow-hidden xl:col-span-8">
             <OrdersTable orders={filteredOrders.slice(0, 5)} title="Recent orders" subtitle="Latest activity" />
           </section>
 
