@@ -3,10 +3,11 @@
 import Image from 'next/image'
 import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Check, Bell, Camera, Loader2, Shield, LogOut, Mail, Phone, Truck, UserRound } from 'lucide-react'
+import { Check, Bell, Camera, Loader2, Shield, LogOut, Mail, Phone, Truck, UserRound, X } from 'lucide-react'
 import { useAuth } from '@/hooks'
 import { useOperationsData } from '@/hooks/useOperationsData'
 import { supabase, supabaseUrl } from '@/lib/supabase/client'
+import AvatarCropDialog from '@/components/profile/AvatarCropDialog'
 
 const preferenceDefaults = {
   timezone: 'Asia/Kolkata',
@@ -47,9 +48,26 @@ export default function SettingsPage() {
   const [avatarError, setAvatarError] = useState('')
   const [avatarSuccess, setAvatarSuccess] = useState('')
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [cropImageUrl, setCropImageUrl] = useState<string | null>(null)
+  const [cropImageName, setCropImageName] = useState('')
+  const [isAvatarPreviewOpen, setIsAvatarPreviewOpen] = useState(false)
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
-  const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (!isAvatarPreviewOpen) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsAvatarPreviewOpen(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isAvatarPreviewOpen])
+
+  useEffect(() => {
+    if (!cropImageUrl) return;
+    return () => URL.revokeObjectURL(cropImageUrl);
+  }, [cropImageUrl]);
+
+  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file || !user) return
@@ -71,15 +89,21 @@ export default function SettingsPage() {
       return
     }
 
+    setCropImageName(file.name)
+    setCropImageUrl(URL.createObjectURL(file))
+  }
+
+  const handleCroppedAvatar = async (file: Blob) => {
+    if (!user) throw new Error('You must be signed in to update your profile photo.')
     setIsUploadingAvatar(true)
     const previousAvatarPath = getOwnedAvatarPath(user.avatar_url, user.id)
-    const objectPath = `${user.id}/${crypto.randomUUID()}.${extension}`
+    const objectPath = `${user.id}/${crypto.randomUUID()}.jpg`
     try {
       const { error: uploadError } = await supabase.storage
         .from('profile-avatars')
         .upload(objectPath, file, {
           cacheControl: '3600',
-          contentType: file.type,
+          contentType: 'image/jpeg',
           upsert: false,
         })
       if (uploadError) throw new Error(`Could not upload photo: ${uploadError.message}`)
@@ -100,12 +124,22 @@ export default function SettingsPage() {
         if (cleanupError) console.warn('Profile photo updated, but the previous image could not be removed:', cleanupError)
       }
       setAvatarSuccess('Your profile photo has been updated.')
+      setCropImageUrl(null)
+      setCropImageName('')
     } catch (uploadError) {
       console.error('Unable to update profile photo:', uploadError)
-      setAvatarError(uploadError instanceof Error ? uploadError.message : 'Unable to update your profile photo.')
+      const message = uploadError instanceof Error ? uploadError.message : 'Unable to update your profile photo.'
+      setAvatarError(message)
+      throw new Error(message)
     } finally {
       setIsUploadingAvatar(false)
     }
+  }
+
+  const cancelAvatarCrop = () => {
+    if (isUploadingAvatar) return
+    setCropImageUrl(null)
+    setCropImageName('')
   }
 
   useEffect(() => {
@@ -168,24 +202,34 @@ export default function SettingsPage() {
             <p role="alert" className="text-sm text-danger-foreground">Your profile could not be loaded. Sign in again to view your account information.</p>
           ) : (
             <>
-              <div className="mb-6 flex flex-col gap-4 rounded-lg border border-border bg-muted/20 p-4 sm:flex-row sm:items-center">
-                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary to-cyan-500 text-xl font-semibold text-primary-foreground">
+              <div className="mb-6 flex flex-col items-center gap-4 rounded-xl border border-border bg-muted/20 px-4 py-5 text-center sm:py-6">
+                <button
+                  type="button"
+                  onClick={() => user.avatar_url && setIsAvatarPreviewOpen(true)}
+                  disabled={!user.avatar_url}
+                  aria-label={user.avatar_url ? 'View full profile photo' : 'No profile photo uploaded'}
+                  title={user.avatar_url ? 'View full photo' : undefined}
+                  className="flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary to-cyan-500 text-2xl font-semibold text-primary-foreground shadow-md ring-4 ring-primary/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/30 disabled:cursor-default sm:text-3xl"
+                  style={{ width: 'clamp(6.5rem, 12vw, 8rem)', height: 'clamp(6.5rem, 12vw, 8rem)' }}
+                >
                   {user.avatar_url ? (
                     <Image
                       src={user.avatar_url}
                       alt={`${user.full_name || 'Your'} profile photo`}
-                      width={80}
-                      height={80}
+                      width={112}
+                      height={112}
                       unoptimized
                       className="h-full w-full object-cover"
+                      style={{ width: '100%', height: '100%', maxWidth: 'none' }}
                     />
                   ) : (
-                    user.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || <UserRound className="h-8 w-8" />
+                    user.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || <UserRound className="h-9 w-9" />
                   )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-semibold text-foreground">Profile photo</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">Upload a JPG, PNG, or WebP image up to 5 MB.</p>
+                </button>
+                <div className="min-w-0">
+                  <h3 className="text-lg font-semibold text-foreground">{user.full_name || 'Profile photo'}</h3>
+                  <p className="mt-1 text-sm capitalize text-muted-foreground">{user.role.replace(/_/g, ' ')}</p>
+                  <p className="mt-2 text-sm text-muted-foreground">Upload a JPG, PNG, or WebP image up to 5 MB.</p>
                   <input
                     ref={avatarInputRef}
                     type="file"
@@ -198,7 +242,7 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => avatarInputRef.current?.click()}
                     disabled={isUploadingAvatar}
-                    className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
+                    className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
                   >
                     {isUploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                     {isUploadingAvatar ? 'Uploading…' : user.avatar_url ? 'Change photo' : 'Upload photo'}
@@ -261,6 +305,48 @@ export default function SettingsPage() {
             </>
           )}
         </section>
+
+        {isAvatarPreviewOpen && user?.avatar_url && (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4 sm:p-8"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${user.full_name || 'Profile'} photo`}
+            onClick={() => setIsAvatarPreviewOpen(false)}
+          >
+            <button
+              type="button"
+              onClick={() => setIsAvatarPreviewOpen(false)}
+              aria-label="Close full profile photo"
+              className="absolute right-4 top-4 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex h-full w-full max-w-5xl flex-col items-center justify-center gap-3" onClick={(event) => event.stopPropagation()}>
+              <Image
+                src={user.avatar_url}
+                alt={`${user.full_name || 'Your'} profile photo`}
+                width={1600}
+                height={1600}
+                unoptimized
+                className="h-auto max-h-[calc(100dvh-6rem)] w-auto max-w-full object-contain"
+                style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: 'calc(100dvh - 6rem)' }}
+                priority
+              />
+              <p className="text-sm font-medium text-white/90">{user.full_name || 'Profile photo'}</p>
+            </div>
+          </div>
+        )}
+
+        {cropImageUrl && (
+          <AvatarCropDialog
+            imageUrl={cropImageUrl}
+            imageName={cropImageName}
+            onCancel={cancelAvatarCrop}
+            onSave={handleCroppedAvatar}
+            isSaving={isUploadingAvatar}
+          />
+        )}
 
         <form onSubmit={savePreferences} className="space-y-6">
           <div className="surface-glass rounded-lg p-5 sm:p-8">
@@ -357,24 +443,26 @@ export default function SettingsPage() {
           </div>
         </form>
 
-        {/* Danger Zone */}
-        <div className="surface-glass rounded-lg border border-danger/30 bg-danger/5 p-6 sm:p-8">
-          <div className="mb-6 flex items-center gap-3">
-            <div className="rounded-md bg-danger p-3 text-danger-foreground">
-              <LogOut className="h-6 w-6" />
+        <section aria-labelledby="sign-out-heading" className="surface-glass rounded-xl border border-border p-5 sm:p-6">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-danger/10 text-danger-foreground">
+                <LogOut className="h-5 w-5" />
+              </div>
+              <div className="min-w-0">
+                <h2 id="sign-out-heading" className="text-base font-semibold text-foreground">Sign out</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Sign out of your NMD Logistics account on this device.</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-semibold text-foreground">Sign Out</h2>
-              <p className="mt-1 text-sm text-muted-foreground">End your current session</p>
-            </div>
+            <Link
+              href="/auth/signout"
+              className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg border border-danger/30 bg-background px-5 text-sm font-semibold text-danger-foreground transition hover:border-danger/50 hover:bg-danger/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/50 sm:w-auto"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </Link>
           </div>
-          <Link
-            href="/auth/signout"
-            className="inline-flex min-h-11 items-center rounded-md border border-danger/40 bg-danger px-4 py-2.5 font-semibold text-danger-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            Sign Out
-          </Link>
-        </div>
+        </section>
       </div>
     </div>
   )
