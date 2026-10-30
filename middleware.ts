@@ -87,6 +87,8 @@ export async function middleware(request: NextRequest) {
     const isAdminOnlyRoute = pathname === '/users' || pathname.startsWith('/users/') || pathname === '/api-docs' || pathname.startsWith('/api-docs/');
     const isDriverAllowedRoute = pathname === '/assignments' ||
       pathname.startsWith('/assignments/') ||
+      pathname === '/settings' ||
+      pathname.startsWith('/settings/') ||
       pathname === '/help' ||
       pathname.startsWith('/help/') ||
       pathname === '/status' ||
