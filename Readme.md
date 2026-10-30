@@ -175,6 +175,8 @@ The database is designed with the following tables:
 
 The initial schema is tracked in `supabase/migrations/`; `database/schema.sql` remains as the original reference. Use `npm run db:push` for the linked cloud project. For local development, start Docker Desktop, run `npm run db:start`, then `npm run db:lint` or `npm run db:reset`.
 
+Order, driver, assignment, dashboard, analytics, and report screens read from Supabase. Assignment creation and progress updates synchronize the related order status, and order status changes are recorded in `delivery_status_history`. Apply all migrations before using these workflows.
+
 ## 🔐 Security & Best Practices
 
 - ✅ TypeScript for type safety

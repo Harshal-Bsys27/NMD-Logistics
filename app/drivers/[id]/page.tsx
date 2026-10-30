@@ -2,15 +2,14 @@
 
 import { useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useMockDrivers, useMockAssignments } from '@/services/mockData';
+import { useOperationsData } from '@/hooks/useOperationsData';
 import { ArrowLeft, AlertCircle, Award, Briefcase, Phone, Activity } from 'lucide-react';
 
 export default function DriverDetailPage() {
   const router = useRouter();
   const params = useParams();
   const driverId = params.id as string;
-  const { drivers } = useMockDrivers();
-  const { assignments } = useMockAssignments();
+  const { drivers, assignments, orders, isLoading, error } = useOperationsData();
 
   const driver = useMemo(() => drivers.find((d) => d.id === driverId), [drivers, driverId]);
 
@@ -19,7 +18,18 @@ export default function DriverDetailPage() {
     [assignments, driverId]
   );
 
-  if (!driver) {
+  if (isLoading) {
+    return (
+      <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl animate-pulse space-y-4">
+          <div className="h-10 w-32 rounded-md bg-muted" />
+          <div className="h-40 rounded-lg bg-muted" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!driver || error) {
     return (
       <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
@@ -32,7 +42,7 @@ export default function DriverDetailPage() {
           </button>
           <div className="flex items-center gap-3 rounded-lg border border-danger/30 bg-danger p-4 text-danger-foreground">
             <AlertCircle className="h-5 w-5" />
-            <p className="text-sm">Driver not found</p>
+            <p className="text-sm">{error || 'Driver not found'}</p>
           </div>
         </div>
       </div>
@@ -102,7 +112,9 @@ export default function DriverDetailPage() {
 
           <div className="surface-glass h-full rounded-lg p-5">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Active Assignments</p>
-            <p className="mt-3 text-2xl font-bold tabular-nums text-info-foreground">{driverAssignments.length}</p>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-info-foreground">
+              {driverAssignments.filter((assignment) => !['completed', 'cancelled', 'rejected'].includes(assignment.status)).length}
+            </p>
           </div>
 
           <div className="surface-glass h-full rounded-lg p-5">
@@ -168,7 +180,9 @@ export default function DriverDetailPage() {
                 <div key={assignment.id} className="surface-glass rounded-lg border border-border p-4">
                   <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
-                      <p className="font-semibold text-foreground">Order #{assignment.order_id.slice(0, 8)}</p>
+                      <p className="font-semibold text-foreground">
+                        {orders.find((order) => order.id === assignment.order_id)?.order_number ?? `Order #${assignment.order_id.slice(0, 8)}`}
+                      </p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         Status: {assignment.status} • Est. {assignment.estimated_duration_minutes} mins
                       </p>

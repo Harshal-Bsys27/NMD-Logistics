@@ -1,9 +1,11 @@
 'use client';
 
-import { useMockDrivers, useMockAssignments } from '@/services/mockData';
+import { driverService } from '@/services/database';
+import { useOperationsData } from '@/hooks/useOperationsData';
+import { useAuth } from '@/hooks';
 import { useRouter } from 'next/navigation';
 import { cn, toTitleCase } from '@/utils/helpers';
-import { Award, MapPin, TrendingUp, Users, Search } from 'lucide-react';
+import { AlertCircle, Award, MapPin, TrendingUp, Users, Search } from 'lucide-react';
 import { useState } from 'react';
 
 const statusColors: Record<string, { bg: string; text: string; badge: string }> = {
@@ -23,9 +25,12 @@ const vehicleEmojis: Record<string, string> = {
 
 export default function DriversPage() {
   const router = useRouter();
-  const { drivers } = useMockDrivers();
-  const { assignments } = useMockAssignments();
+  const { user } = useAuth();
+  const canManageDrivers = user?.role === 'admin' || user?.role === 'supervisor';
+  const { drivers, assignments, isLoading, error, refresh } = useOperationsData();
   const [searchTerm, setSearchTerm] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [busyDriverId, setBusyDriverId] = useState<string | null>(null);
 
   const filteredDrivers = drivers.filter((driver) =>
     driver.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -40,6 +45,20 @@ export default function DriversPage() {
   const availableCount = drivers.filter((d) => d.current_status === 'available').length;
   const onDeliveryCount = drivers.filter((d) => d.current_status === 'on_delivery').length;
 
+  const handleStatusUpdate = async (driverId: string, status: 'available' | 'on_delivery') => {
+    setBusyDriverId(driverId);
+    setActionError('');
+    try {
+      const result = await driverService.updateStatus(driverId, status);
+      if (result.error) throw new Error(result.error);
+      await refresh(true);
+    } catch (updateError) {
+      setActionError(updateError instanceof Error ? updateError.message : 'Unable to update driver status');
+    } finally {
+      setBusyDriverId(null);
+    }
+  };
+
   return (
     <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
       <div className="w-full space-y-6">
@@ -48,6 +67,20 @@ export default function DriversPage() {
           <h1 className="text-3xl font-semibold text-foreground">Drivers & Assignments</h1>
           <p className="mt-2 text-muted-foreground">Manage your delivery personnel and track active assignments</p>
         </div>
+
+        {(error || actionError) && (
+          <div role="alert" className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger/10 p-4 text-danger-foreground">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="flex-1 text-sm">
+              <p>{error || actionError}</p>
+              {error && (
+                <button type="button" onClick={() => void refresh()} className="mt-2 font-semibold underline">
+                  Try again
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -114,7 +147,11 @@ export default function DriversPage() {
 
         {/* Drivers Grid */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {filteredDrivers.map((driver) => {
+          {isLoading ? (
+            <div className="surface-glass rounded-lg border border-border p-8 text-center text-muted-foreground" aria-live="polite">
+              Loading drivers…
+            </div>
+          ) : filteredDrivers.map((driver) => {
             const colors = statusColors[driver.current_status];
             const driverAssignments = getDriverAssignments(driver.id);
             const activeAssignment = driverAssignments.find((a) => a.status === 'in_progress');
@@ -123,6 +160,13 @@ export default function DriversPage() {
               <div
                 key={driver.id}
                 onClick={() => router.push(`/drivers/${driver.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    router.push(`/drivers/${driver.id}`);
+                  }
+                }}
+                tabIndex={0}
                 className="surface-glass cursor-pointer rounded-lg border border-border p-5 transition hover:border-ring/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 {/* Driver Header */}
@@ -171,7 +215,9 @@ export default function DriversPage() {
                   </div>
                   <div className="rounded-md bg-muted/40 p-3">
                     <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Active</p>
-                    <p className="mt-2 font-bold tabular-nums text-info-foreground">{driverAssignments.length}</p>
+                    <p className="mt-2 font-bold tabular-nums text-info-foreground">
+                      {driverAssignments.filter((assignment) => !['completed', 'cancelled', 'rejected'].includes(assignment.status)).length}
+                    </p>
                   </div>
                 </div>
 
@@ -184,22 +230,47 @@ export default function DriversPage() {
                   </div>
                 )}
 
-                {/* Action Button */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/drivers/${driver.id}`);
-                  }}
-                  className="mt-6 min-h-11 w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  View Details
-                </button>
+                <div className="mt-6 flex gap-2">
+                  {canManageDrivers && (
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleStatusUpdate(driver.id, 'available');
+                        }}
+                        disabled={busyDriverId === driver.id}
+                        className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted disabled:opacity-50"
+                      >
+                        Available
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleStatusUpdate(driver.id, 'on_delivery');
+                        }}
+                        disabled={busyDriverId === driver.id}
+                        className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted disabled:opacity-50"
+                      >
+                        On delivery
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/drivers/${driver.id}`);
+                    }}
+                    className="flex-1 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90"
+                  >
+                    Details
+                  </button>
+                </div>
               </div>
             );
           })}
         </div>
 
-        {filteredDrivers.length === 0 && (
+        {!isLoading && filteredDrivers.length === 0 && (
           <div className="surface-glass rounded-lg border border-border py-12 text-center">
             <p className="text-muted-foreground">No drivers found matching your search</p>
           </div>

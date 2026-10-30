@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useMockAssignments, useMockOrders, useMockDrivers } from '@/services/mockData';
 import { assignmentService } from '@/services/database';
+import { useOperationsData } from '@/hooks/useOperationsData';
 import { formatDate } from '@/utils/helpers';
 import {
   ArrowLeft,
@@ -13,13 +13,11 @@ import {
   Clock,
   AlertCircle,
   CheckCircle2,
-  Phone,
   Star,
   AlertTriangle,
-  MapPinIcon,
 } from 'lucide-react';
 
-type AssignmentStatus = 'pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
+import type { AssignmentStatus } from '@/types';
 
 const vehicleEmojis: Record<string, string> = {
   bike: '🏍️',
@@ -29,19 +27,30 @@ const vehicleEmojis: Record<string, string> = {
   truck: '🚚',
 };
 
-export default function AssignmentDetailPage({ params }: { params: { id: string } }) {
+export default function AssignmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const { assignments } = useMockAssignments();
-  const { orders } = useMockOrders();
-  const { drivers } = useMockDrivers();
+  const resolvedParams = use(params);
+  const { assignments, orders, drivers, isLoading, error, refresh } = useOperationsData();
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [actionError, setActionError] = useState('');
 
-  const assignment = assignments.find((a) => a.id === params.id);
+  const assignment = assignments.find((a) => a.id === resolvedParams.id);
   const order = assignment ? orders.find((o) => o.id === assignment.order_id) : null;
   const driver = assignment ? drivers.find((d) => d.id === assignment.personnel_id) : null;
 
-  if (!assignment || !order || !driver) {
+  if (isLoading) {
+    return (
+      <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl animate-pulse space-y-4">
+          <div className="h-10 w-32 rounded-md bg-muted" />
+          <div className="h-40 rounded-lg bg-muted" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!assignment || !order || !driver || error) {
     return (
       <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl">
@@ -56,7 +65,7 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
           <div className="surface-glass rounded-lg border border-danger/30 bg-danger p-8 text-center">
             <AlertTriangle className="mx-auto h-12 w-12 text-danger-foreground" />
             <h1 className="mt-4 text-2xl font-bold text-danger-foreground">Assignment Not Found</h1>
-            <p className="mt-2 text-danger-foreground">The assignment you're looking for doesn't exist.</p>
+            <p className="mt-2 text-danger-foreground">{error || "The assignment you're looking for doesn't exist."}</p>
             <Link
               href="/assignments"
               className="mt-6 inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2.5 font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -80,18 +89,15 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
 
   const handleStatusUpdate = async (newStatus: AssignmentStatus) => {
     setActionLoading(true);
+    setActionError('');
     try {
-      const { error } = await assignmentService.updateStatus(assignment.id, newStatus);
-
-      if (error) {
-        throw new Error(error);
-      }
-
+      const result = await assignmentService.updateStatus(assignment.id, newStatus);
+      if (result.error) throw new Error(result.error);
+      await refresh(true);
       setActionMessage(`Assignment ${statusColors[newStatus].label}`);
       setTimeout(() => setActionMessage(null), 2500);
-    } catch (error) {
-      console.error('Failed to update assignment status:', error);
-      setActionMessage(null);
+    } catch (updateError) {
+      setActionError(updateError instanceof Error ? updateError.message : 'Unable to update assignment');
     } finally {
       setActionLoading(false);
     }
@@ -132,6 +138,13 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
             </div>
           </div>
         </div>
+
+        {actionError && (
+          <div role="alert" className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger/10 p-4 text-danger-foreground">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <p className="text-sm">{actionError}</p>
+          </div>
+        )}
 
         {/* Status Timeline */}
         <div className="surface-glass rounded-lg p-6">
@@ -300,20 +313,6 @@ export default function AssignmentDetailPage({ params }: { params: { id: string 
             </div>
           </div>
 
-          {/* Driver Contact */}
-          <div className="mt-4">
-            <p className="mb-3 text-sm text-muted-foreground">Quick Actions</p>
-            <div className="flex gap-3">
-              <button className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <Phone className="h-4 w-4" />
-                Call Driver
-              </button>
-              <button className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2 font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <MapPinIcon className="h-4 w-4" />
-                Track Live
-              </button>
-            </div>
-          </div>
         </div>
 
         {/* Notes */}

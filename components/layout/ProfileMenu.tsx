@@ -54,17 +54,18 @@ export default function ProfileMenu() {
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-label="Open profile menu"
-        className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        title="Profile menu"
+        className="flex h-11 items-center gap-2 rounded-lg px-1.5 py-1 text-left text-on-brand transition-colors duration-150 hover:bg-on-brand/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:px-2"
       >
-        <div className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-cyan-500 text-xs font-semibold text-primary-foreground">
+        <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent to-warning text-xs font-bold text-accent-foreground">
           HB
-          <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500" />
+          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-brand-900 bg-success" />
         </div>
-        <div className="hidden min-w-0 md:block">
-          <p className="truncate text-sm font-semibold text-foreground">Harshal</p>
-          <p className="text-[11px] text-muted-foreground">Admin</p>
+        <div className="hidden min-w-0 lg:block">
+          <p className="truncate text-sm font-semibold text-on-brand">Harshal</p>
+          <p className="text-[11px] text-on-brand/75">Admin</p>
         </div>
-        <ChevronDown className="hidden h-4 w-4 text-muted-foreground md:block" />
+        <ChevronDown className="hidden h-4 w-4 text-on-brand/70 lg:block" />
       </button>
 
       {open && (

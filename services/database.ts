@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import { CreateOrderInput } from '@/lib/validations/schemas';
+import type { AssignmentStatus, OrderAssignment, OrderStatus } from '@/types';
 
 // ============== ORDER OPERATIONS ==============
 
@@ -11,7 +12,9 @@ export const orderService = {
         .from('orders')
         .insert([
           {
-            order_number: `ORD-${Date.now().toString().slice(-6)}`,
+            order_number: `ORD-${Date.now()}${Math.floor(Math.random() * 10_000)
+              .toString()
+              .padStart(4, '0')}`,
             client_name: orderData.client_name,
             client_phone: orderData.client_phone,
             client_email: orderData.client_email,
@@ -113,7 +116,7 @@ export const orderService = {
   },
 
   // Update order status
-  async updateStatus(orderId: string, status: string) {
+  async updateStatus(orderId: string, status: OrderStatus) {
     try {
       const { data, error } = await supabase
         .from('orders')
@@ -222,6 +225,10 @@ export const assignmentService = {
     notes?: string;
   }) {
     try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('You must be signed in to assign an order');
+
       const { data, error } = await supabase
         .from('order_assignments')
         .insert([
@@ -229,7 +236,7 @@ export const assignmentService = {
             order_id: assignmentData.order_id,
             personnel_id: assignmentData.personnel_id,
             status: 'pending',
-            assigned_by: (await supabase.auth.getUser()).data.user?.id,
+            assigned_by: authData.user.id,
             estimated_duration_minutes: assignmentData.estimated_duration_minutes,
             notes: assignmentData.notes,
             assigned_at: new Date().toISOString(),
@@ -250,10 +257,12 @@ export const assignmentService = {
   // Update assignment status
   async updateStatus(
     assignmentId: string,
-    status: 'pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled'
+    status: AssignmentStatus
   ) {
     try {
-      const updateData: Record<string, any> = {
+      const updateData: Partial<
+        Pick<OrderAssignment, 'status' | 'updated_at' | 'accepted_at' | 'started_at' | 'completed_at'>
+      > = {
         status,
         updated_at: new Date().toISOString(),
       };

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Activity, BarChart3, FileCode2, FileText, HelpCircle, LayoutDashboard, LogOut, Package, Settings, Truck, Zap } from 'lucide-react'
+import { Activity, BarChart3, FileCode2, FileText, HelpCircle, LayoutDashboard, LogOut, Menu, Package, Settings, Truck, X, Zap, Route } from 'lucide-react'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import ThemeToggle from '@/components/layout/ThemeToggle'
@@ -17,6 +17,7 @@ const mobileGroups = [
       { href: '/orders', label: 'Orders', icon: Package, badge: '4' },
       { href: '/drivers', label: 'Drivers', icon: Truck, badge: '3' },
       { href: '/assignments', label: 'Assignments', icon: Zap, badge: '2' },
+      { href: '/dispatch', label: 'Dispatch', icon: Route },
       { href: '/reports', label: 'Reports', icon: FileText },
       { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     ],
@@ -48,13 +49,13 @@ export default function MobileSidebar() {
     <div className="lg:hidden">
       <Button
         type="button"
-        variant="ghost"
         aria-label="Open navigation menu"
         aria-expanded={open}
+        title="Open navigation menu"
         onClick={() => setOpen(true)}
-        className="min-h-11 border border-border px-3"
+        className="h-10 w-10 min-h-10 justify-center rounded-lg border-0 p-0 text-on-brand hover:bg-on-brand/10 hover:text-on-brand focus-visible:ring-2 focus-visible:ring-accent"
       >
-        Menu
+        <Menu className="h-5 w-5" />
       </Button>
 
       {open && (
@@ -68,8 +69,8 @@ export default function MobileSidebar() {
           <aside className="relative h-full w-72 border-r border-border bg-background p-5 text-foreground shadow-2xl">
             <div className="mb-8 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">Navigation</h2>
-              <Button type="button" variant="ghost" aria-label="Close navigation menu" onClick={() => setOpen(false)}>
-                Close
+              <Button type="button" variant="ghost" aria-label="Close navigation menu" title="Close navigation menu" onClick={() => setOpen(false)}>
+                <X className="h-5 w-5" />
               </Button>
             </div>
 

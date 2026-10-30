@@ -2,43 +2,78 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useMockOrders } from '@/services/mockData';
+import { useAuth } from '@/hooks';
 import { orderService } from '@/services/database';
 import { OrderForm } from '@/components/forms/OrderForm';
 import { CreateOrderInput } from '@/lib/validations/schemas';
 import { formatDate } from '@/utils/helpers';
-import { ArrowLeft, AlertCircle, MapPin, Calendar, DollarSign, Package } from 'lucide-react';
+import { ArrowLeft, AlertCircle, MapPin, Calendar, DollarSign, Package, ArrowRight } from 'lucide-react';
+import type { Order, OrderStatus } from '@/types';
+
+const statusFlow: OrderStatus[] = ['draft', 'pending', 'confirmed', 'assigned', 'picked_up', 'in_transit', 'delivered'];
 
 export default function OrderDetailPage() {
   const router = useRouter();
   const params = useParams();
   const orderId = params.id as string;
-  const { orders } = useMockOrders();
+  const { user } = useAuth();
+  const canManageOrders = user?.role === 'admin' || user?.role === 'supervisor';
   const [isLoading, setIsLoading] = useState(false);
-  const [dbOrder, setDbOrder] = useState(null);
-  const [loadingDb, setLoadingDb] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loadError, setLoadError] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [loadingOrder, setLoadingOrder] = useState(true);
 
-  // Try to load from database first, fall back to mock data
   useEffect(() => {
+    let active = true;
     const loadOrder = async () => {
       try {
         const { data, error } = await orderService.getById(orderId);
-        if (!error && data) {
-          setDbOrder(data);
+        if (!active) return;
+        if (error) {
+          setLoadError(error);
+        } else if (data) {
+          setOrder(data);
+        } else {
+          setLoadError('Order not found');
         }
-      } catch (err) {
-        console.log('Database order fetch failed, using mock data');
+      } catch (error) {
+        if (active) setLoadError(error instanceof Error ? error.message : 'Unable to load order');
       } finally {
-        setLoadingDb(false);
+        if (active) setLoadingOrder(false);
       }
     };
 
-    loadOrder();
+    void loadOrder();
+    return () => {
+      active = false;
+    };
   }, [orderId]);
 
-  const order = dbOrder || useMemo(() => orders.find((o) => o.id === orderId), [orders, orderId]);
+  const nextStatus = useMemo(() => {
+    if (!order) return null;
+    const index = statusFlow.indexOf(order.status);
+    if (index === -1 || index === statusFlow.length - 1) return null;
+    return statusFlow[index + 1];
+  }, [order]);
 
-  if (loadingDb) {
+  const updateStatus = async () => {
+    if (!order || !nextStatus) return;
+    setIsUpdatingStatus(true);
+    setActionError('');
+    try {
+      const { data, error } = await orderService.updateStatus(order.id, nextStatus);
+      if (error) throw new Error(error);
+      if (data) setOrder(data);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Unable to update order status');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  if (loadingOrder) {
     return (
       <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
         <div className="mx-auto max-w-3xl">
@@ -65,9 +100,9 @@ export default function OrderDetailPage() {
             <ArrowLeft className="h-4 w-4" />
             Back
           </button>
-          <div className="flex items-center gap-3 rounded-lg border border-danger/30 bg-danger p-4 text-danger-foreground">
+          <div role="alert" className="flex items-center gap-3 rounded-lg border border-danger/30 bg-danger p-4 text-danger-foreground">
             <AlertCircle className="h-5 w-5" />
-            <p className="text-sm">Order not found</p>
+            <p className="text-sm">{loadError || 'Order not found'}</p>
           </div>
         </div>
       </div>
@@ -77,12 +112,9 @@ export default function OrderDetailPage() {
   const handleSubmit = async (data: CreateOrderInput) => {
     setIsLoading(true);
     try {
-      const { error } = await orderService.update(orderId, data);
-
-      if (error) {
-        throw new Error(error);
-      }
-
+      const { data: updatedOrder, error } = await orderService.update(orderId, data);
+      if (error) throw new Error(error);
+      if (updatedOrder) setOrder(updatedOrder);
       router.push('/orders');
     } catch (error) {
       console.error('Failed to update order:', error);
@@ -94,6 +126,7 @@ export default function OrderDetailPage() {
 
   const statusColors: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground',
+    pending: 'bg-warning text-warning-foreground',
     confirmed: 'bg-warning text-warning-foreground',
     assigned: 'bg-info text-info-foreground',
     picked_up: 'bg-warning text-warning-foreground',
@@ -114,6 +147,13 @@ export default function OrderDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </button>
+
+        {actionError && (
+          <div role="alert" className="mb-6 flex items-start gap-3 rounded-lg border border-danger/30 bg-danger/10 p-4 text-danger-foreground">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <p className="text-sm">{actionError}</p>
+          </div>
+        )}
 
         {/* Order Overview */}
         <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -198,15 +238,34 @@ export default function OrderDetailPage() {
               </div>
             )}
           </div>
+
+          {canManageOrders && nextStatus && (
+            <div className="mt-6 flex flex-col gap-3 rounded-lg border border-border bg-muted/30 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Lifecycle</p>
+                <p className="mt-1 text-sm text-foreground">Current status: <span className="font-medium">{order.status}</span></p>
+              </div>
+              <button
+                onClick={() => void updateStatus()}
+                disabled={isUpdatingStatus}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isUpdatingStatus ? 'Updating…' : `Advance to ${nextStatus.replace('_', ' ')}`}
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Edit Form */}
-        <div className="mb-8">
-          <h2 className="mb-4 text-xl font-semibold text-foreground">Edit Order</h2>
-          <div className="surface-glass rounded-lg p-6 sm:p-8">
-            <OrderForm initialOrder={order} onSubmit={handleSubmit} isLoading={isLoading} />
+        {canManageOrders && (
+          <div className="mb-8">
+            <h2 className="mb-4 text-xl font-semibold text-foreground">Edit Order</h2>
+            <div className="surface-glass rounded-lg p-6 sm:p-8">
+              <OrderForm initialOrder={order} onSubmit={handleSubmit} isLoading={isLoading} />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

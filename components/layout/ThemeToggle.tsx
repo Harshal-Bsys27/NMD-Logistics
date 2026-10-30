@@ -63,9 +63,9 @@ export default function ThemeToggle() {
       <button
         type="button"
         aria-label="Theme options"
-        title="Theme options"
         onClick={() => setOpen((current) => !current)}
-        className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        title="Theme options"
+        className="inline-flex h-10 w-10 items-center justify-center rounded-lg text-on-brand/85 transition-colors duration-150 hover:bg-on-brand/10 hover:text-on-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
       >
         <CurrentIcon className="h-4 w-4" />
       </button>

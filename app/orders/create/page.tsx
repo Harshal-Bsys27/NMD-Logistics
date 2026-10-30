@@ -2,28 +2,25 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks';
 import { OrderForm } from '@/components/forms/OrderForm';
 import { CreateOrderInput } from '@/lib/validations/schemas';
 import { orderService } from '@/services/database';
-import { ArrowLeft } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 export default function CreateOrderPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const canManageOrders = user?.role === 'admin' || user?.role === 'supervisor';
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (data: CreateOrderInput) => {
     setIsLoading(true);
     try {
-      const { data: createdOrder, error } = await orderService.create(data);
+      const { error } = await orderService.create(data);
+      if (error) throw new Error(error);
 
-      if (error) {
-        throw new Error(error);
-      }
-
-      // Navigate to the new order detail page
-      if (createdOrder) {
-        router.push(`/orders/${createdOrder.id}`);
-      }
+      router.push('/orders');
     } catch (error) {
       console.error('Failed to create order:', error);
       throw error;
@@ -31,6 +28,26 @@ export default function CreateOrderPage() {
       setIsLoading(false);
     }
   };
+
+  if (authLoading) {
+    return <div className="px-4 py-12 text-center text-muted-foreground" role="status">Checking access…</div>;
+  }
+
+  if (!canManageOrders) {
+    return (
+      <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl">
+          <div role="alert" className="flex items-center gap-3 rounded-lg border border-danger/30 bg-danger/10 p-4 text-danger-foreground">
+            <AlertCircle className="h-5 w-5" />
+            <p className="text-sm">You do not have permission to create orders.</p>
+          </div>
+          <button type="button" onClick={() => router.push('/orders')} className="mt-4 min-h-11 rounded-md border border-border px-4 py-2 text-sm font-medium hover:bg-muted">
+            Back to Orders
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
