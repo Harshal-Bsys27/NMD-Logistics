@@ -38,6 +38,7 @@ export interface DeliveryPersonnel {
 // Order Types
 export type OrderStatus = 
   | 'draft'
+  | 'pending'
   | 'confirmed'
   | 'assigned'
   | 'picked_up'

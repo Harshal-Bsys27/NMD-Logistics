@@ -54,6 +54,7 @@
     },
     /* Strict type checking */
     "strict": true,
+    "ignoreDeprecations": "5.0",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
