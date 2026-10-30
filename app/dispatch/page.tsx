@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, ArrowRight, BellRing, CheckCircle2, Clock3, Package, Route, Search } from 'lucide-react';
+import { AlertTriangle, ArrowRight, BellRing, CheckCircle2, Clock3, Package, RefreshCw, Route, Search } from 'lucide-react';
 import { useAuth } from '@/hooks';
 import { assignmentService } from '@/services/database';
 import { useOperationsData } from '@/hooks/useOperationsData';
@@ -19,15 +19,22 @@ const priorityRank: Record<string, number> = {
 
 export default function DispatchPage() {
   const { user } = useAuth();
-  const { assignments, orders, drivers, isLoading, error, refresh } = useOperationsData();
+  const { assignments, orders, drivers, isLoading, error, realtimeStatus, refresh } = useOperationsData();
   const canManageDispatch = user?.role === 'admin' || user?.role === 'supervisor';
   const [filter, setFilter] = useState<DispatchFilter>('all');
   const [routeSearch, setRouteSearch] = useState('');
   const [actionError, setActionError] = useState('');
   const [busyAssignmentId, setBusyAssignmentId] = useState<string | null>(null);
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [readyOrderSearch, setReadyOrderSearch] = useState('');
   const [selectedDrivers, setSelectedDrivers] = useState<Record<string, string>>({});
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setCurrentTime(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const activeAssignmentOrderIds = useMemo(
     () => new Set(
@@ -98,14 +105,14 @@ export default function DispatchPage() {
           ? new Date(new Date(assignment.started_at).getTime() + assignment.estimated_duration_minutes * 60_000)
           : null;
         const delay = assignment.status === 'in_progress' && estimatedArrival
-          ? Math.max(0, Math.ceil((Date.now() - estimatedArrival.getTime()) / 60_000))
+          ? Math.max(0, Math.ceil((currentTime - estimatedArrival.getTime()) / 60_000))
           : 0;
         const eta = assignment.status === 'completed'
           ? 'Delivered'
           : estimatedArrival
             ? delay > 0
               ? `${delay} min overdue`
-              : `${Math.ceil((estimatedArrival.getTime() - Date.now()) / 60_000)} min remaining`
+              : `${Math.ceil((estimatedArrival.getTime() - currentTime) / 60_000)} min remaining`
             : assignment.status === 'pending'
               ? 'Awaiting driver'
               : 'Awaiting start';
@@ -115,7 +122,9 @@ export default function DispatchPage() {
           assignmentStatus: assignment.status,
           orderNumber: order?.order_number ?? assignment.order_id.slice(0, 6).toUpperCase(),
           customer: order?.client_name ?? 'Customer',
-          route: order?.pickup_location ?? 'Metro route',
+          pickupLocation: order?.pickup_location ?? 'Pickup unavailable',
+          deliveryLocation: order?.delivery_location ?? 'Delivery unavailable',
+          route: order ? `${order.pickup_location} ${order.delivery_location}` : 'Metro route',
           driverName: driver ? `${driver.full_name || driver.employee_id} (${driver.employee_id})` : 'Unassigned',
           eta,
           delay,
@@ -123,7 +132,7 @@ export default function DispatchPage() {
         };
       })
       .sort((a, b) => b.delay - a.delay);
-  }, [assignments, drivers, orders]);
+  }, [assignments, currentTime, drivers, orders]);
 
   const visibleAssignments = useMemo(() => {
     const search = routeSearch.trim().toLowerCase();
@@ -141,6 +150,16 @@ export default function DispatchPage() {
       return matchesFilter && matchesSearch;
     });
   }, [dispatcherData, filter, routeSearch]);
+
+  const filterCounts = useMemo(
+    () => ({
+      all: dispatcherData.length,
+      queued: dispatcherData.filter((item) => item.status === 'queued').length,
+      on_route: dispatcherData.filter((item) => item.status === 'on_route').length,
+      delayed: dispatcherData.filter((item) => item.delay > 0).length,
+    }),
+    [dispatcherData]
+  );
 
   const summary = useMemo(() => {
     const activeRoutes = dispatcherData.filter((item) => item.status === 'on_route').length;
@@ -213,6 +232,15 @@ export default function DispatchPage() {
     }
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refresh(true);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <div className="min-w-0 bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
       <div className="min-w-0 space-y-6">
@@ -222,9 +250,24 @@ export default function DispatchPage() {
             <h1 className="mt-2 text-3xl font-semibold text-foreground">Dispatch board</h1>
             <p className="mt-2 text-sm text-muted-foreground">Manage active routes, exceptions, and handoff timing in one place.</p>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs font-medium text-muted-foreground">
-            <BellRing className="h-3.5 w-3.5 text-primary" />
-            {summary.delayed} route alerts
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+              <span className={cn('h-2 w-2 rounded-full', realtimeStatus === 'live' ? 'bg-success' : realtimeStatus === 'connecting' ? 'animate-pulse bg-warning' : 'bg-muted-foreground')} />
+              {realtimeStatus === 'live' ? 'Live updates' : realtimeStatus === 'connecting' ? 'Connecting' : 'Auto-refresh'}
+            </span>
+            <span className="inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-xs font-medium text-muted-foreground">
+              <BellRing className="h-3.5 w-3.5 text-primary" />
+              {summary.delayed} route alerts
+            </span>
+            <button
+              type="button"
+              onClick={() => void handleRefresh()}
+              disabled={isRefreshing || isLoading}
+              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
+            >
+              <RefreshCw className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
+              {isRefreshing ? 'Refreshing…' : 'Refresh'}
+            </button>
           </div>
         </header>
 
@@ -420,14 +463,18 @@ export default function DispatchPage() {
                     type="button"
                     onClick={() => setFilter(option)}
                     aria-pressed={filter === option}
+                    aria-label={`${option === 'all' ? 'All' : option === 'on_route' ? 'On route' : option === 'queued' ? 'Queued' : 'Delayed'} routes: ${filterCounts[option]}`}
                     className={cn(
-                      'inline-flex min-h-10 min-w-0 items-center justify-center rounded-full border px-2 text-[10px] font-medium uppercase tracking-[0.08em] transition sm:px-3 sm:text-xs sm:tracking-[0.12em]',
+                      'inline-flex min-h-10 min-w-0 items-center justify-center gap-1.5 rounded-full border px-2 text-[10px] font-medium uppercase tracking-[0.08em] transition sm:px-3 sm:text-xs sm:tracking-[0.12em]',
                       filter === option
                         ? 'border-primary bg-primary/10 text-primary'
                         : 'border-border bg-background text-muted-foreground hover:bg-muted'
                     )}
                   >
-                    {option === 'all' ? 'All' : option === 'on_route' ? 'On route' : option === 'queued' ? 'Queued' : 'Delayed'}
+                    <span>{option === 'all' ? 'All' : option === 'on_route' ? 'On route' : option === 'queued' ? 'Queued' : 'Delayed'}</span>
+                    <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] tabular-nums', filter === option ? 'bg-primary/10' : 'bg-muted')}>
+                      {filterCounts[option]}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -460,9 +507,16 @@ export default function DispatchPage() {
                       </div>
 
                       <div className="mt-3 grid min-w-0 grid-cols-2 gap-2">
-                        <div className="min-w-0 overflow-hidden rounded-md bg-muted/40 p-2">
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Route</p>
-                          <p className="mt-1 line-clamp-2 break-all text-xs text-foreground" title={assignment.route}>{assignment.route}</p>
+                        <div className="col-span-2 grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 overflow-hidden rounded-md bg-muted/40 p-2">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Pickup</p>
+                            <p className="mt-1 line-clamp-2 break-words text-xs text-foreground" title={assignment.pickupLocation}>{assignment.pickupLocation}</p>
+                          </div>
+                          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Delivery</p>
+                            <p className="mt-1 line-clamp-2 break-words text-xs text-foreground" title={assignment.deliveryLocation}>{assignment.deliveryLocation}</p>
+                          </div>
                         </div>
                         <div className="min-w-0 overflow-hidden rounded-md bg-muted/40 p-2">
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Driver</p>

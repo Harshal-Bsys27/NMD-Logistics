@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import AppShell from '@/components/layout/AppShell';
+import ToastContainer from '@/components/notifications/ToastContainer';
 import { AuthProvider } from '@/hooks';
 import { OperationsDataProvider } from '@/hooks/useOperationsData';
 
@@ -40,9 +41,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <div id="root">
           <AuthProvider>
-            <OperationsDataProvider>
-              <AppShell>{children}</AppShell>
-            </OperationsDataProvider>
+            <ToastContainer>
+              <OperationsDataProvider>
+                <AppShell>{children}</AppShell>
+              </OperationsDataProvider>
+            </ToastContainer>
           </AuthProvider>
         </div>
       </body>

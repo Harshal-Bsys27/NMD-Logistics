@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/utils/helpers';
 import Navbar from '@/components/layout/Navbar';
 import Sidebar from '@/components/sidebar/Sidebar';
-import ToastContainer from '@/components/notifications/ToastContainer';
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -44,7 +43,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </main>
         </div>
       )}
-      <ToastContainer />
     </>
   );
 }

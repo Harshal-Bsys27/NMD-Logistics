@@ -55,7 +55,7 @@ const helpSections = [
     description: 'Configure workspace and preferences',
     topics: [
       { title: 'Profile Settings', content: 'Update your name, email, and timezone. These settings affect notifications and reports.' },
-      { title: 'Notifications', content: 'Control order updates, assignment notifications, and daily summaries. All preferences are saved locally.' },
+      { title: 'Notifications', content: 'View live order and assignment updates in the notification bell. Enable desktop alerts from the bell menu; notification history is saved in this browser.' },
       { title: 'Security', content: 'Change password, enable two-factor authentication (coming soon), and manage API keys.' },
       { title: 'Integrations', content: 'Connect with payment providers and courier APIs. Configure webhooks for real-time updates.' },
     ],
