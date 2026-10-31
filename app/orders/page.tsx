@@ -139,7 +139,12 @@ export default function OrdersPage() {
         .filter((assignment) => ['pending', 'accepted', 'in_progress'].includes(assignment.status))
         .map((assignment) => assignment.personnel_id)
     );
-    return drivers.filter((driver) => driver.current_status === 'available' && !assignedDriverIds.has(driver.id));
+    return drivers.filter(
+      (driver) =>
+        driver.user_status !== 'suspended' &&
+        driver.current_status === 'available' &&
+        !assignedDriverIds.has(driver.id)
+    );
   }, [assignments, drivers]);
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {

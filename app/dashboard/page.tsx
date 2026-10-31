@@ -164,13 +164,14 @@ export default function DashboardPage() {
   );
 
   const driverStats = useMemo(() => {
-    const driverRatings = drivers.map((driver) =>
+    const activeDrivers = drivers.filter((driver) => driver.user_status !== 'suspended');
+    const driverRatings = activeDrivers.map((driver) =>
       getDriverRating(driver.id, customerFeedback, driver.rating).average
     ).filter((rating) => rating > 0);
     return {
-      total: drivers.length,
-      available: drivers.filter((d) => d.current_status === 'available' && !activeDriverIds.has(d.id)).length,
-      onDelivery: drivers.filter((d) => d.current_status === 'on_delivery').length,
+      total: activeDrivers.length,
+      available: activeDrivers.filter((d) => d.current_status === 'available' && !activeDriverIds.has(d.id)).length,
+      onDelivery: activeDrivers.filter((d) => d.current_status === 'on_delivery').length,
       avgRating: driverRatings.length
         ? (driverRatings.reduce((sum, rating) => sum + rating, 0) / driverRatings.length).toFixed(1)
         : '—',
@@ -284,20 +285,21 @@ export default function DashboardPage() {
       { key: 'on_break', label: 'On break', tone: 'text-warning-foreground', bar: 'bg-warning-foreground' },
       { key: 'off_duty', label: 'Off duty', tone: 'text-muted-foreground', bar: 'bg-muted-foreground' },
     ];
+    const activeDrivers = drivers.filter((driver) => driver.user_status !== 'suspended');
     return statuses.map((status) => {
       const count = status.key === 'assigned'
-        ? drivers.filter((driver) => driver.current_status === 'available' && activeDriverIds.has(driver.id)).length
+        ? activeDrivers.filter((driver) => driver.current_status === 'available' && activeDriverIds.has(driver.id)).length
         : status.key === 'available'
-          ? drivers.filter((driver) => driver.current_status === 'available' && !activeDriverIds.has(driver.id)).length
-          : drivers.filter((driver) => driver.current_status === status.key).length;
-      return { ...status, value: drivers.length ? Math.round((count / drivers.length) * 100) : 0, count };
+          ? activeDrivers.filter((driver) => driver.current_status === 'available' && !activeDriverIds.has(driver.id)).length
+          : activeDrivers.filter((driver) => driver.current_status === status.key).length;
+      return { ...status, value: activeDrivers.length ? Math.round((count / activeDrivers.length) * 100) : 0, count };
     });
   }, [activeDriverIds, drivers]);
 
   const priorityAlerts = useMemo(() => [
     { title: 'Unassigned orders', count: orders.filter((order) => ['draft', 'pending', 'confirmed'].includes(order.status)).length, level: 'High', border: 'border-l-danger bg-danger/5', badge: 'bg-danger/10 text-danger-foreground' },
     { title: 'Orders marked failed', count: orders.filter((order) => order.status === 'failed').length, level: 'Medium', border: 'border-l-warning bg-warning/5', badge: 'bg-warning/10 text-warning-foreground' },
-    { title: 'Drivers unavailable', count: drivers.filter((driver) => driver.current_status === 'off_duty').length, level: 'Info', border: 'border-l-success bg-success/5', badge: 'bg-success/10 text-success-foreground' },
+    { title: 'Drivers unavailable', count: drivers.filter((driver) => driver.user_status !== 'suspended' && driver.current_status === 'off_duty').length, level: 'Info', border: 'border-l-success bg-success/5', badge: 'bg-success/10 text-success-foreground' },
   ], [orders, drivers]);
 
   const dashboardStats = [

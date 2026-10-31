@@ -147,8 +147,8 @@ export default function AnalyticsPage() {
           <MetricCard
             icon={Users}
             label="Active Drivers"
-            value={drivers.filter((driver) => driver.current_status !== 'off_duty').length.toLocaleString('en-IN')}
-            detail={`${drivers.filter((driver) => driver.current_status === 'available').length} currently available`}
+            value={drivers.filter((driver) => driver.user_status !== 'suspended' && driver.current_status !== 'off_duty').length.toLocaleString('en-IN')}
+            detail={`${drivers.filter((driver) => driver.user_status !== 'suspended' && driver.current_status === 'available').length} currently available`}
             color="bg-warning text-warning-foreground"
           />
         </div>

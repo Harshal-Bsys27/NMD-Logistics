@@ -49,13 +49,30 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  if (user && user.app_metadata?.invite_pending === true && !isAcceptInviteRoute && pathname !== '/auth/signout' && !isCustomerFeedbackRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/auth/accept-invite';
-    url.search = '';
-    const redirectResponse = NextResponse.redirect(url);
-    response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
-    return redirectResponse;
+  if (user && user.app_metadata?.invite_pending === true && pathname !== '/auth/signout' && !isCustomerFeedbackRoute) {
+    const { data: inviteProfile } = await supabase
+      .from('users')
+      .select('status')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (inviteProfile?.status === 'suspended' && isAcceptInviteRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/auth/signin';
+      url.search = '?error=access';
+      const redirectResponse = NextResponse.redirect(url);
+      response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+      return redirectResponse;
+    }
+
+    if (inviteProfile?.status !== 'suspended' && !isAcceptInviteRoute) {
+      const url = request.nextUrl.clone();
+      url.pathname = '/auth/accept-invite';
+      url.search = '';
+      const redirectResponse = NextResponse.redirect(url);
+      response.cookies.getAll().forEach((cookie) => redirectResponse.cookies.set(cookie));
+      return redirectResponse;
+    }
   }
 
   if (user && isAcceptInviteRoute && user.app_metadata?.invite_pending !== true) {
@@ -108,10 +125,10 @@ export async function middleware(request: NextRequest) {
   if (user && isAuthRoute && pathname !== '/auth/signout' && !isAcceptInviteRoute) {
     const { data: profile } = await supabase
       .from('users')
-      .select('id')
+      .select('id, status')
       .eq('id', user.id)
       .maybeSingle();
-    if (profile) {
+    if (profile?.status === 'active') {
       const url = request.nextUrl.clone();
       url.pathname = '/dashboard';
       url.search = '';

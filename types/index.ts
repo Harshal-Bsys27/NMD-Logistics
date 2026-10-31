@@ -24,6 +24,7 @@ export interface DeliveryPersonnel {
   id: string;
   user_id: string;
   full_name?: string;
+  user_status?: UserStatus;
   employee_id: string;
   vehicle_type: VehicleType;
   vehicle_number: string;

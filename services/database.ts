@@ -144,7 +144,7 @@ export const driverService = {
     try {
       const { data, error } = await supabase
         .from('delivery_personnel')
-        .select('*, user:users!delivery_personnel_user_id_fkey(full_name)')
+        .select('*, user:users!delivery_personnel_user_id_fkey(full_name, status)')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -152,6 +152,7 @@ export const driverService = {
         data: (data || []).map(({ user, ...driver }) => ({
           ...driver,
           full_name: user?.full_name ?? '',
+          user_status: user?.status,
         })),
         error: null,
       };
