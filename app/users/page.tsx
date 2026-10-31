@@ -47,7 +47,7 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-5xl space-y-6 bg-background px-3 py-5 text-foreground sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <header>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Administrator</p>
         <h1 className="mt-2 text-3xl font-semibold">Invitations & staff access</h1>

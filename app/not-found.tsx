@@ -5,7 +5,7 @@ import { AlertTriangle, Home, ArrowLeft } from 'lucide-react';
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+    <div className="min-h-dvh bg-background px-3 py-5 text-foreground sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mx-auto flex max-w-md flex-col items-center justify-center text-center">
         {/* Icon */}
         <div className="mb-6 rounded-lg bg-danger p-6">
