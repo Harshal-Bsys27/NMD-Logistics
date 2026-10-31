@@ -35,7 +35,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <Navbar collapsed={sidebarCollapsed} onToggleSidebar={toggleSidebar} />
           <Sidebar collapsed={sidebarCollapsed} />
           <main className={cn(
-            'min-h-[calc(100vh-var(--navbar-height))] min-w-0 w-full px-3 py-4 transition-[margin,width] duration-200 sm:px-4 sm:py-5 md:px-6 md:py-6 xl:px-8',
+            'min-h-[calc(100dvh-var(--navbar-height))] min-w-0 w-full transition-[margin,width] duration-200',
             sidebarCollapsed
               ? 'lg:ml-[76px] lg:w-[calc(100%-76px)]'
               : 'lg:ml-[264px] lg:w-[calc(100%-264px)]',
