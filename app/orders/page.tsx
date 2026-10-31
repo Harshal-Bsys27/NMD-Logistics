@@ -187,8 +187,80 @@ export default function OrdersPage() {
     }
   };
 
+  const renderOrderActions = (order: (typeof orders)[number]) => {
+    const nextStatus = advanceStatus(order.status);
+
+    return (
+      <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center xl:flex-col xl:items-stretch">
+        {canManageOrders && ['pending', 'confirmed'].includes(order.status) && (
+          <div className="flex min-w-0 flex-1 gap-2">
+            <select
+              aria-label={`Select driver for ${order.order_number}`}
+              value={selectedDrivers[order.id] ?? availableDrivers[0]?.id ?? ''}
+              disabled={availableDrivers.length === 0 || busyOrderId === order.id}
+              onClick={(event) => event.stopPropagation()}
+              onChange={(event) => {
+                event.stopPropagation();
+                setSelectedDrivers((current) => ({ ...current, [order.id]: event.target.value }));
+              }}
+              className="min-h-11 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-xs text-foreground"
+            >
+              {availableDrivers.length === 0 ? (
+                <option value="">No drivers available</option>
+              ) : (
+                availableDrivers.map((driver) => (
+                  <option key={driver.id} value={driver.id}>
+                    {driver.full_name || driver.employee_id} ({driver.employee_id})
+                  </option>
+                ))
+              )}
+            </select>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                void handleAssignDriver(order.id);
+              }}
+              disabled={availableDrivers.length === 0 || busyOrderId === order.id}
+              className="inline-flex min-h-11 shrink-0 items-center justify-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-3 text-xs font-semibold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {busyOrderId === order.id ? 'Saving…' : 'Assign'}
+              <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        {canManageOrders && nextStatus && (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              void updateOrderStatus(order.id, nextStatus);
+            }}
+            disabled={busyOrderId === order.id}
+            className="inline-flex min-h-11 items-center justify-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-3 text-xs font-semibold text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {busyOrderId === order.id ? 'Saving…' : 'Ready for dispatch'}
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        )}
+        <button
+          type="button"
+          aria-label={`View ${order.order_number}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            router.push(`/orders/${order.id}`);
+          }}
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-border px-3 text-sm font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:shrink-0"
+        >
+          View order
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    );
+  };
+
   return (
-    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+    <div className="bg-background px-3 py-5 text-foreground sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="w-full space-y-6">
         {/* Header */}
         <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
@@ -277,7 +349,49 @@ export default function OrdersPage() {
 
         {/* Orders Table */}
         <div className="surface-glass overflow-hidden rounded-lg border border-border">
-          <div className="max-h-[min(70vh,720px)] overflow-auto rounded-md">
+          <div className="space-y-3 p-3 xl:hidden">
+            {isLoading ? (
+              <p role="status" className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+                Loading orders…
+              </p>
+            ) : visibleOrders.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
+                {orders.length === 0 ? 'No orders yet. Create an order to get started.' : 'No orders found matching your filters.'}
+              </p>
+            ) : visibleOrders.map((order) => {
+              const colors = statusColors[order.status] ?? statusColors.draft;
+              return (
+                <article key={order.id} className="min-w-0 rounded-lg border border-border bg-background p-3">
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">{order.order_number}</p>
+                      <p className="mt-1 truncate text-sm font-medium text-foreground">{order.client_name}</p>
+                      <p className="truncate text-xs text-muted-foreground">{order.client_phone}</p>
+                    </div>
+                    <span className={cn('inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold', colors)}>
+                      {toTitleCase(order.status)}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                    <span className={cn('rounded-full px-2.5 py-1 text-xs font-semibold', priorityColors[order.priority || 'normal'])}>
+                      {toTitleCase(order.priority || 'normal')} priority
+                    </span>
+                    <span className="text-sm font-semibold tabular-nums text-foreground">
+                      ₹{(order.package_value ?? 0).toLocaleString('en-IN')}
+                    </span>
+                    <span className="w-full text-xs text-muted-foreground">
+                      Created {formatDate(order.created_at, 'short')}
+                    </span>
+                  </div>
+                  <div className="mt-3">
+                    {renderOrderActions(order)}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="hidden max-h-[min(70vh,720px)] overflow-auto rounded-md xl:block">
             <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="sticky top-0 z-10 border-b border-border bg-muted">
@@ -320,7 +434,6 @@ export default function OrdersPage() {
                 ) : (
                   visibleOrders.map((order) => {
                     const colors = statusColors[order.status] ?? statusColors.draft;
-                    const nextStatus = advanceStatus(order.status);
                     return (
                       <tr
                         key={order.id}
@@ -371,67 +484,7 @@ export default function OrdersPage() {
                           {formatDate(order.created_at, 'short')}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <div className="flex flex-col items-end justify-center gap-2">
-                            {canManageOrders && ['pending', 'confirmed'].includes(order.status) && (
-                              <div className="flex items-center gap-2">
-                                <select
-                                  value={selectedDrivers[order.id] ?? availableDrivers[0]?.id ?? ''}
-                                  disabled={availableDrivers.length === 0 || busyOrderId === order.id}
-                                  onClick={(event) => event.stopPropagation()}
-                                  onChange={(event) => {
-                                    event.stopPropagation();
-                                    setSelectedDrivers((current) => ({ ...current, [order.id]: event.target.value }));
-                                  }}
-                                  className="min-h-9 rounded-md border border-border bg-background px-2 py-1 text-[10px] text-foreground"
-                                >
-                                  {availableDrivers.length === 0 ? (
-                                    <option value="">No drivers</option>
-                                  ) : (
-                                    availableDrivers.map((driver) => (
-                                      <option key={driver.id} value={driver.id}>
-                                        {driver.full_name || driver.employee_id} ({driver.employee_id})
-                                      </option>
-                                    ))
-                                  )}
-                                </select>
-                                <button
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    handleAssignDriver(order.id);
-                                  }}
-                                  disabled={availableDrivers.length === 0 || busyOrderId === order.id}
-                                  className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary transition hover:bg-primary/10"
-                                >
-                                  {busyOrderId === order.id ? 'Saving…' : 'Assign'}
-                                  <ArrowRight className="h-3 w-3" />
-                                </button>
-                              </div>
-                            )}
-                            {canManageOrders && nextStatus && (
-                              <button
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  void updateOrderStatus(order.id, nextStatus);
-                                }}
-                                disabled={busyOrderId === order.id}
-                                className="inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary transition hover:bg-primary/10"
-                              >
-                                {busyOrderId === order.id ? 'Saving…' : 'Ready for dispatch'}
-                                <ArrowRight className="h-3 w-3" />
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              aria-label={`View ${order.order_number}`}
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                router.push(`/orders/${order.id}`);
-                              }}
-                              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            >
-                              <ChevronRight className="h-4 w-4" />
-                            </button>
-                          </div>
+                          {renderOrderActions(order)}
                         </td>
                       </tr>
                     );
@@ -443,17 +496,17 @@ export default function OrdersPage() {
         </div>
 
         {/* Pagination */}
-        <div className="mt-6 flex items-center justify-between">
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground">
             Showing <span className="font-semibold tabular-nums text-foreground">{visibleOrders.length}</span> of{' '}
             <span className="font-semibold tabular-nums text-foreground">{filteredOrders.length}</span> matching orders
           </p>
-          <div className="flex gap-2">
+          <div className="flex w-full items-center gap-2 sm:w-auto">
             <button
               type="button"
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               disabled={page === 1}
-              className="min-h-11 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="min-h-11 flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none sm:px-4"
             >
               Previous
             </button>
@@ -464,7 +517,7 @@ export default function OrdersPage() {
               type="button"
               onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
               disabled={page >= pageCount}
-              className="min-h-11 rounded-md border border-border bg-background px-4 py-2 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="min-h-11 flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none sm:px-4"
             >
               Next
             </button>

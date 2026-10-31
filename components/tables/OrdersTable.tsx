@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Eye, Edit2, Trash2, Search, PackageCheck } from 'lucide-react';
-import { cn } from '@/utils/helpers';
+import { cn, formatDate } from '@/utils/helpers';
 import type { Order } from '@/types';
 
 interface OrdersTableProps {
@@ -137,12 +137,93 @@ export default function OrdersTable({ orders, title, subtitle, onEdit, onDelete,
         </select>
       </div>
 
-      <p className="mb-2 text-xs text-muted-foreground sm:hidden">Swipe the table sideways to view every order detail.</p>
+      <div className="mb-3 flex items-center gap-2 2xl:hidden">
+        <label className="min-w-0 flex-1">
+          <span className="sr-only">Sort orders</span>
+          <select
+            value={sortKey}
+            onChange={(event) => setSortKey(event.target.value as SortKey)}
+            className="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <option value="created_at">Date created</option>
+            <option value="order_number">Order number</option>
+            <option value="client_name">Client</option>
+            <option value="status">Status</option>
+            <option value="package_value">Package value</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={() => setSortDirection((direction) => direction === 'asc' ? 'desc' : 'asc')}
+          className="min-h-11 shrink-0 rounded-lg border border-input bg-background px-3 text-sm font-medium text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={`Sort ${sortDirection === 'asc' ? 'descending' : 'ascending'}`}
+        >
+          {sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+        </button>
+      </div>
+
+      <div className="space-y-3 2xl:hidden">
+        {filteredAndSortedOrders.length ? filteredAndSortedOrders.map((order) => {
+          const statusColor = statusColors[order.status] || statusColors.draft;
+          return (
+            <article key={order.id} className="min-w-0 rounded-lg border border-border bg-background p-3">
+              <div className="flex min-w-0 items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-foreground">{order.order_number}</p>
+                  <p className="mt-1 truncate text-sm text-foreground">{order.client_name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{order.client_phone}</p>
+                </div>
+                <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold', statusColor.bg, statusColor.text)}>
+                  <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                  {statusLabels[order.status] ?? order.status.replace(/_/g, ' ')}
+                </span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <p className="min-w-0 rounded-md bg-muted/40 p-2">
+                  <span className="block font-semibold text-muted-foreground">Pickup</span>
+                  <span className="mt-1 block line-clamp-2 break-words text-foreground">{order.pickup_location}</span>
+                </p>
+                <p className="min-w-0 rounded-md bg-muted/40 p-2">
+                  <span className="block font-semibold text-muted-foreground">Delivery</span>
+                  <span className="mt-1 block line-clamp-2 break-words text-foreground">{order.delivery_location}</span>
+                </p>
+              </div>
+              <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+                <span className="text-sm font-semibold tabular-nums text-foreground">₹{(order.package_value ?? 0).toLocaleString('en-IN')}</span>
+                <span className="text-xs text-muted-foreground">{formatDate(order.created_at, 'short')}</span>
+              </div>
+              {(onView || onEdit || onDelete) && (
+                <div className="mt-2 flex justify-end gap-1">
+                  {onView && (
+                    <button type="button" onClick={() => onView(order)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`View ${order.order_number}`}>
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  )}
+                  {onEdit && (
+                    <button type="button" onClick={() => onEdit(order)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Edit ${order.order_number}`}>
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button type="button" onClick={() => onDelete(order.id)} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-destructive hover:bg-destructive/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={`Delete ${order.order_number}`}>
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </article>
+          );
+        }) : (
+          <p className="rounded-lg border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">No orders found.</p>
+        )}
+      </div>
+
+      <p className="mb-2 hidden text-xs text-muted-foreground 2xl:block">Swipe the table sideways to view every order detail.</p>
       <div
         role="region"
         aria-label="Scrollable orders table"
         tabIndex={0}
-        className="w-full min-w-0 max-w-full max-h-[min(70vh,720px)] overflow-auto overscroll-x-contain rounded-lg border border-border/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="hidden w-full min-w-0 max-w-full max-h-[min(70vh,720px)] overflow-auto overscroll-x-contain rounded-lg border border-border/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 2xl:block"
       >
         <table className="w-full min-w-[980px] table-fixed border-separate border-spacing-0 lg:min-w-[1100px]">
           <thead className="sticky top-0 z-10 bg-muted/60 backdrop-blur-sm">
