@@ -24,7 +24,6 @@ export default function DispatchPage() {
   const [filter, setFilter] = useState<DispatchFilter>('all');
   const [routeSearch, setRouteSearch] = useState('');
   const [actionError, setActionError] = useState('');
-  const [busyAssignmentId, setBusyAssignmentId] = useState<string | null>(null);
   const [busyOrderId, setBusyOrderId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [readyOrderSearch, setReadyOrderSearch] = useState('');
@@ -52,7 +51,10 @@ export default function DispatchPage() {
         .map((assignment) => assignment.personnel_id)
     );
     return drivers.filter(
-      (driver) => driver.current_status === 'available' && !activeDriverIds.has(driver.id)
+      (driver) =>
+        driver.user_status !== 'suspended' &&
+        driver.current_status === 'available' &&
+        !activeDriverIds.has(driver.id)
     );
   }, [assignments, drivers]);
 
@@ -177,7 +179,9 @@ export default function DispatchPage() {
 
   const alerts = useMemo(() => {
     const dueSoon = dispatcherData.filter((item) => item.status === 'queued').length;
-    const activeDrivers = drivers.filter((driver) => driver.current_status === 'on_delivery').length;
+    const activeDrivers = drivers.filter(
+      (driver) => driver.user_status !== 'suspended' && driver.current_status === 'on_delivery'
+    ).length;
 
     return [
       { title: 'Assignments awaiting dispatch', count: dueSoon, level: 'High', accent: 'border-danger bg-danger/5', badge: 'bg-danger/10 text-danger-foreground' },
@@ -185,20 +189,6 @@ export default function DispatchPage() {
       { title: 'Drivers on active delivery', count: activeDrivers, level: 'Low', accent: 'border-success bg-success/5', badge: 'bg-success/10 text-success-foreground' },
     ];
   }, [dispatcherData, drivers]);
-
-  const handleStatusUpdate = async (assignmentId: string, status: 'accepted' | 'in_progress') => {
-    setBusyAssignmentId(assignmentId);
-    setActionError('');
-    try {
-      const result = await assignmentService.updateStatus(assignmentId, status);
-      if (result.error) throw new Error(result.error);
-      await refresh(true);
-    } catch (updateError) {
-      setActionError(updateError instanceof Error ? updateError.message : 'Unable to update dispatch status');
-    } finally {
-      setBusyAssignmentId(null);
-    }
-  };
 
   const handleAssignOrder = async (orderId: string) => {
     const order = orders.find((item) => item.id === orderId);
@@ -532,34 +522,20 @@ export default function DispatchPage() {
                     </div>
 
                     <div className="flex min-w-0 gap-2 lg:flex-wrap lg:justify-end">
-                      {assignment.status !== 'completed' && (
-                        <>
-                          {assignment.assignmentStatus === 'pending' && (
-                            <button
-                              type="button"
-                              onClick={() => void handleStatusUpdate(assignment.id, 'accepted')}
-                              disabled={busyAssignmentId === assignment.id}
-                              className="min-h-11 min-w-0 flex-1 rounded-md bg-primary px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary-foreground sm:flex-none sm:px-3 sm:text-xs sm:tracking-[0.12em]"
-                            >
-                              Accept
-                            </button>
-                          )}
-                          {assignment.assignmentStatus === 'accepted' && (
-                            <button
-                              type="button"
-                              onClick={() => void handleStatusUpdate(assignment.id, 'in_progress')}
-                              disabled={busyAssignmentId === assignment.id}
-                              className="min-h-11 min-w-0 flex-1 rounded-lg bg-info px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-950 transition-colors hover:bg-info/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none sm:px-3 sm:text-xs sm:tracking-[0.12em]"
-                            >
-                              Start
-                            </button>
-                          )}
-                          {assignment.assignmentStatus === 'in_progress' && (
-                            <span className="inline-flex min-h-11 items-center justify-center rounded-lg border border-info/25 bg-info/10 px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-info-foreground sm:px-3 sm:text-xs">
-                              Awaiting driver POD
-                            </span>
-                          )}
-                        </>
+                      {assignment.assignmentStatus === 'pending' && (
+                        <span className="inline-flex min-h-11 items-center justify-center rounded-lg border border-warning/25 bg-warning/10 px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.06em] text-warning-foreground sm:text-xs">
+                          Awaiting driver response
+                        </span>
+                      )}
+                      {assignment.assignmentStatus === 'accepted' && (
+                        <span className="inline-flex min-h-11 items-center justify-center rounded-lg border border-info/25 bg-info/10 px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.06em] text-info-foreground sm:text-xs">
+                          Driver accepted · awaiting start
+                        </span>
+                      )}
+                      {assignment.assignmentStatus === 'in_progress' && (
+                        <span className="inline-flex min-h-11 items-center justify-center rounded-lg border border-info/25 bg-info/10 px-3 py-2 text-center text-[10px] font-semibold uppercase tracking-[0.06em] text-info-foreground sm:px-3 sm:text-xs">
+                          In delivery · awaiting driver POD
+                        </span>
                       )}
 
                       <Link href={`/assignments/${assignment.id}`} className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center gap-1 rounded-md border border-border bg-background px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-foreground transition hover:bg-muted sm:flex-none sm:gap-2 sm:px-3 sm:text-xs sm:tracking-[0.12em]">
