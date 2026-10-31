@@ -1,9 +1,15 @@
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
+
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig = (phase) => ({
+  distDir: phase === PHASE_DEVELOPMENT_SERVER ? '.next-dev' : '.next',
   reactStrictMode: true,
   outputFileTracingRoot: process.cwd(),
   typescript: {
     tsconfigPath: './tsconfig.json',
+  },
+  experimental: {
+    devtoolSegmentExplorer: false,
   },
   images: {
     remotePatterns: [
@@ -24,6 +30,6 @@ const nextConfig = {
       ],
     },
   ],
-};
+});
 
 export default nextConfig;
