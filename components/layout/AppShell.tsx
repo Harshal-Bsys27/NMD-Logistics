@@ -12,6 +12,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isAuthRoute = pathname === '/auth' || pathname.startsWith('/auth/');
   const isPublicLanding = pathname === '/';
+  const isPublicFeedback = pathname.startsWith('/feedback/');
 
   useEffect(() => {
     setSidebarCollapsed(localStorage.getItem('nmd-sidebar-collapsed') === 'true');
@@ -27,7 +28,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      {isAuthRoute || isPublicLanding ? (
+      {isAuthRoute || isPublicLanding || isPublicFeedback ? (
         <main>{children}</main>
       ) : (
         <div className="min-h-screen bg-background text-foreground">
