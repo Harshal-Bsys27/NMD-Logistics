@@ -233,7 +233,7 @@ export default function AssignmentsPage() {
 
   return (
     <div className="min-w-0 bg-background text-foreground">
-      <div className="w-full min-w-0 space-y-5 sm:space-y-6">
+      <div className="w-full min-w-0 space-y-5 px-3 py-4 sm:space-y-6 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">

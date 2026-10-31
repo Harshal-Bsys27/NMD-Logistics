@@ -333,7 +333,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="bg-background text-foreground">
+    <div className="bg-background px-3 py-4 text-foreground sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="flex w-full min-w-0 flex-col gap-4 sm:gap-6">
         <header className="order-1 flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">

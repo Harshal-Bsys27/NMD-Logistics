@@ -35,7 +35,7 @@ export default function CreateOrderPage() {
 
   if (!canManageOrders) {
     return (
-      <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="bg-background px-3 py-5 text-foreground sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         <div className="mx-auto max-w-3xl">
           <div role="alert" className="flex items-center gap-3 rounded-lg border border-danger/30 bg-danger/10 p-4 text-danger-foreground">
             <AlertCircle className="h-5 w-5" />
@@ -50,7 +50,7 @@ export default function CreateOrderPage() {
   }
 
   return (
-    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+    <div className="bg-background px-3 py-5 text-foreground sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mx-auto max-w-3xl">
         {/* Header */}
         <div className="mb-8">

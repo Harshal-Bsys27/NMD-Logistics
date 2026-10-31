@@ -116,7 +116,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
 
   if (isLoading) {
     return (
-      <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="bg-background px-3 py-5 text-foreground sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         <div className="mx-auto max-w-4xl animate-pulse space-y-4">
           <div className="h-10 w-32 rounded-md bg-muted" />
           <div className="h-40 rounded-lg bg-muted" />
@@ -127,7 +127,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
 
   if (!assignment || !order || !driver || error) {
     return (
-      <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+      <div className="bg-background px-3 py-5 text-foreground sm:px-6 sm:py-6 lg:px-8 lg:py-8">
         <div className="mx-auto max-w-4xl">
           <button
             onClick={() => router.back()}
@@ -262,7 +262,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
     : null;
 
   return (
-    <div className="bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+    <div className="bg-background px-3 py-5 text-foreground sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="mx-auto max-w-4xl space-y-8">
         {/* Header */}
         <div>

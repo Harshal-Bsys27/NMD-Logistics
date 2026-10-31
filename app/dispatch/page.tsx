@@ -232,7 +232,7 @@ export default function DispatchPage() {
   };
 
   return (
-    <div className="min-w-0 bg-background px-4 py-8 text-foreground sm:px-6 lg:px-8">
+    <div className="min-w-0 bg-background px-3 py-5 text-foreground sm:px-6 sm:py-6 lg:px-8 lg:py-8">
       <div className="min-w-0 space-y-6">
         <header className="flex flex-col gap-4 border-b border-border pb-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
