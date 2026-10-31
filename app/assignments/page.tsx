@@ -2,13 +2,14 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
-import { assignmentService } from '@/services/database';
+import Image from 'next/image';
+import { assignmentService, driverService } from '@/services/database';
 import { useOperationsData } from '@/hooks/useOperationsData';
 import { useAuth } from '@/hooks';
 import { formatDate } from '@/utils/helpers';
-import { Clock, AlertCircle, CheckCircle2, Download, MapPin, Phone, RefreshCw, Truck, UserRound } from 'lucide-react';
+import { Activity, Clock, AlertCircle, CheckCircle2, Download, MapPin, PackageCheck, Phone, RefreshCw, Truck, UserRound, X } from 'lucide-react';
 
-import type { AssignmentStatus } from '@/types';
+import type { AssignmentStatus, PersonnelStatus } from '@/types';
 
 export default function AssignmentsPage() {
   const { user } = useAuth();
@@ -16,14 +17,48 @@ export default function AssignmentsPage() {
   const [selectedStatus, setSelectedStatus] = useState<AssignmentStatus | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [actionError, setActionError] = useState('');
+  const [availabilityHistory, setAvailabilityHistory] = useState<Array<{
+    id: string;
+    previous_status: PersonnelStatus;
+    new_status: PersonnelStatus;
+    changed_at: string;
+  }>>([]);
+  const [availabilityHistoryError, setAvailabilityHistoryError] = useState('');
   const [busyAssignmentId, setBusyAssignmentId] = useState<string | null>(null);
+  const [isUpdatingAvailability, setIsUpdatingAvailability] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const isDriver = user?.role === 'delivery_personnel';
   const driverProfile = isDriver ? drivers.find((driver) => driver.user_id === user.id) : undefined;
+  const driverProfileId = driverProfile?.id;
+  const driverProfileStatus = driverProfile?.current_status;
 
   useEffect(() => {
     if (isDriver) void refresh(true);
   }, [isDriver, refresh]);
+
+  useEffect(() => {
+    setAvatarLoadFailed(false);
+  }, [user?.avatar_url]);
+
+  useEffect(() => {
+    if (!isDriver || !driverProfileId) {
+      setAvailabilityHistory([]);
+      setAvailabilityHistoryError('');
+      return;
+    }
+
+    let active = true;
+    void driverService.getAvailabilityHistory(driverProfileId).then((result) => {
+      if (!active) return;
+      setAvailabilityHistory(result.data);
+      setAvailabilityHistoryError(result.error ?? '');
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [driverProfileId, driverProfileStatus, isDriver]);
 
   const visibleAssignments = useMemo(
     () => isDriver
@@ -31,34 +66,48 @@ export default function AssignmentsPage() {
       : assignments,
     [assignments, driverProfile?.id, isDriver]
   );
+  const activeDriverAssignment = visibleAssignments.find((assignment) => assignment.status === 'in_progress')
+    ?? visibleAssignments.find((assignment) => ['pending', 'accepted'].includes(assignment.status));
+  const hasActiveDriverAssignment = Boolean(activeDriverAssignment);
+  const displayedDriverStatus = activeDriverAssignment
+    ? activeDriverAssignment.status === 'in_progress' ? 'on_delivery' : 'assigned'
+    : driverProfile?.current_status;
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
 
   const filteredAssignments = useMemo(() => {
     return visibleAssignments.filter((assignment) => {
       const matchesStatus = selectedStatus === 'all' || assignment.status === selectedStatus;
       const order = orders.find((item) => item.id === assignment.order_id);
       const driver = drivers.find((item) => item.id === assignment.personnel_id);
-      const search = searchTerm.toLowerCase();
       const matchesSearch =
-        !search ||
-        assignment.id.toLowerCase().includes(search) ||
-        order?.order_number.toLowerCase().includes(search) ||
-        order?.client_name.toLowerCase().includes(search) ||
-        driver?.full_name?.toLowerCase().includes(search) ||
-        driver?.employee_id.toLowerCase().includes(search);
+        !normalizedSearchTerm ||
+        assignment.id.toLowerCase().includes(normalizedSearchTerm) ||
+        order?.order_number.toLowerCase().includes(normalizedSearchTerm) ||
+        order?.client_name.toLowerCase().includes(normalizedSearchTerm) ||
+        driver?.full_name?.toLowerCase().includes(normalizedSearchTerm) ||
+        driver?.employee_id.toLowerCase().includes(normalizedSearchTerm);
       return matchesStatus && matchesSearch;
     });
-  }, [visibleAssignments, orders, drivers, selectedStatus, searchTerm]);
+  }, [visibleAssignments, orders, drivers, selectedStatus, normalizedSearchTerm]);
 
   const getOrderInfo = (orderId: string) => orders.find((o) => o.id === orderId);
   const getDriverInfo = (driverId: string) => drivers.find((d) => d.id === driverId);
 
   const statusBadgeColors: Record<AssignmentStatus, string> = {
-    pending: 'bg-warning text-warning-foreground',
-    accepted: 'bg-info text-info-foreground',
-    rejected: 'bg-danger text-danger-foreground',
-    in_progress: 'bg-info text-info-foreground',
-    completed: 'bg-success text-success-foreground',
-    cancelled: 'bg-muted text-muted-foreground',
+    pending: 'border border-warning/25 bg-warning/15 text-warning-foreground dark:border-warning/30 dark:bg-warning/15',
+    accepted: 'border border-info/25 bg-info/15 text-info-foreground dark:border-info/30 dark:bg-info/15',
+    rejected: 'border border-danger/25 bg-danger/15 text-danger-foreground dark:border-danger/30 dark:bg-danger/15',
+    in_progress: 'border border-info/25 bg-info/15 text-info-foreground dark:border-info/30 dark:bg-info/15',
+    completed: 'border border-success/25 bg-success/15 text-success-foreground dark:border-success/30 dark:bg-success/15',
+    cancelled: 'border border-border bg-muted text-muted-foreground dark:bg-muted/80',
+  };
+  const statusAccentColors: Record<AssignmentStatus, string> = {
+    pending: 'border-l-warning',
+    accepted: 'border-l-info',
+    rejected: 'border-l-danger',
+    in_progress: 'border-l-info',
+    completed: 'border-l-success',
+    cancelled: 'border-l-muted-foreground',
   };
 
   const statusCounts = {
@@ -146,6 +195,21 @@ export default function AssignmentsPage() {
     }
   };
 
+  const handleAvailabilityChange = async (value: string) => {
+    if (!driverProfile || (value !== 'available' && value !== 'on_break' && value !== 'off_duty')) return;
+    setIsUpdatingAvailability(true);
+    setActionError('');
+    try {
+      const result = await driverService.setMyAvailability(value as Exclude<PersonnelStatus, 'on_delivery'>);
+      if (result.error) throw new Error(result.error);
+      await refresh(true);
+    } catch (updateError) {
+      setActionError(updateError instanceof Error ? updateError.message : 'Unable to update your availability');
+    } finally {
+      setIsUpdatingAvailability(false);
+    }
+  };
+
   return (
     <div className="min-w-0 bg-background text-foreground">
       <div className="w-full min-w-0 space-y-5 sm:space-y-6">
@@ -188,35 +252,114 @@ export default function AssignmentsPage() {
 
         {isDriver && driverProfile && (
           <>
-            <section aria-label="Driver profile summary" className="grid gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4">
-              <div className="flex min-w-0 items-center gap-3 sm:col-span-2 lg:col-span-1">
-                <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"><UserRound className="h-5 w-5" /></span>
+            <section aria-label="Driver profile summary" className="grid min-w-0 grid-cols-1 gap-3 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/[0.07] via-background to-primary/[0.03] p-3 shadow-sm sm:grid-cols-2 sm:p-4 xl:grid-cols-12 xl:gap-4">
+              <div className="flex min-h-[112px] min-w-0 items-center gap-4 rounded-xl border border-primary/10 bg-background/80 p-4 sm:col-span-2 sm:p-5 xl:col-span-4">
+                <span className="inline-flex h-[72px] w-[72px] shrink-0 overflow-hidden rounded-full border-[3px] border-background bg-primary/10 text-primary shadow-md ring-2 ring-primary/15">
+                  {user?.avatar_url && !avatarLoadFailed ? (
+                    <Image
+                      src={user.avatar_url}
+                      alt={`${user.full_name || 'Driver'} profile photo`}
+                      width={72}
+                      height={72}
+                      unoptimized
+                      onError={() => setAvatarLoadFailed(true)}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-full w-full items-center justify-center">
+                      <UserRound className="h-8 w-8" />
+                    </span>
+                  )}
+                </span>
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-foreground">{user?.full_name}</p>
-                  <p className="truncate text-xs text-muted-foreground">Employee ID: {driverProfile.employee_id}</p>
+                  <p className="break-words text-lg font-bold leading-tight text-foreground sm:text-xl">{user?.full_name || driverProfile.full_name || 'Driver'}</p>
+                  <p className="mt-1 break-all text-sm font-medium text-muted-foreground">Employee ID: {driverProfile.employee_id}</p>
+                  <p className="mt-2 inline-flex rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-primary">Delivery personnel</p>
                 </div>
               </div>
-              <div className="flex min-w-0 items-center gap-3 rounded-lg bg-background/70 p-3">
+              <div className="flex min-h-[96px] min-w-0 items-center gap-3 rounded-xl border border-border/60 bg-background/75 p-4 sm:p-5 xl:col-span-2">
                 <Truck className="h-5 w-5 shrink-0 text-primary" />
                 <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Vehicle</p>
-                  <p className="truncate text-sm font-semibold capitalize text-foreground">{driverProfile.vehicle_type} · {driverProfile.vehicle_number}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Vehicle</p>
+                  <p className="mt-1 truncate text-sm font-semibold capitalize text-foreground">{driverProfile.vehicle_type} · {driverProfile.vehicle_number}</p>
                 </div>
               </div>
-              <div className="flex min-w-0 items-center gap-3 rounded-lg bg-background/70 p-3">
+              <div className="flex min-h-[96px] min-w-0 items-center gap-3 rounded-xl border border-border/60 bg-background/75 p-4 sm:p-5 xl:col-span-2">
                 <Phone className="h-5 w-5 shrink-0 text-primary" />
                 <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Contact number</p>
-                  <p className="truncate text-sm font-semibold text-foreground">{user?.phone || 'Add your phone number in your account details'}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Contact number</p>
+                  <p className="mt-1 truncate text-sm font-semibold text-foreground">{user?.phone || 'Not provided'}</p>
                 </div>
               </div>
-              <div className="flex min-w-0 items-center gap-3 rounded-lg bg-background/70 p-3">
-                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${driverProfile.current_status === 'available' ? 'bg-success' : driverProfile.current_status === 'on_delivery' ? 'bg-info' : 'bg-muted-foreground'}`} />
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground">Current status</p>
-                  <p className="truncate text-sm font-semibold capitalize text-foreground">{driverProfile.current_status.replace(/_/g, ' ')}</p>
+              <div className="min-w-0 rounded-xl border border-primary/20 bg-background/85 p-4 shadow-sm sm:col-span-2 sm:p-5 xl:col-span-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                  <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${displayedDriverStatus === 'available' ? 'bg-success' : displayedDriverStatus === 'on_delivery' ? 'bg-info' : displayedDriverStatus === 'assigned' ? 'bg-primary' : 'bg-warning'}`} />
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Current availability</p>
+                  </div>
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold capitalize text-primary">
+                    {displayedDriverStatus?.replace(/_/g, ' ') ?? 'Unknown'}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">Choose whether dispatch can assign you new deliveries.</p>
+                <label htmlFor="driver-availability" className="sr-only">Set your availability</label>
+                <select
+                  id="driver-availability"
+                  value={driverProfile.current_status}
+                  onChange={(event) => void handleAvailabilityChange(event.currentTarget.value)}
+                  disabled={isLoading || isUpdatingAvailability || hasActiveDriverAssignment}
+                  className="mt-3 min-h-12 w-full rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 [color-scheme:light] dark:[color-scheme:dark]"
+                >
+                  <option value="available">Available for assignments</option>
+                  <option value="on_break">On break</option>
+                  <option value="off_duty">Off duty</option>
+                  {driverProfile.current_status === 'on_delivery' && (
+                    <option value="on_delivery" disabled>On delivery · assignment managed</option>
+                  )}
+                </select>
+                <p className="mt-2 text-xs leading-4 text-muted-foreground" aria-live="polite">
+                  {isUpdatingAvailability
+                    ? 'Updating availability…'
+                    : hasActiveDriverAssignment
+                      ? 'Finish or decline your active assignment before changing availability.'
+                      : 'Dispatchers see your availability immediately.'}
+                </p>
+              </div>
+            </section>
+
+            <section aria-label="Recent availability changes" className="surface-glass rounded-xl border border-border p-4 sm:p-5">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Activity className="h-4 w-4" />
+                </span>
+                <div>
+                  <h2 className="text-sm font-semibold text-foreground">Availability history</h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Recent changes to your driver status</p>
                 </div>
               </div>
+              {availabilityHistoryError ? (
+                <p role="status" className="mt-3 rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
+                  Availability history will appear after the history migration is applied.
+                </p>
+              ) : availabilityHistory.length ? (
+                <ol className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                  {availabilityHistory.map((entry) => (
+                    <li key={entry.id} className="flex min-w-0 items-center gap-3 rounded-lg border border-border/70 bg-background/60 p-3">
+                      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${entry.new_status === 'available' ? 'bg-success' : entry.new_status === 'on_delivery' ? 'bg-info' : 'bg-warning'}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-semibold capitalize text-foreground">
+                          {entry.previous_status.replace(/_/g, ' ')} <span className="text-muted-foreground">to</span> {entry.new_status.replace(/_/g, ' ')}
+                        </p>
+                        <time dateTime={entry.changed_at} className="mt-1 block text-[10px] text-muted-foreground">
+                          {formatDate(entry.changed_at, 'short')}
+                        </time>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="mt-3 text-xs text-muted-foreground">No availability changes recorded yet.</p>
+              )}
             </section>
 
             <section aria-label="Driver activity" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -296,15 +439,25 @@ export default function AssignmentsPage() {
         {/* Search Bar */}
         {!isDriver && (
           <div className="flex min-w-0 gap-3">
-            <div className="surface-glass min-h-11 min-w-0 flex-1 rounded-lg border border-border px-4 py-2.5">
+            <div className="surface-glass flex min-h-11 min-w-0 flex-1 items-center rounded-lg border border-border px-4">
               <input
                 type="text"
                 placeholder="Search by order, driver, or assignment ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 aria-label="Search assignments"
-                className="w-full bg-transparent text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="min-w-0 flex-1 bg-transparent py-2.5 text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  aria-label="Clear assignment search"
+                  className="ml-2 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -333,70 +486,84 @@ export default function AssignmentsPage() {
             filteredAssignments.map((assignment) => {
               const order = getOrderInfo(assignment.order_id);
               const driver = getDriverInfo(assignment.personnel_id);
+              const statusLabel = assignment.status.replace(/_/g, ' ');
 
               return (
-                <div key={assignment.id} className="surface-glass min-w-0 overflow-hidden rounded-lg border border-border p-3 transition hover:border-ring/50 sm:p-5">
+                <div key={assignment.id} className={`surface-glass min-w-0 overflow-hidden rounded-xl border border-border border-l-4 ${statusAccentColors[assignment.status]} p-2.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-ring/50 hover:shadow-lg dark:bg-card/95 dark:shadow-black/20 dark:hover:shadow-black/35 sm:p-4`}>
                     <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     {/* Main Info */}
                     <div className="min-w-0 flex-1">
-                      <div className="mb-3 flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
-                        <Link href={`/assignments/${assignment.id}`} className="min-w-0 max-w-full break-words text-base font-semibold text-foreground hover:text-primary sm:text-lg">
-                          {isDriver
-                            ? `${order?.order_number || 'Delivery'}${order?.client_name ? ` · ${order.client_name}` : ''}`
-                            : `${order?.order_number || 'Order'} → ${driver?.full_name || driver?.employee_id || 'Driver'}`}
-                        </Link>
-                        <span className={`inline-flex min-h-6 items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeColors[assignment.status]}`}>
-                          {assignment.status.replace('_', ' ')}
+                      <div className="mb-3 flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-lg border border-border/70 bg-gradient-to-r from-muted/90 via-muted/60 to-card px-3 py-2.5 dark:from-muted dark:via-muted/80 dark:to-card">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/15 bg-background text-primary shadow-sm dark:border-primary/30 dark:bg-primary/15">
+                            <PackageCheck className="h-4 w-4" />
+                          </span>
+                          <div className="min-w-0">
+                            <Link href={`/assignments/${assignment.id}`} className="block truncate text-sm font-bold text-foreground transition hover:text-primary sm:text-base">
+                              {isDriver
+                                ? `${order?.order_number || 'Delivery'}${order?.client_name ? ` · ${order.client_name}` : ''}`
+                                : `${order?.order_number || 'Order'} → ${driver?.full_name || driver?.employee_id || 'Driver'}`}
+                            </Link>
+                            <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                              {isDriver ? 'Your delivery' : `Assignment · ${assignment.id.slice(0, 8)}`}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`inline-flex min-h-7 items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wide ${statusBadgeColors[assignment.status]}`}>
+                          <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                          {statusLabel}
                         </span>
                       </div>
 
                       {/* Order & Driver Details */}
-                      <div className="mb-3 grid min-w-0 grid-cols-2 gap-2 sm:gap-3">
-                        <div className="min-w-0 rounded-md bg-muted/50 p-2.5 sm:p-3">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground">{isDriver ? 'Delivery details' : 'Order details'}</p>
-                          <p className="mt-1 break-words text-sm text-foreground">{order?.package_description || 'Package details unavailable'}</p>
-                          {isDriver ? (
-                            <div className="mt-3 grid gap-2">
-                              <div>
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Pickup</p>
-                                <p className="mt-1 flex items-start gap-1 break-words text-xs text-foreground">
-                                  <MapPin className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
-                                  {order?.pickup_location || 'Pickup location unavailable'}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Delivery</p>
-                                <p className="mt-1 flex items-start gap-1 break-words text-xs text-foreground">
-                                  <MapPin className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
-                                  {order?.delivery_location || 'Delivery location unavailable'}
-                                </p>
-                              </div>
+                      <div className="mb-3 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
+                        <div className="min-w-0 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card p-3 shadow-sm dark:border-primary/30 dark:from-primary/20 dark:via-card dark:to-card sm:p-4">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary dark:bg-primary/20">
+                              <PackageCheck className="h-3.5 w-3.5" />
+                            </span>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary">{isDriver ? 'Delivery & route' : 'Order route'}</p>
+                          </div>
+                          <p className="mt-2 break-words text-sm font-semibold text-foreground">{order?.package_description || 'Package details unavailable'}</p>
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            <div className="min-w-0 rounded-lg border border-primary/20 bg-background/90 p-2.5 dark:border-primary/25 dark:bg-primary/[0.12]">
+                              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-primary">Pickup</p>
+                              <p className="mt-1.5 flex items-start gap-1.5 break-words text-xs font-medium leading-5 text-foreground">
+                                <MapPin className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
+                                {order?.pickup_location || 'Pickup location unavailable'}
+                              </p>
                             </div>
-                          ) : (
-                            <p className="mt-1 flex items-start gap-1 break-words text-xs text-muted-foreground">
-                              <MapPin className="mt-0.5 h-3 w-3 shrink-0" />
-                              {order?.delivery_location}
-                            </p>
-                          )}
+                            <div className="min-w-0 rounded-lg border border-success/25 bg-success/[0.08] p-2.5 dark:border-success/30 dark:bg-success/[0.15]">
+                              <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-success-foreground">Deliver to</p>
+                              <p className="mt-1.5 flex items-start gap-1.5 break-words text-xs font-medium leading-5 text-foreground">
+                                <MapPin className="mt-0.5 h-3 w-3 shrink-0 text-success-foreground" />
+                                {order?.delivery_location || 'Delivery location unavailable'}
+                              </p>
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="min-w-0 rounded-md bg-muted/50 p-2.5 sm:p-3">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground">{isDriver ? 'Customer' : 'Driver'}</p>
-                          <p className="mt-1 break-words text-sm text-foreground">
+                        <div className="min-w-0 rounded-xl border border-info/20 bg-gradient-to-br from-info/10 via-card to-card p-3 shadow-sm dark:border-info/30 dark:from-info/20 dark:via-card dark:to-card sm:p-4">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-info/10 text-info-foreground dark:bg-info/20">
+                              {isDriver ? <UserRound className="h-3.5 w-3.5" /> : <Truck className="h-3.5 w-3.5" />}
+                            </span>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-info-foreground">{isDriver ? 'Customer contact' : 'Assigned driver'}</p>
+                          </div>
+                          <p className="mt-2 break-words text-sm font-semibold text-foreground">
                             {isDriver ? order?.client_name || 'Customer details unavailable' : driver?.full_name || driver?.employee_id}
                           </p>
                           {isDriver && order?.client_phone ? (
-                            <a className="mt-2 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary underline-offset-4 hover:underline" href={`tel:${order.client_phone}`}>
+                            <a className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg border border-info/15 bg-background/85 px-3 text-sm font-semibold text-primary transition hover:bg-info/10" href={`tel:${order.client_phone}`}>
                               <Phone className="h-4 w-4 shrink-0" />
                               {order.client_phone}
                             </a>
                           ) : !isDriver && driver?.full_name ? (
-                            <p className="mt-1 text-xs text-muted-foreground">ID: {driver.employee_id}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">Employee ID: {driver.employee_id}</p>
                           ) : null}
                           {!isDriver && (
                             <p className="mt-1 text-xs text-muted-foreground">
-                              {driver && (driver.vehicle_type.charAt(0).toUpperCase() + driver.vehicle_type.slice(1))} •{' '}
-                              {driver?.vehicle_number}
+                              {driver && (driver.vehicle_type.charAt(0).toUpperCase() + driver.vehicle_type.slice(1))} · {driver?.vehicle_number}
                             </p>
                           )}
                         </div>
@@ -404,29 +571,29 @@ export default function AssignmentsPage() {
 
                       {/* Assignment Notes */}
                       {assignment.notes && (
-                        <div className="mb-3 min-w-0 rounded-md border border-border bg-muted/50 p-3">
-                          <p className="text-xs uppercase tracking-wider text-muted-foreground">Notes</p>
-                          <p className="mt-1 break-words text-sm text-foreground">{assignment.notes}</p>
+                        <div className="mb-3 min-w-0 rounded-lg border border-warning/25 bg-warning/[0.08] p-3 dark:border-warning/30 dark:bg-warning/[0.14]">
+                          <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-warning-foreground">Assignment notes</p>
+                          <p className="mt-1 break-words text-xs leading-5 text-foreground">{assignment.notes}</p>
                         </div>
                       )}
 
                       {/* Timeline */}
-                      <div className="flex flex-wrap gap-3 text-xs">
+                      <div className="flex flex-wrap gap-2">
                         {assignment.assigned_at && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Clock className="h-3 w-3" />
+                          <div className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/60 px-2.5 py-1.5 text-[10px] font-medium text-muted-foreground dark:bg-muted">
+                            <Clock className="h-3 w-3 shrink-0" />
                             Assigned: {formatDate(assignment.assigned_at, 'short')}
                           </div>
                         )}
                         {assignment.accepted_at && (
-                          <div className="flex items-center gap-1 text-success-foreground">
-                            <CheckCircle2 className="h-3 w-3" />
+                          <div className="inline-flex items-center gap-1.5 rounded-full border border-success/25 bg-success/[0.08] px-2.5 py-1.5 text-[10px] font-medium text-success-foreground dark:border-success/30 dark:bg-success/[0.14]">
+                            <CheckCircle2 className="h-3 w-3 shrink-0" />
                             Accepted: {formatDate(assignment.accepted_at, 'short')}
                           </div>
                         )}
                         {assignment.started_at && (
-                          <div className="flex items-center gap-1 text-info-foreground">
-                            <AlertCircle className="h-3 w-3" />
+                          <div className="inline-flex items-center gap-1.5 rounded-full border border-info/25 bg-info/[0.08] px-2.5 py-1.5 text-[10px] font-medium text-info-foreground dark:border-info/30 dark:bg-info/[0.14]">
+                            <AlertCircle className="h-3 w-3 shrink-0" />
                             Started: {formatDate(assignment.started_at, 'short')}
                           </div>
                         )}
@@ -434,9 +601,9 @@ export default function AssignmentsPage() {
                     </div>
 
                     <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center lg:flex-col lg:items-end">
-                      <div className="flex min-h-16 flex-1 items-center justify-between gap-4 rounded-md border border-border bg-muted/40 px-4 py-2 text-left sm:flex-col sm:justify-center sm:gap-0 sm:text-center lg:min-w-[150px]">
-                        <p className="text-xs uppercase tracking-wider text-muted-foreground">Est. Duration</p>
-                        <p className="text-2xl font-bold tabular-nums text-info-foreground">
+                      <div className="flex min-h-16 flex-1 items-center justify-between gap-4 rounded-xl border border-info/25 bg-gradient-to-br from-info/10 via-card to-card px-4 py-3 text-left shadow-sm dark:border-info/30 dark:from-info/20 dark:via-card dark:to-card sm:flex-col sm:justify-center sm:gap-0 sm:text-center lg:min-w-[150px]">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-info-foreground">Est. duration</p>
+                        <p className="text-2xl font-extrabold tabular-nums text-foreground">
                           {assignment.estimated_duration_minutes}
                           <span className="ml-1 text-xs font-normal text-muted-foreground">min</span>
                         </p>

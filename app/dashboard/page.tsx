@@ -12,8 +12,7 @@ import {
   Area,
   BarChart,
   Bar,
-  LineChart,
-  Line,
+  LabelList,
   PieChart,
   Pie,
   Cell,
@@ -40,6 +39,9 @@ import {
   DollarSign,
   PackageCheck,
   Route,
+  Award,
+  Star,
+  X,
   UserPlus,
 } from 'lucide-react';
 
@@ -67,6 +69,7 @@ const statStyles = [
 export default function DashboardPage() {
   const router = useRouter();
   const [dateRange, setDateRange] = useState('30');
+  const [isDriverPerformanceOpen, setIsDriverPerformanceOpen] = useState(false);
   const { user, loading } = useAuth();
   const {
     orders,
@@ -77,6 +80,20 @@ export default function DashboardPage() {
     realtimeStatus,
     refresh,
   } = useOperationsData();
+
+  useEffect(() => {
+    if (!isDriverPerformanceOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsDriverPerformanceOpen(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isDriverPerformanceOpen]);
 
   const filteredOrders = useMemo(() => {
     if (dateRange === 'all') return orders;
@@ -225,11 +242,25 @@ export default function DashboardPage() {
 
   const driverPerformanceData = useMemo(
     () => drivers
-      .map((driver) => ({ name: driver.full_name || driver.employee_id, deliveries: driver.total_deliveries_completed, rating: driver.rating }))
-      .sort((left, right) => right.deliveries - left.deliveries)
-      .slice(0, 10),
+      .map((driver) => ({
+        id: driver.id,
+        name: driver.full_name || driver.employee_id,
+        employeeId: driver.employee_id,
+        deliveries: driver.total_deliveries_completed,
+        rating: driver.rating,
+        ratingLabel: driver.rating > 0 ? `${driver.rating.toFixed(1)} / 5` : 'Not rated',
+        status: driver.current_status,
+      }))
+      .sort((left, right) => right.deliveries - left.deliveries),
     [drivers]
   );
+  const topDriverPerformanceData = driverPerformanceData.slice(0, 10);
+  const maxDriverDeliveries = Math.max(1, ...topDriverPerformanceData.map((driver) => driver.deliveries));
+  const maxAllDriverDeliveries = Math.max(1, ...driverPerformanceData.map((driver) => driver.deliveries));
+  const ratedDrivers = driverPerformanceData.filter((driver) => driver.rating > 0);
+  const averageDriverRating = ratedDrivers.length
+    ? ratedDrivers.reduce((total, driver) => total + driver.rating, 0) / ratedDrivers.length
+    : 0;
 
   const routeHealth = useMemo(() => {
     const statuses = [
@@ -366,7 +397,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="order-3 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6">
-          <section className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4 md:p-5 xl:col-span-8">
+          <section className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4 shadow-lg shadow-brand-950/[0.04] transition-shadow hover:shadow-xl hover:shadow-brand-950/[0.07] dark:shadow-black/15 dark:hover:shadow-black/25 md:p-5 xl:col-span-8">
             <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 items-start gap-3">
                 <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-500"><Activity className="h-5 w-5" /></span>
@@ -394,30 +425,30 @@ export default function DashboardPage() {
                 <AreaChart data={orderTrendData} margin={{ top: 12, right: 20, left: 0, bottom: 8 }}>
                   <defs>
                     <linearGradient id="serviceCompleted" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={chartTheme.colors[0]} stopOpacity={0.28} />
+                      <stop offset="0%" stopColor={chartTheme.colors[0]} stopOpacity={0.4} />
                       <stop offset="95%" stopColor={chartTheme.colors[0]} stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="serviceActive" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={chartTheme.colors[2]} stopOpacity={0.2} />
+                      <stop offset="0%" stopColor={chartTheme.colors[2]} stopOpacity={0.32} />
                       <stop offset="95%" stopColor={chartTheme.colors[2]} stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="serviceFailed" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={chartTheme.colors[3]} stopOpacity={0.24} />
+                      <stop offset="0%" stopColor={chartTheme.colors[3]} stopOpacity={0.34} />
                       <stop offset="95%" stopColor={chartTheme.colors[3]} stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} vertical={false} />
-                  <XAxis dataKey="period" stroke={chartTheme.label} tickLine={false} axisLine={false} tickMargin={8} />
-                  <YAxis stroke={chartTheme.label} width={32} tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} />
+                  <XAxis dataKey="period" stroke={chartTheme.label} tick={{ fill: chartTheme.label, fontSize: 11 }} tickLine={false} axisLine={false} tickMargin={10} />
+                  <YAxis stroke={chartTheme.label} width={32} tick={{ fill: chartTheme.label, fontSize: 11 }} tickLine={false} axisLine={false} tickMargin={10} allowDecimals={false} />
                   <Tooltip
                     cursor={{ stroke: chartTheme.grid, strokeWidth: 1 }}
-                    contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground, borderRadius: '0.75rem' }}
+                    contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground, borderRadius: '0.75rem', boxShadow: '0 12px 30px rgba(15, 23, 42, 0.16)' }}
                   />
                   <Legend wrapperStyle={{ paddingTop: 12, fontSize: '12px' }} />
-                  <Area type="monotone" dataKey="completed" name="Delivered" stroke={chartTheme.colors[0]} fill="url(#serviceCompleted)" strokeWidth={2.5} />
-                  <Area type="monotone" dataKey="active" name="Active" stroke={chartTheme.colors[2]} fill="url(#serviceActive)" strokeWidth={2.5} />
-                  <Area type="monotone" dataKey="failed" name="Failed" stroke={chartTheme.colors[3]} fill="url(#serviceFailed)" strokeWidth={2.5} />
-                  <Area type="monotone" dataKey="cancelled" name="Cancelled" stroke={chartTheme.label} fill={chartTheme.label} fillOpacity={0.08} strokeWidth={2} />
+                  <Area type="monotone" dataKey="completed" name="Delivered" stroke={chartTheme.colors[0]} fill="url(#serviceCompleted)" strokeWidth={3} activeDot={{ r: 5, strokeWidth: 0 }} />
+                  <Area type="monotone" dataKey="active" name="Active" stroke={chartTheme.colors[2]} fill="url(#serviceActive)" strokeWidth={2.5} activeDot={{ r: 5, strokeWidth: 0 }} />
+                  <Area type="monotone" dataKey="failed" name="Failed" stroke={chartTheme.colors[3]} fill="url(#serviceFailed)" strokeWidth={2.5} activeDot={{ r: 5, strokeWidth: 0 }} />
+                  <Area type="monotone" dataKey="cancelled" name="Cancelled" stroke={chartTheme.label} fill={chartTheme.label} fillOpacity={0.08} strokeWidth={2} activeDot={{ r: 4, strokeWidth: 0 }} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
@@ -481,7 +512,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="order-6 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6">
-          <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4 md:p-5 xl:col-span-6">
+          <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4 shadow-lg shadow-brand-950/[0.04] transition-shadow hover:shadow-xl hover:shadow-brand-950/[0.07] dark:shadow-black/15 dark:hover:shadow-black/25 md:p-5 xl:col-span-6">
             <div className="mb-6 flex items-center gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600/10 text-brand-600 dark:bg-brand-500/15 dark:text-brand-500"><DollarSign className="h-5 w-5" /></span>
               <div>
@@ -492,12 +523,18 @@ export default function DashboardPage() {
             {filteredOrders.length ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={orderTrendData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-                  <XAxis dataKey="period" stroke={chartTheme.label} />
-                  <YAxis stroke={chartTheme.label} />
-                  <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
+                  <defs>
+                    <linearGradient id="declaredValueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={chartTheme.colors[0]} stopOpacity={1} />
+                      <stop offset="100%" stopColor={chartTheme.colors[0]} stopOpacity={0.55} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 5" stroke={chartTheme.grid} vertical={false} />
+                  <XAxis dataKey="period" stroke={chartTheme.label} tick={{ fill: chartTheme.label, fontSize: 11 }} tickLine={false} axisLine={false} tickMargin={10} />
+                  <YAxis stroke={chartTheme.label} tick={{ fill: chartTheme.label, fontSize: 11 }} tickLine={false} axisLine={false} width={44} />
+                  <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground, borderRadius: '0.75rem', boxShadow: '0 12px 30px rgba(15, 23, 42, 0.16)' }} />
                   <Legend />
-                  <Bar dataKey="declaredValue" name="Declared package value" fill={chartTheme.colors[0]} radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="declaredValue" name="Declared package value" fill="url(#declaredValueGradient)" radius={[8, 8, 2, 2]} maxBarSize={48} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -507,7 +544,7 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-violet p-4 md:p-5 xl:col-span-6">
+          <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-violet p-4 shadow-lg shadow-brand-950/[0.04] transition-shadow hover:shadow-xl hover:shadow-brand-950/[0.07] dark:shadow-black/15 dark:hover:shadow-black/25 md:p-5 xl:col-span-6">
             <div className="mb-6 flex items-center gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-violet/10 text-violet-foreground"><Clock3 className="h-5 w-5" /></span>
               <div>
@@ -522,18 +559,20 @@ export default function DashboardPage() {
                     data={deliveryTimeData}
                     cx="50%"
                     cy="50%"
+                    innerRadius={52}
+                    paddingAngle={3}
                     labelLine={false}
                     label={({ name, percent }) => `${name} ${Math.round((percent ?? 0) * 100)}%`}
                     nameKey="range"
-                    outerRadius={80}
+                    outerRadius={88}
                     fill={chartTheme.colors[0]}
                     dataKey="percentage"
                   >
                     {deliveryTimeData.map((entry, index) => (
-                      <Cell key={`cell-${entry.range}`} fill={chartTheme.colors[index % chartTheme.colors.length]} />
+                      <Cell key={`cell-${entry.range}`} fill={chartTheme.colors[index % chartTheme.colors.length]} stroke="var(--card)" strokeWidth={3} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
+                  <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground, borderRadius: '0.75rem', boxShadow: '0 12px 30px rgba(15, 23, 42, 0.16)' }} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
@@ -551,29 +590,166 @@ export default function DashboardPage() {
         </div>
 
         <div className="order-7 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6">
-          <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-success p-4 md:p-5 xl:col-span-6">
-            <div className="mb-6 flex items-center gap-3">
+          <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-success p-4 shadow-lg shadow-brand-950/[0.04] transition-shadow hover:shadow-xl hover:shadow-brand-950/[0.07] dark:shadow-black/15 dark:hover:shadow-black/25 md:p-5 xl:col-span-6">
+            <div className="mb-6 flex items-center justify-between gap-3">
               <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-success/10 text-success-foreground"><Truck className="h-5 w-5" /></span>
-              <div>
+              <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-semibold text-foreground">Top Driver Performance</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Deliveries and customer ratings</p>
+                <p className="mt-1 text-sm text-muted-foreground">Completed deliveries and customer ratings</p>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsDriverPerformanceOpen(true)}
+                disabled={driverPerformanceData.length === 0}
+                className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg border border-success/25 bg-success/5 px-3 text-xs font-semibold text-success-foreground transition hover:bg-success/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 sm:text-sm"
+              >
+                View all
+                <ArrowUpRight className="h-4 w-4" />
+              </button>
             </div>
-            {driverPerformanceData.length ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={driverPerformanceData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={chartTheme.grid} />
-                  <XAxis dataKey="name" stroke={chartTheme.label} />
-                  <YAxis yAxisId="deliveries" stroke={chartTheme.label} allowDecimals={false} />
-                  <YAxis yAxisId="rating" orientation="right" stroke={chartTheme.label} domain={[0, 5]} />
-                  <Tooltip contentStyle={{ backgroundColor: chartTheme.tooltipBackground, border: chartTheme.tooltipBorder, color: chartTheme.tooltipForeground }} />
-                  <Legend />
-                  <Line yAxisId="deliveries" type="monotone" dataKey="deliveries" stroke={chartTheme.colors[0]} strokeWidth={2} dot={{ fill: chartTheme.colors[0], r: 4 }} />
-                  <Line yAxisId="rating" type="monotone" dataKey="rating" stroke={chartTheme.colors[2]} strokeWidth={2} dot={{ fill: chartTheme.colors[2], r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
+            {topDriverPerformanceData.length ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="relative min-w-0 overflow-hidden rounded-xl border border-success/20 bg-gradient-to-br from-success/10 via-card to-card p-3 sm:p-4">
+                    <div className="absolute -right-4 -top-5 h-20 w-20 rounded-full bg-success/10 blur-2xl" />
+                    <div className="relative flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-success-foreground sm:text-xs">
+                      <Award className="h-4 w-4" />
+                      Top performer
+                    </div>
+                    <p className="relative mt-2 truncate text-sm font-bold text-foreground sm:text-base" title={topDriverPerformanceData[0].name}>
+                      {topDriverPerformanceData[0].name}
+                    </p>
+                    <p className="relative mt-0.5 text-[11px] font-medium text-muted-foreground">
+                      Employee ID: {topDriverPerformanceData[0].employeeId}
+                    </p>
+                    <p className="relative mt-1 text-xs text-muted-foreground">
+                      {topDriverPerformanceData[0].deliveries.toLocaleString('en-IN')} completed deliveries
+                    </p>
+                  </div>
+                  <div className="relative min-w-0 overflow-hidden rounded-xl border border-warning/20 bg-gradient-to-br from-warning/10 via-card to-card p-3 sm:p-4">
+                    <div className="absolute -right-4 -top-5 h-20 w-20 rounded-full bg-warning/10 blur-2xl" />
+                    <div className="relative flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-warning-foreground sm:text-xs">
+                      <Star className="h-4 w-4 fill-current" />
+                      Average rating
+                    </div>
+                    <p className="relative mt-2 text-sm font-bold tabular-nums text-foreground sm:text-base">
+                      {averageDriverRating > 0 ? `${averageDriverRating.toFixed(1)} / 5` : 'Not rated yet'}
+                    </p>
+                    <p className="relative mt-1 text-xs text-muted-foreground">
+                      Across {ratedDrivers.length} rated {ratedDrivers.length === 1 ? 'driver' : 'drivers'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-border/80 bg-gradient-to-br from-card via-card to-success/[0.035] p-2 pt-3 shadow-inner shadow-brand-950/[0.03] sm:p-4">
+                  <div className="mb-1 flex items-center justify-between gap-2 pl-1 text-[9px] font-bold uppercase tracking-[0.11em] text-muted-foreground sm:text-[10px] sm:tracking-[0.14em]">
+                    <span>Driver · employee ID · deliveries</span>
+                    <span className="text-warning-foreground">Rating / 5</span>
+                  </div>
+                  <ResponsiveContainer width="100%" height={Math.max(260, topDriverPerformanceData.length * 38)}>
+                  <BarChart
+                    data={topDriverPerformanceData}
+                    layout="vertical"
+                    margin={{ top: 8, right: 6, bottom: 8, left: 0 }}
+                    barCategoryGap="32%"
+                  >
+                    <defs>
+                      <linearGradient id="driverDeliveriesGradient" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="var(--success)" stopOpacity={0.58} />
+                        <stop offset="100%" stopColor="var(--success)" stopOpacity={1} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid horizontal={false} stroke={chartTheme.grid} strokeDasharray="3 5" />
+                    <XAxis
+                      type="number"
+                      dataKey="deliveries"
+                      domain={[0, Math.ceil(maxDriverDeliveries * 1.18)]}
+                      allowDecimals={false}
+                      tick={{ fill: chartTheme.label, fontSize: 10 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="employeeId"
+                      width={124}
+                      tick={(props: { x: number; y: number; payload: { value: string } }) => {
+                        const driver = topDriverPerformanceData.find((item) => item.employeeId === props.payload.value);
+                        if (!driver) return <g />;
+                        const displayName = driver.name.length > 17
+                          ? `${driver.name.slice(0, 16)}…`
+                          : driver.name;
+                        return (
+                          <g>
+                            <text x={props.x - 6} y={props.y} textAnchor="end" fill={chartTheme.label}>
+                              <tspan x={props.x - 6} dy="-0.25em" fontSize="10" fontWeight="600">{displayName}</tspan>
+                              <tspan x={props.x - 6} dy="1.25em" fontSize="9">{driver.employeeId}</tspan>
+                            </text>
+                          </g>
+                        );
+                      }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      yAxisId="rating"
+                      type="category"
+                      dataKey="ratingLabel"
+                      orientation="right"
+                      width={72}
+                      tick={{ fill: chartTheme.label, fontSize: 10, fontWeight: 600 }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <Tooltip
+                      cursor={{ fill: 'var(--muted)', opacity: 0.45 }}
+                      formatter={(value, name, item) => [
+                        name === 'Completed deliveries'
+                          ? Number(value).toLocaleString('en-IN')
+                          : item.payload.ratingLabel,
+                        name,
+                      ]}
+                      labelFormatter={(label) => {
+                        const employeeId = String(label);
+                        const driver = topDriverPerformanceData.find((item) => item.employeeId === employeeId);
+                        return driver ? `${driver.name} · ${employeeId}` : `Employee ID: ${employeeId}`;
+                      }}
+                      contentStyle={{
+                        backgroundColor: chartTheme.tooltipBackground,
+                        border: chartTheme.tooltipBorder,
+                        color: chartTheme.tooltipForeground,
+                        borderRadius: '0.75rem',
+                        boxShadow: '0 12px 30px rgba(15, 23, 42, 0.16)',
+                      }}
+                    />
+                    <Bar
+                      dataKey="deliveries"
+                      name="Completed deliveries"
+                      fill="url(#driverDeliveriesGradient)"
+                      background={{ fill: 'var(--muted)', radius: 7 }}
+                      radius={[2, 7, 7, 2]}
+                      maxBarSize={22}
+                      isAnimationActive
+                    >
+                      <LabelList
+                        dataKey="deliveries"
+                        position="right"
+                        formatter={(value: number | string) => Number(value).toLocaleString('en-IN')}
+                        fill={chartTheme.label}
+                        fontSize={10}
+                        fontWeight={600}
+                      />
+                    </Bar>
+                  </BarChart>
+                  </ResponsiveContainer>
+                  <p className="mt-1 text-center text-[10px] text-muted-foreground">
+                    Ranked by completed deliveries · Showing top {topDriverPerformanceData.length} of {driverPerformanceData.length}
+                  </p>
+                </div>
+              </div>
             ) : (
-              <div className="flex h-[300px] flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
+              <div className="flex min-h-[220px] flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
                 <p>No driver records are visible yet.</p>
                 {canManageOperations && (
                   <Link href="/drivers" className="font-semibold text-primary underline">Add the first driver</Link>
@@ -619,7 +795,12 @@ export default function DashboardPage() {
 
         <div className="order-4 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6">
           <section className="min-w-0 max-w-full space-y-4 overflow-hidden xl:col-span-8">
-            <OrdersTable orders={filteredOrders.slice(0, 5)} title="Recent orders" subtitle="Latest activity" />
+            <OrdersTable
+              orders={filteredOrders.slice(0, 5)}
+              title="Recent orders"
+              subtitle="Latest activity"
+              onView={(order) => router.push(`/orders/${order.id}`)}
+            />
           </section>
 
           <section className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:col-span-4 xl:grid-cols-1">
@@ -680,6 +861,209 @@ export default function DashboardPage() {
         </div>
 
       </div>
+      {isDriverPerformanceOpen && (
+        <div
+          className="fixed inset-0 z-[80] flex items-center justify-center bg-foreground/60 p-2 backdrop-blur-sm sm:p-5"
+          onClick={() => setIsDriverPerformanceOpen(false)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="driver-performance-title"
+            className="flex max-h-[96vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-border bg-background text-foreground shadow-2xl sm:max-h-[92vh]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flex items-start justify-between gap-4 border-b border-border bg-gradient-to-r from-success/10 via-background to-warning/10 px-4 py-4 sm:px-6 sm:py-5">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-success/10 text-success-foreground">
+                  <Truck className="h-5 w-5" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-success-foreground sm:text-xs">Fleet analytics</p>
+                  <h2 id="driver-performance-title" className="mt-1 text-lg font-bold sm:text-2xl">Top Driver Performance</h2>
+                  <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                    All {driverPerformanceData.length} drivers · ranked by completed deliveries
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDriverPerformanceOpen(false)}
+                aria-label="Close driver performance details"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </header>
+
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-3 sm:p-6">
+              <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Total drivers</p>
+                  <p className="mt-2 text-2xl font-bold tabular-nums">{driverPerformanceData.length}</p>
+                </div>
+                <div className="rounded-xl border border-success/20 bg-success/5 p-3 sm:p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-success-foreground">Top completed</p>
+                  <p className="mt-2 text-2xl font-bold tabular-nums">{driverPerformanceData[0]?.deliveries.toLocaleString('en-IN') ?? 0}</p>
+                </div>
+                <div className="rounded-xl border border-warning/20 bg-warning/5 p-3 sm:p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-warning-foreground">Average rating</p>
+                  <p className="mt-2 text-2xl font-bold tabular-nums">{averageDriverRating > 0 ? `${averageDriverRating.toFixed(1)} / 5` : '—'}</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-3 sm:p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Rated drivers</p>
+                  <p className="mt-2 text-2xl font-bold tabular-nums">{ratedDrivers.length}</p>
+                </div>
+              </div>
+
+              <section aria-label="All driver performance chart" className="rounded-xl border border-border bg-card p-2 sm:p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-sm font-semibold sm:text-base">Performance by driver</h3>
+                    <p className="mt-1 text-xs text-muted-foreground">Bar length shows completed deliveries; ratings use a separate column.</p>
+                  </div>
+                  <span className="rounded-full bg-success/10 px-3 py-1 text-[10px] font-semibold text-success-foreground">
+                    {driverPerformanceData.length} total
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[540px]">
+                    <div className="mb-1 flex items-center justify-between pl-[128px] pr-[76px] text-[9px] font-bold uppercase tracking-wide text-muted-foreground">
+                      <span>Completed deliveries</span>
+                      <span>Rating / 5</span>
+                    </div>
+                    <ResponsiveContainer width="100%" height={Math.max(320, driverPerformanceData.length * 44)}>
+                      <BarChart
+                        data={driverPerformanceData}
+                        layout="vertical"
+                        margin={{ top: 8, right: 6, bottom: 8, left: 0 }}
+                        barCategoryGap="30%"
+                      >
+                        <defs>
+                          <linearGradient id="allDriverDeliveriesGradient" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="var(--success)" stopOpacity={0.58} />
+                            <stop offset="100%" stopColor="var(--success)" stopOpacity={1} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid horizontal={false} stroke={chartTheme.grid} strokeDasharray="3 5" />
+                        <XAxis
+                          type="number"
+                          dataKey="deliveries"
+                          domain={[0, Math.ceil(maxAllDriverDeliveries * 1.18)]}
+                          allowDecimals={false}
+                          tick={{ fill: chartTheme.label, fontSize: 10 }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="employeeId"
+                          width={128}
+                          tick={(props: { x: number; y: number; payload: { value: string } }) => {
+                            const driver = driverPerformanceData.find((item) => item.employeeId === props.payload.value);
+                            if (!driver) return <g />;
+                            const displayName = driver.name.length > 18 ? `${driver.name.slice(0, 17)}…` : driver.name;
+                            return (
+                              <g>
+                                <text x={props.x - 8} y={props.y} textAnchor="end" fill={chartTheme.label}>
+                                  <tspan x={props.x - 8} dy="-0.25em" fontSize="10" fontWeight="600">{displayName}</tspan>
+                                  <tspan x={props.x - 8} dy="1.25em" fontSize="9">{driver.employeeId}</tspan>
+                                </text>
+                              </g>
+                            );
+                          }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          yAxisId="all-rating"
+                          type="category"
+                          dataKey="ratingLabel"
+                          orientation="right"
+                          width={76}
+                          tick={{ fill: chartTheme.label, fontSize: 10, fontWeight: 600 }}
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          cursor={{ fill: 'var(--muted)', opacity: 0.45 }}
+                          formatter={(value, name, item) => [
+                            name === 'Completed deliveries'
+                              ? Number(value).toLocaleString('en-IN')
+                              : item.payload.ratingLabel,
+                            name,
+                          ]}
+                          labelFormatter={(label) => {
+                            const employeeId = String(label);
+                            const driver = driverPerformanceData.find((item) => item.employeeId === employeeId);
+                            return driver ? `${driver.name} · ${employeeId}` : `Employee ID: ${employeeId}`;
+                          }}
+                          contentStyle={{
+                            backgroundColor: chartTheme.tooltipBackground,
+                            border: chartTheme.tooltipBorder,
+                            color: chartTheme.tooltipForeground,
+                            borderRadius: '0.75rem',
+                            boxShadow: '0 12px 30px rgba(15, 23, 42, 0.16)',
+                          }}
+                        />
+                        <Bar
+                          dataKey="deliveries"
+                          name="Completed deliveries"
+                          fill="url(#allDriverDeliveriesGradient)"
+                          background={{ fill: 'var(--muted)', radius: 7 }}
+                          radius={[2, 7, 7, 2]}
+                          maxBarSize={24}
+                        >
+                          <LabelList
+                            dataKey="deliveries"
+                            position="right"
+                            formatter={(value: number | string) => Number(value).toLocaleString('en-IN')}
+                            fill={chartTheme.label}
+                            fontSize={10}
+                            fontWeight={600}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </section>
+
+              <section aria-label="Driver performance details" className="overflow-hidden rounded-xl border border-border bg-card">
+                <div className="border-b border-border px-4 py-3">
+                  <h3 className="text-sm font-semibold">Driver details</h3>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[620px] text-left text-sm">
+                    <thead className="bg-muted/50 text-[10px] uppercase tracking-wide text-muted-foreground">
+                      <tr>
+                        <th className="px-4 py-3 font-semibold">Rank</th>
+                        <th className="px-4 py-3 font-semibold">Driver</th>
+                        <th className="px-4 py-3 font-semibold">Employee ID</th>
+                        <th className="px-4 py-3 text-right font-semibold">Completed</th>
+                        <th className="px-4 py-3 text-right font-semibold">Rating</th>
+                        <th className="px-4 py-3 text-right font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {driverPerformanceData.map((driver, index) => (
+                        <tr key={driver.id} className="transition-colors hover:bg-muted/30">
+                          <td className="px-4 py-3 font-semibold tabular-nums text-muted-foreground">#{index + 1}</td>
+                          <td className="px-4 py-3 font-medium text-foreground">{driver.name}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{driver.employeeId}</td>
+                          <td className="px-4 py-3 text-right font-semibold tabular-nums">{driver.deliveries.toLocaleString('en-IN')}</td>
+                          <td className="px-4 py-3 text-right font-semibold tabular-nums text-warning-foreground">{driver.ratingLabel}</td>
+                          <td className="px-4 py-3 text-right capitalize text-muted-foreground">{driver.status.replace(/_/g, ' ')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
