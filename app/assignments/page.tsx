@@ -564,9 +564,12 @@ export default function AssignmentsPage() {
                           <div className="min-w-0">
                             <Link href={`/assignments/${assignment.id}`} className="block truncate text-sm font-bold text-foreground transition hover:text-primary sm:text-base">
                               {isDriver
-                                ? `${order?.order_number || 'Delivery'}${order?.client_name ? ` · ${order.client_name}` : ''}`
+                                ? order?.order_number || 'Delivery'
                                 : `${order?.order_number || 'Order'} → ${driver?.full_name || driver?.employee_id || 'Driver'}`}
                             </Link>
+                            <p className="mt-1 break-words text-sm font-semibold text-primary">
+                              Client: {order?.client_name || 'Customer details unavailable'}
+                            </p>
                             <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                               {isDriver ? 'Your delivery' : `Assignment · ${assignment.id.slice(0, 8)}`}
                             </p>
@@ -672,7 +675,7 @@ export default function AssignmentsPage() {
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {assignment.status === 'pending' && (
+                        {isDriver && assignment.status === 'pending' && (
                           <button
                             onClick={(event) => {
                               event.preventDefault();
@@ -684,7 +687,7 @@ export default function AssignmentsPage() {
                             Accept
                           </button>
                         )}
-                        {assignment.status === 'accepted' && (
+                        {isDriver && assignment.status === 'accepted' && (
                           <button
                             onClick={(event) => {
                               event.preventDefault();
@@ -704,6 +707,21 @@ export default function AssignmentsPage() {
                           >
                             Complete with POD
                           </Link>
+                        )}
+                        {!isDriver && assignment.status === 'pending' && (
+                          <span className="inline-flex min-h-11 items-center rounded-md border border-warning/25 bg-warning/10 px-3 text-xs font-semibold text-warning-foreground">
+                            Awaiting driver response
+                          </span>
+                        )}
+                        {!isDriver && assignment.status === 'accepted' && (
+                          <span className="inline-flex min-h-11 items-center rounded-md border border-info/25 bg-info/10 px-3 text-xs font-semibold text-info-foreground">
+                            Driver accepted · awaiting start
+                          </span>
+                        )}
+                        {!isDriver && assignment.status === 'in_progress' && (
+                          <span className="inline-flex min-h-11 items-center rounded-md border border-info/25 bg-info/10 px-3 text-xs font-semibold text-info-foreground">
+                            In delivery · awaiting driver POD
+                          </span>
                         )}
                       </div>
                     </div>
