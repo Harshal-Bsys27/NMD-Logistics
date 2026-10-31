@@ -110,6 +110,35 @@ export interface OrderAssignment {
   updated_at: string;
 }
 
+export interface DeliveryProof {
+  id: string;
+  assignment_id: string;
+  order_id: string;
+  personnel_id: string;
+  recipient_name: string;
+  notes?: string | null;
+  photo_path?: string | null;
+  delivered_at: string;
+  created_by: string;
+  created_at: string;
+}
+
+export interface DeliveryFeedback {
+  id: string;
+  request_id: string;
+  order_id: string;
+  assignment_id: string;
+  personnel_id: string;
+  rating: number;
+  review?: string | null;
+  submitted_at: string;
+}
+
+export interface DeliveryFeedbackSummary {
+  feedbackCount: number;
+  averageRating: number;
+}
+
 // Alias for convenience
 export type Assignment = OrderAssignment;
 

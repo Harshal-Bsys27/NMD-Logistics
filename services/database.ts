@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import { CreateOrderInput } from '@/lib/validations/schemas';
-import type { AssignmentStatus, OrderAssignment, OrderStatus, PersonnelStatus } from '@/types';
+import type { AssignmentStatus, DeliveryFeedback, DeliveryProof, OrderAssignment, OrderStatus, PersonnelStatus } from '@/types';
 
 // ============== ORDER OPERATIONS ==============
 
@@ -346,6 +346,164 @@ export const assignmentService = {
       return { data, error: null };
     } catch (error: any) {
       return { data: null, error: error.message };
+    }
+  },
+
+  async completeWithProof(input: {
+    assignmentId: string;
+    recipientName: string;
+    notes: string;
+    photo: File | null;
+  }) {
+    let photoPath: string | null = null;
+    let preserveUploadedPhoto = false;
+    try {
+      if (input.photo) {
+        const extensionByType: Record<string, string> = {
+          'image/jpeg': 'jpg',
+          'image/png': 'png',
+          'image/webp': 'webp',
+        };
+        const extension = extensionByType[input.photo.type];
+        if (!extension) throw new Error('Choose a JPG, PNG, or WebP proof photo.');
+        if (input.photo.size > 8 * 1024 * 1024) throw new Error('The proof photo must be 8 MB or smaller.');
+
+        const uploadPath = `${input.assignmentId}/${crypto.randomUUID()}.${extension}`;
+        const { error: uploadError } = await supabase.storage
+          .from('delivery-proofs')
+          .upload(uploadPath, input.photo, {
+            cacheControl: '3600',
+            contentType: input.photo.type,
+            upsert: false,
+          });
+        if (uploadError) throw new Error(`Could not upload proof photo: ${uploadError.message}`);
+        photoPath = uploadPath;
+      }
+
+      const { data, error } = await supabase.rpc('complete_assignment_with_proof', {
+        p_assignment_id: input.assignmentId,
+        p_recipient_name: input.recipientName.trim(),
+        p_notes: input.notes.trim() || null,
+        p_photo_path: photoPath,
+      });
+      if (error) {
+        const verification = await supabase
+          .from('delivery_proofs')
+          .select('*')
+          .eq('assignment_id', input.assignmentId)
+          .maybeSingle();
+        if (verification.data) return { data: verification.data as DeliveryProof, error: null };
+        if (verification.error) {
+          preserveUploadedPhoto = true;
+          throw new Error(
+            `${error.message} Delivery completion could not be verified. Refresh the assignment before retrying.${photoPath ? ' The uploaded photo has been retained.' : ''}`
+          );
+        }
+        throw new Error(error.message);
+      }
+      if (!data) throw new Error('Delivery completion returned no proof record.');
+      return { data: data as DeliveryProof, error: null };
+    } catch (error) {
+      if (photoPath && !preserveUploadedPhoto) {
+        const { error: cleanupError } = await supabase.storage.from('delivery-proofs').remove([photoPath]);
+        if (cleanupError) {
+          console.error('Unable to remove proof photo after delivery completion failed:', cleanupError);
+          const message = error instanceof Error ? error.message : 'Unable to complete delivery';
+          return {
+            data: null,
+            error: `${message} The uploaded photo could not be removed; contact an administrator.`,
+          };
+        }
+      }
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Unable to complete delivery',
+      };
+    }
+  },
+
+  async getProofByAssignmentId(assignmentId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('delivery_proofs')
+        .select('*')
+        .eq('assignment_id', assignmentId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return { data: data as DeliveryProof | null, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Unable to load proof of delivery',
+      };
+    }
+  },
+
+  async getFeedbackByAssignmentId(assignmentId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('delivery_feedback')
+        .select('*')
+        .eq('assignment_id', assignmentId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return { data: data as DeliveryFeedback | null, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Unable to load customer feedback',
+      };
+    }
+  },
+
+  async getAllFeedback() {
+    try {
+      const { data, error } = await supabase
+        .from('delivery_feedback')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+
+      if (error) throw error;
+      return { data: (data ?? []) as DeliveryFeedback[], error: null };
+    } catch (error) {
+      return {
+        data: [] as DeliveryFeedback[],
+        error: error instanceof Error ? error.message : 'Unable to load customer feedback',
+      };
+    }
+  },
+
+  async getAllProofs() {
+    try {
+      const { data, error } = await supabase
+        .from('delivery_proofs')
+        .select('*')
+        .order('delivered_at', { ascending: false });
+
+      if (error) throw error;
+      return { data: (data ?? []) as DeliveryProof[], error: null };
+    } catch (error) {
+      return {
+        data: [] as DeliveryProof[],
+        error: error instanceof Error ? error.message : 'Unable to load proof of delivery records',
+      };
+    }
+  },
+
+  async getProofPhotoUrl(photoPath: string) {
+    try {
+      const { data, error } = await supabase.storage
+        .from('delivery-proofs')
+        .createSignedUrl(photoPath, 60 * 60);
+      if (error) throw error;
+      return { data: data.signedUrl, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Unable to load proof photo',
+      };
     }
   },
 

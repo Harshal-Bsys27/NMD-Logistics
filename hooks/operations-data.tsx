@@ -3,13 +3,17 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { assignmentService, driverService, orderService } from '@/services/database';
-import type { Assignment, DeliveryPersonnel, Order } from '@/types';
+import type { Assignment, DeliveryFeedback, DeliveryPersonnel, DeliveryProof, Order } from '@/types';
 import { useAuth } from './auth';
 
 interface OperationsData {
   orders: Order[];
   drivers: DeliveryPersonnel[];
   assignments: Assignment[];
+  deliveryProofs: DeliveryProof[];
+  customerFeedback: DeliveryFeedback[];
+  deliveryProofsError: string;
+  customerFeedbackError: string;
   isLoading: boolean;
   error: string;
   realtimeStatus: 'connecting' | 'live' | 'polling';
@@ -30,6 +34,10 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [drivers, setDrivers] = useState<DeliveryPersonnel[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [deliveryProofs, setDeliveryProofs] = useState<DeliveryProof[]>([]);
+  const [customerFeedback, setCustomerFeedback] = useState<DeliveryFeedback[]>([]);
+  const [deliveryProofsError, setDeliveryProofsError] = useState('');
+  const [customerFeedbackError, setCustomerFeedbackError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [realtimeStatus, setRealtimeStatus] = useState<OperationsData['realtimeStatus']>('connecting');
@@ -53,10 +61,12 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
 
     const promise = (async () => {
       try {
-        const [orderResult, driverResult, assignmentResult] = await Promise.all([
+        const [orderResult, driverResult, assignmentResult, proofResult, feedbackResult] = await Promise.all([
           orderService.getAll(),
           driverService.getAll(),
           assignmentService.getAll(),
+          assignmentService.getAllProofs(),
+          assignmentService.getAllFeedback(),
         ]);
         const firstError = orderResult.error || driverResult.error || assignmentResult.error;
         if (firstError) throw new Error(firstError);
@@ -65,6 +75,10 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
           setOrders(orderResult.data ?? []);
           setDrivers(driverResult.data ?? []);
           setAssignments(assignmentResult.data ?? []);
+          setDeliveryProofs(proofResult.data ?? []);
+          setDeliveryProofsError(proofResult.error ?? '');
+          setCustomerFeedback(feedbackResult.data ?? []);
+          setCustomerFeedbackError(feedbackResult.error ?? '');
           loadedUserIdRef.current = refreshUserId;
           setError('');
         }
@@ -103,6 +117,10 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
       setOrders([]);
       setDrivers([]);
       setAssignments([]);
+      setDeliveryProofs([]);
+      setCustomerFeedback([]);
+      setDeliveryProofsError('');
+      setCustomerFeedbackError('');
       setIsLoading(authLoading);
       setRealtimeStatus('connecting');
       return;
@@ -112,6 +130,8 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
       setOrders([]);
       setDrivers([]);
       setAssignments([]);
+      setDeliveryProofs([]);
+      setCustomerFeedback([]);
       setIsLoading(true);
     }
 
@@ -127,6 +147,7 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, scheduleRefresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'order_assignments' }, scheduleRefresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_personnel' }, scheduleRefresh)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'delivery_feedback' }, scheduleRefresh)
       .subscribe((status) => {
         if (!active) return;
         if (status === 'SUBSCRIBED') {
@@ -172,7 +193,19 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
   }, [authLoading, refresh, userId]);
 
   return (
-    <OperationsDataContext.Provider value={{ orders, drivers, assignments, isLoading, error, realtimeStatus, refresh }}>
+    <OperationsDataContext.Provider value={{
+      orders,
+      drivers,
+      assignments,
+      deliveryProofs,
+      customerFeedback,
+      deliveryProofsError,
+      customerFeedbackError,
+      isLoading,
+      error,
+      realtimeStatus,
+      refresh,
+    }}>
       {children}
     </OperationsDataContext.Provider>
   );
