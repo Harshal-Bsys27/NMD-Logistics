@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Activity, BarChart3, FileCode2, FileText, HelpCircle, LayoutDashboard, LogOut, Menu, Package, Settings, Truck, UserRound, X, Zap, Route, Users } from 'lucide-react'
@@ -38,6 +38,26 @@ export default function MobileSidebar() {
   const router = useRouter()
   const { user, loading } = useAuth()
 
+  useEffect(() => {
+    if (!open) return
+
+    const previousOverflow = document.body.style.overflow
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open])
+
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
+
   const handleSignOut = () => {
     setOpen(false)
     router.push('/auth/signout')
@@ -65,7 +85,7 @@ export default function MobileSidebar() {
             onClick={() => setOpen(false)}
           />
           <aside className="relative flex h-dvh max-h-screen w-[min(18rem,calc(100vw-2.5rem))] flex-col border-r border-border bg-background p-4 text-foreground shadow-2xl sm:p-5">
-            <div className="mb-5 flex shrink-0 items-center justify-between sm:mb-8">
+            <div className="mb-4 flex shrink-0 items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">Navigation</h2>
               <Button type="button" variant="ghost" aria-label="Close navigation menu" title="Close navigation menu" onClick={() => setOpen(false)}>
                 <X className="h-5 w-5" />
@@ -76,18 +96,18 @@ export default function MobileSidebar() {
               <Link
                 href="/settings"
                 onClick={() => setOpen(false)}
-                className="mb-4 flex min-w-0 flex-col items-center gap-3 rounded-xl border border-border bg-muted/30 px-4 py-5 text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="mb-4 flex min-h-16 min-w-0 shrink-0 items-center gap-3 rounded-xl border border-border bg-muted/30 p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <div className="flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary to-cyan-500 text-2xl font-semibold text-primary-foreground ring-4 ring-primary/10">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary to-cyan-500 text-sm font-semibold text-primary-foreground ring-2 ring-primary/10">
                   {user.avatar_url ? (
-                    <Image src={user.avatar_url} alt="" width={112} height={112} unoptimized className="h-full w-full object-cover" />
+                    <Image src={user.avatar_url} alt="" width={48} height={48} unoptimized className="h-full w-full object-cover" />
                   ) : (
-                    user.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || <UserRound className="h-9 w-9" />
+                    user.full_name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join('') || <UserRound className="h-5 w-5" />
                   )}
                 </div>
                 <div className="min-w-0">
-                  <p className="break-words text-base font-semibold text-foreground">{user.full_name || user.email}</p>
-                  <p className="text-xs capitalize text-muted-foreground">{user.role.replace(/_/g, ' ')} · My profile</p>
+                  <p className="truncate text-sm font-semibold text-foreground">{user.full_name || user.email}</p>
+                  <p className="truncate text-xs capitalize text-muted-foreground">{user.role.replace(/_/g, ' ')} · My profile</p>
                 </div>
               </Link>
             )}
@@ -125,7 +145,7 @@ export default function MobileSidebar() {
                 )
               })}
             </nav>
-            <div className="shrink-0 space-y-1 border-t border-border bg-background pt-3">
+            <div className="shrink-0 space-y-1 border-t border-border bg-background pt-3 pb-[env(safe-area-inset-bottom)]">
               {!loading && user && <Link href="/settings" onClick={() => setOpen(false)} className="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"><Settings className="h-5 w-5" />{user.role === 'delivery_personnel' ? 'My profile' : 'Settings'}</Link>}
               {!loading && user && user.role !== 'delivery_personnel' && <Link href="/help" onClick={() => setOpen(false)} className="flex min-h-11 items-center gap-3 rounded-md px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"><HelpCircle className="h-5 w-5" />Help & Support</Link>}
               <div className="flex items-center justify-between px-3 pt-2">
