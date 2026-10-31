@@ -5,6 +5,7 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { TrendingUp, Package, Truck, AlertCircle, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useOperationsData } from '@/hooks/useOperationsData';
+import { getDriverRating } from '@/utils/driver-ratings';
 
 const chartTheme = {
   grid: 'var(--border)',
@@ -46,7 +47,7 @@ function MetricCard({ icon: Icon, label, value, detail, color }: MetricCardProps
 }
 
 export default function AnalyticsPage() {
-  const { orders, drivers, assignments, isLoading, error } = useOperationsData();
+  const { orders, drivers, assignments, customerFeedback, isLoading, error } = useOperationsData();
 
   const orderTrendData = React.useMemo(() => {
     const today = new Date();
@@ -92,12 +93,13 @@ export default function AnalyticsPage() {
         id: driver.employee_id,
         name: driver.full_name || driver.employee_id,
         deliveries: driver.total_deliveries_completed,
-        rating: driver.rating,
+        rating: getDriverRating(driver.id, customerFeedback, driver.rating).average.toFixed(1),
+        ratingCount: customerFeedback.filter((entry) => entry.personnel_id === driver.id).length,
         status: driver.current_status.replace(/_/g, ' '),
       }))
       .sort((left, right) => right.deliveries - left.deliveries)
       .slice(0, 10),
-    [drivers]
+    [customerFeedback, drivers]
   );
   const now = new Date();
   const monthlyOrders = orders.filter((order) => {
@@ -233,6 +235,9 @@ export default function AnalyticsPage() {
                         <span className="text-sm font-semibold tabular-nums text-foreground">{driver.rating}</span>
                         <span className="text-lg">⭐</span>
                       </div>
+                      <p className="mt-1 text-right text-xs text-muted-foreground">
+                        {driver.ratingCount} customer rating{driver.ratingCount === 1 ? '' : 's'}
+                      </p>
                     </td>
                     <td className="px-4 py-4 text-right">
                       <span className="text-sm font-semibold capitalize text-foreground">{driver.status}</span>

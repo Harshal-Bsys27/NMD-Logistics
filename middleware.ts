@@ -36,7 +36,8 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
   const pathname = request.nextUrl.pathname;
   const isAuthRoute = pathname === '/auth' || pathname.startsWith('/auth/');
-  const isPublicRoute = pathname === '/' || pathname === '/auth/signout';
+  const isCustomerFeedbackRoute = pathname.startsWith('/feedback/');
+  const isPublicRoute = pathname === '/' || pathname === '/auth/signout' || isCustomerFeedbackRoute;
   const isAcceptInviteRoute = pathname === '/auth/accept-invite';
 
   if (!user && !isAuthRoute && !isPublicRoute) {
@@ -48,7 +49,7 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  if (user && user.app_metadata?.invite_pending === true && !isAcceptInviteRoute && pathname !== '/auth/signout') {
+  if (user && user.app_metadata?.invite_pending === true && !isAcceptInviteRoute && pathname !== '/auth/signout' && !isCustomerFeedbackRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/accept-invite';
     url.search = '';
@@ -66,7 +67,7 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  if (user && !isAuthRoute && pathname !== '/auth/signout') {
+  if (user && !isAuthRoute && pathname !== '/auth/signout' && !isCustomerFeedbackRoute) {
     const { data: profile, error: profileError } = await supabase
       .from('users')
       .select('role, status')
