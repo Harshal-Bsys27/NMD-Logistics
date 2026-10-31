@@ -2,14 +2,16 @@
 
 import { useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useOperationsData } from '@/hooks/useOperationsData';
+import { getDriverRating } from '@/utils/driver-ratings';
 import { ArrowLeft, AlertCircle, Award, Briefcase, Phone, Activity } from 'lucide-react';
 
 export default function DriverDetailPage() {
   const router = useRouter();
   const params = useParams();
   const driverId = params.id as string;
-  const { drivers, assignments, orders, isLoading, error } = useOperationsData();
+  const { drivers, assignments, orders, customerFeedback, isLoading, error, customerFeedbackError } = useOperationsData();
 
   const driver = useMemo(() => drivers.find((d) => d.id === driverId), [drivers, driverId]);
 
@@ -17,6 +19,13 @@ export default function DriverDetailPage() {
     () => assignments.filter((a) => a.personnel_id === driverId),
     [assignments, driverId]
   );
+  const driverFeedback = useMemo(
+    () => customerFeedback
+      .filter((entry) => entry.personnel_id === driverId)
+      .sort((left, right) => new Date(right.submitted_at).getTime() - new Date(left.submitted_at).getTime()),
+    [customerFeedback, driverId]
+  );
+  const ratingSummary = driver ? getDriverRating(driver.id, customerFeedback, driver.rating) : { average: 0, count: 0 };
 
   if (isLoading) {
     return (
@@ -92,7 +101,7 @@ export default function DriverDetailPage() {
                 {driver.current_status.replace('_', ' ')}
               </span>
               <div className="flex items-center gap-2 text-lg font-semibold text-warning-foreground">
-                {driver.rating}⭐
+                {ratingSummary.average.toFixed(1)}⭐
               </div>
             </div>
           </div>
@@ -107,7 +116,8 @@ export default function DriverDetailPage() {
 
           <div className="surface-glass h-full rounded-lg p-5">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Customer Rating</p>
-            <p className="mt-3 text-2xl font-bold tabular-nums text-warning-foreground">{driver.rating}</p>
+            <p className="mt-3 text-2xl font-bold tabular-nums text-warning-foreground">{ratingSummary.average.toFixed(1)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{ratingSummary.count} customer rating{ratingSummary.count === 1 ? '' : 's'}</p>
           </div>
 
           <div className="surface-glass h-full rounded-lg p-5">
@@ -128,6 +138,46 @@ export default function DriverDetailPage() {
             </p>
           </div>
         </div>
+        <section className="mb-8 surface-glass rounded-lg border border-border p-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Customer feedback</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Ratings and reviews from completed deliveries</p>
+            </div>
+            <span className="rounded-full bg-warning/15 px-3 py-1 text-sm font-bold text-warning-foreground">
+              {ratingSummary.count} rating{ratingSummary.count === 1 ? '' : 's'}
+            </span>
+          </div>
+          {customerFeedbackError ? (
+            <p role="alert" className="mt-4 rounded-lg border border-danger/25 bg-danger/10 p-3 text-sm text-danger-foreground">
+              Customer feedback could not be loaded: {customerFeedbackError}
+            </p>
+          ) : driverFeedback.length ? (
+            <div className="mt-4 space-y-3">
+              {driverFeedback.map((feedback) => {
+                const order = orders.find((entry) => entry.id === feedback.order_id);
+                const assignment = driverAssignments.find((entry) => entry.id === feedback.assignment_id);
+                return (
+                  <div key={feedback.id} className="rounded-lg border border-border bg-muted/30 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-semibold text-foreground">{order?.order_number ?? 'Delivery'}</p>
+                      <span className="text-sm font-bold text-warning-foreground">{feedback.rating}/5 ★</span>
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-foreground">{feedback.review || 'Rating submitted without a comment.'}</p>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <time dateTime={feedback.submitted_at}>{new Date(feedback.submitted_at).toLocaleString('en-IN')}</time>
+                      {assignment && <Link className="font-semibold text-primary hover:underline" href={`/assignments/${assignment.id}`}>View POD and delivery</Link>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-4 rounded-lg border border-dashed border-border p-5 text-center text-sm text-muted-foreground">
+              No customer feedback has been submitted for this driver yet.
+            </p>
+          )}
+        </section>
 
         {/* Driver Information */}
         <div className="mb-8 grid gap-6 lg:grid-cols-2">
@@ -212,7 +262,7 @@ export default function DriverDetailPage() {
               <p className="mt-1 text-sm text-muted-foreground">Total Deliveries</p>
             </div>
             <div>
-              <p className="text-3xl font-bold tabular-nums text-warning-foreground">{driver.rating}</p>
+              <p className="text-3xl font-bold tabular-nums text-warning-foreground">{ratingSummary.average.toFixed(1)} / 5</p>
               <p className="mt-1 text-sm text-muted-foreground">Customer Rating</p>
             </div>
             <div>

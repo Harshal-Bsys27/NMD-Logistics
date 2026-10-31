@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn, toTitleCase } from '@/utils/helpers';
+import { getDriverRating } from '@/utils/driver-ratings';
 import { AlertCircle, Award, Download, MapPin, TrendingUp, Users, Search, UserPlus } from 'lucide-react';
 import { useState } from 'react';
 
@@ -29,7 +30,7 @@ export default function DriversPage() {
   const router = useRouter();
   const { user } = useAuth();
   const canManageDrivers = user?.role === 'admin';
-  const { drivers, assignments, isLoading, error, refresh } = useOperationsData();
+  const { drivers, assignments, customerFeedback, isLoading, error, refresh } = useOperationsData();
   const [searchTerm, setSearchTerm] = useState('');
   const [actionError, setActionError] = useState('');
   const [busyDriverId, setBusyDriverId] = useState<string | null>(null);
@@ -44,7 +45,9 @@ export default function DriversPage() {
     return assignments.filter((a) => a.personnel_id === driverId);
   };
 
-  const avgRating = drivers.length > 0 ? (drivers.reduce((sum, d) => sum + d.rating, 0) / drivers.length).toFixed(1) : 0;
+  const avgRating = drivers.length > 0
+    ? (drivers.reduce((sum, driver) => sum + getDriverRating(driver.id, customerFeedback, driver.rating).average, 0) / drivers.length).toFixed(1)
+    : 0;
   const assignedDriverIds = new Set(
     assignments
       .filter((assignment) => ['pending', 'accepted', 'in_progress'].includes(assignment.status))
@@ -92,7 +95,7 @@ export default function DriversPage() {
           !['completed', 'cancelled', 'rejected'].includes(assignment.status)
         ).length,
         driver.total_deliveries_completed,
-        driver.rating,
+        getDriverRating(driver.id, customerFeedback, driver.rating).average.toFixed(1),
         driver.phone_verified ? 'Yes' : 'No',
         driver.created_at ? new Date(driver.created_at).toLocaleDateString() : '',
       ].map(escapeCell);
@@ -253,6 +256,7 @@ export default function DriversPage() {
             </div>
           ) : filteredDrivers.map((driver) => {
             const driverAssignments = getDriverAssignments(driver.id);
+            const driverRating = getDriverRating(driver.id, customerFeedback, driver.rating);
             const activeAssignment = driverAssignments.find((a) => a.status === 'in_progress');
             const hasActiveAssignment = driverAssignments.some((a) => ['pending', 'accepted', 'in_progress'].includes(a.status));
             const displayedStatus = hasActiveAssignment && driver.current_status === 'available'
@@ -315,7 +319,8 @@ export default function DriversPage() {
                   </div>
                   <div className="rounded-md bg-muted/40 p-2 sm:p-3">
                     <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Rating</p>
-                    <p className="mt-2 font-bold tabular-nums text-warning-foreground">{driver.rating}⭐</p>
+                    <p className="mt-2 font-bold tabular-nums text-warning-foreground">{driverRating.average.toFixed(1)}⭐</p>
+                    {driverRating.count > 0 && <p className="mt-1 text-[10px] text-muted-foreground">{driverRating.count} customer rating{driverRating.count === 1 ? '' : 's'}</p>}
                   </div>
                   <div className="rounded-md bg-muted/40 p-2 sm:p-3">
                     <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Active</p>
