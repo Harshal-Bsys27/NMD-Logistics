@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks';
 import { useOperationsData } from '@/hooks/useOperationsData';
 import { cn } from '@/utils/helpers';
+import { getDriverRating } from '@/utils/driver-ratings';
 import OrdersTable from '@/components/tables/OrdersTable';
 import {
   AreaChart,
@@ -75,6 +76,10 @@ export default function DashboardPage() {
     orders,
     drivers,
     assignments,
+    deliveryProofs,
+    customerFeedback,
+    deliveryProofsError,
+    customerFeedbackError,
     isLoading: isLoadingOperations,
     error: operationsError,
     realtimeStatus,
@@ -159,15 +164,18 @@ export default function DashboardPage() {
   );
 
   const driverStats = useMemo(() => {
+    const driverRatings = drivers.map((driver) =>
+      getDriverRating(driver.id, customerFeedback, driver.rating).average
+    ).filter((rating) => rating > 0);
     return {
       total: drivers.length,
       available: drivers.filter((d) => d.current_status === 'available' && !activeDriverIds.has(d.id)).length,
       onDelivery: drivers.filter((d) => d.current_status === 'on_delivery').length,
-      avgRating: drivers.length
-        ? (drivers.reduce((sum, d) => sum + d.rating, 0) / drivers.length).toFixed(1)
+      avgRating: driverRatings.length
+        ? (driverRatings.reduce((sum, rating) => sum + rating, 0) / driverRatings.length).toFixed(1)
         : '—',
     };
-  }, [activeDriverIds, drivers]);
+  }, [activeDriverIds, customerFeedback, drivers]);
 
   const orderTrendData = useMemo(() => {
     const unit = dateRange === 'all' ? 'month' : Number(dateRange) <= 30 ? 'day' : 'week';
@@ -242,17 +250,23 @@ export default function DashboardPage() {
 
   const driverPerformanceData = useMemo(
     () => drivers
-      .map((driver) => ({
-        id: driver.id,
-        name: driver.full_name || driver.employee_id,
-        employeeId: driver.employee_id,
-        deliveries: driver.total_deliveries_completed,
-        rating: driver.rating,
-        ratingLabel: driver.rating > 0 ? `${driver.rating.toFixed(1)} / 5` : 'Not rated',
-        status: driver.current_status,
-      }))
+      .map((driver) => {
+        const driverRating = getDriverRating(driver.id, customerFeedback, driver.rating);
+        return {
+          id: driver.id,
+          name: driver.full_name || driver.employee_id,
+          employeeId: driver.employee_id,
+          deliveries: driver.total_deliveries_completed,
+          rating: driverRating.average,
+          ratingCount: driverRating.count,
+          ratingLabel: driverRating.average > 0
+            ? `${driverRating.average.toFixed(1)} / 5${driverRating.count ? ` · ${driverRating.count} review${driverRating.count === 1 ? '' : 's'}` : ''}`
+            : 'Not rated',
+          status: driver.current_status,
+        };
+      })
       .sort((left, right) => right.deliveries - left.deliveries),
-    [drivers]
+    [customerFeedback, drivers]
   );
   const topDriverPerformanceData = driverPerformanceData.slice(0, 10);
   const maxDriverDeliveries = Math.max(1, ...topDriverPerformanceData.map((driver) => driver.deliveries));
@@ -373,6 +387,12 @@ export default function DashboardPage() {
                 Try again
               </button>
             </div>
+          </div>
+        )}
+        {canManageOperations && (deliveryProofsError || customerFeedbackError) && (
+          <div role="alert" className="rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm text-warning-foreground">
+            {deliveryProofsError && <p>Proof of delivery could not be loaded: {deliveryProofsError}</p>}
+            {customerFeedbackError && <p>Customer ratings could not be loaded: {customerFeedbackError}</p>}
           </div>
         )}
         {isLoadingOperations && <p role="status" className="text-sm text-muted-foreground">Loading operations data…</p>}
@@ -859,6 +879,82 @@ export default function DashboardPage() {
             </div>
           </section>
         </div>
+
+        {canManageOperations && (
+          <section aria-label="Recent proofs of delivery and customer feedback" className="order-8 grid min-w-0 gap-4 xl:grid-cols-2">
+            <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-success p-4 md:p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Recent proof of delivery</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">Completed handovers with recipient records</p>
+                </div>
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-success-foreground" />
+              </div>
+              <div className="space-y-2">
+                {deliveryProofs.slice(0, 5).map((proof) => {
+                  const order = orders.find((entry) => entry.id === proof.order_id);
+                  const driver = drivers.find((entry) => entry.id === proof.personnel_id);
+                  return (
+                    <Link
+                      key={proof.id}
+                      href={`/assignments/${proof.assignment_id}`}
+                      className="block rounded-lg border border-border bg-muted/30 p-3 transition hover:border-success/40 hover:bg-success/5"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground">{order?.order_number ?? 'Completed delivery'}</p>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                            Received by {proof.recipient_name} · {driver?.full_name || driver?.employee_id || 'Driver'}
+                          </p>
+                          {proof.notes && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{proof.notes}</p>}
+                        </div>
+                        <time className="shrink-0 text-[10px] text-muted-foreground">{new Date(proof.delivered_at).toLocaleDateString('en-IN')}</time>
+                      </div>
+                    </Link>
+                  );
+                })}
+                {deliveryProofs.length === 0 && (
+                  <p className="rounded-lg border border-dashed border-border p-5 text-center text-sm text-muted-foreground">No proof-of-delivery records yet.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-warning p-4 md:p-5">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Latest customer feedback</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">Ratings and reviews from delivered orders</p>
+                </div>
+                <Star className="h-5 w-5 shrink-0 fill-warning-foreground text-warning-foreground" />
+              </div>
+              <div className="space-y-2">
+                {customerFeedback.slice(0, 5).map((feedback) => {
+                  const order = orders.find((entry) => entry.id === feedback.order_id);
+                  const driver = drivers.find((entry) => entry.id === feedback.personnel_id);
+                  return (
+                    <Link
+                      key={feedback.id}
+                      href={`/assignments/${feedback.assignment_id}`}
+                      className="block rounded-lg border border-border bg-muted/30 p-3 transition hover:border-warning/40 hover:bg-warning/5"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground">{order?.order_number ?? 'Delivery feedback'}</p>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">{driver?.full_name || driver?.employee_id || 'Driver'}</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-warning/15 px-2.5 py-1 text-xs font-bold text-warning-foreground">{feedback.rating}/5 ★</span>
+                      </div>
+                      <p className="mt-2 line-clamp-2 text-sm text-foreground">{feedback.review || 'No written comment.'}</p>
+                    </Link>
+                  );
+                })}
+                {customerFeedback.length === 0 && (
+                  <p className="rounded-lg border border-dashed border-border p-5 text-center text-sm text-muted-foreground">No customer feedback submitted yet.</p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
       </div>
       {isDriverPerformanceOpen && (

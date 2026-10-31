@@ -13,7 +13,17 @@ import type { AssignmentStatus, PersonnelStatus } from '@/types';
 
 export default function AssignmentsPage() {
   const { user } = useAuth();
-  const { assignments, orders, drivers, isLoading, error, realtimeStatus, refresh } = useOperationsData();
+  const {
+    assignments,
+    orders,
+    drivers,
+    customerFeedback,
+    customerFeedbackError,
+    isLoading,
+    error,
+    realtimeStatus,
+    refresh,
+  } = useOperationsData();
   const [selectedStatus, setSelectedStatus] = useState<AssignmentStatus | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [actionError, setActionError] = useState('');
@@ -32,6 +42,17 @@ export default function AssignmentsPage() {
   const driverProfile = isDriver ? drivers.find((driver) => driver.user_id === user.id) : undefined;
   const driverProfileId = driverProfile?.id;
   const driverProfileStatus = driverProfile?.current_status;
+  const driverFeedback = useMemo(
+    () => driverProfile
+      ? customerFeedback
+        .filter((entry) => entry.personnel_id === driverProfile.id)
+        .sort((left, right) => new Date(right.submitted_at).getTime() - new Date(left.submitted_at).getTime())
+      : [],
+    [customerFeedback, driverProfile]
+  );
+  const driverRating = driverFeedback.length
+    ? driverFeedback.reduce((sum, entry) => sum + entry.rating, 0) / driverFeedback.length
+    : driverProfile?.rating ?? 0;
 
   useEffect(() => {
     if (isDriver) void refresh(true);
@@ -373,8 +394,50 @@ export default function AssignmentsPage() {
               </div>
               <div className="surface-glass col-span-2 min-w-0 rounded-xl border border-border p-4 sm:col-span-1">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Customer rating</p>
-                <p className="mt-2 text-2xl font-bold tabular-nums text-warning-foreground">{driverProfile.rating > 0 ? `${driverProfile.rating.toFixed(1)} / 5` : 'Not rated yet'}</p>
+                <p className="mt-2 text-2xl font-bold tabular-nums text-warning-foreground">{driverRating > 0 ? `${driverRating.toFixed(1)} / 5` : 'Not rated yet'}</p>
+                {driverFeedback.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{driverFeedback.length} customer rating{driverFeedback.length === 1 ? '' : 's'}</p>}
               </div>
+            </section>
+
+            <section aria-label="Customer feedback" className="surface-glass rounded-xl border border-border p-4 sm:p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-foreground">Customer feedback</h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Ratings customers have submitted for your deliveries</p>
+                </div>
+                <span className="rounded-full bg-warning/15 px-3 py-1 text-sm font-bold text-warning-foreground">
+                  {driverRating > 0 ? `${driverRating.toFixed(1)} ★` : '—'}
+                </span>
+              </div>
+              {customerFeedbackError ? (
+                <p role="alert" className="mt-3 rounded-lg border border-danger/25 bg-danger/10 p-3 text-xs text-danger-foreground">
+                  Customer feedback could not be loaded: {customerFeedbackError}
+                </p>
+              ) : driverFeedback.length ? (
+                <div className="mt-3 space-y-2">
+                  {driverFeedback.slice(0, 3).map((feedback) => {
+                    const order = orders.find((entry) => entry.id === feedback.order_id);
+                    return (
+                      <Link
+                        key={feedback.id}
+                        href={`/assignments/${feedback.assignment_id}`}
+                        className="block rounded-lg border border-border bg-muted/30 p-3 transition hover:border-warning/40 hover:bg-warning/5"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-semibold text-foreground">{order?.order_number ?? 'Delivery'}</span>
+                          <span className="shrink-0 text-xs font-bold text-warning-foreground">{feedback.rating}/5 ★</span>
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{feedback.review || 'Rating submitted without a comment.'}</p>
+                        <time className="mt-1 block text-[10px] text-muted-foreground">{formatDate(feedback.submitted_at, 'short')}</time>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-3 rounded-lg border border-dashed border-border p-4 text-center text-xs text-muted-foreground">
+                  No customer ratings yet. Feedback appears here after a customer submits a rating.
+                </p>
+              )}
             </section>
           </>
         )}
@@ -633,17 +696,14 @@ export default function AssignmentsPage() {
                             Start
                           </button>
                         )}
-                        {assignment.status === 'in_progress' && (
-                          <button
-                            onClick={(event) => {
-                              event.preventDefault();
-                              void handleStatusUpdate(assignment.id, 'completed');
-                            }}
-                            disabled={busyAssignmentId === assignment.id}
-                            className="min-h-11 rounded-md bg-success px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-success-foreground disabled:opacity-50"
+                        {assignment.status === 'in_progress' && isDriver && (
+                          <Link
+                            href={`/assignments/${assignment.id}`}
+                            onClick={(event) => event.stopPropagation()}
+                            className="inline-flex min-h-11 items-center rounded-md bg-success px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-success-foreground transition hover:opacity-90"
                           >
-                            Complete
-                          </button>
+                            Complete with POD
+                          </Link>
                         )}
                       </div>
                     </div>
@@ -660,7 +720,7 @@ export default function AssignmentsPage() {
                 {[
                   ['1', 'Review', 'Check pickup and delivery details'],
                   ['2', 'Accept', 'Confirm you can take the delivery'],
-                  ['3', 'Update', 'Start the route and mark it complete'],
+                  ['3', 'Complete', 'Record proof of delivery at handover'],
                 ].map(([step, title, description]) => (
                   <div key={step} className="rounded-lg bg-muted/50 p-3">
                     <p className="text-xs font-bold text-primary">STEP {step}</p>

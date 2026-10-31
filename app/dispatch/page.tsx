@@ -186,7 +186,7 @@ export default function DispatchPage() {
     ];
   }, [dispatcherData, drivers]);
 
-  const handleStatusUpdate = async (assignmentId: string, status: 'accepted' | 'in_progress' | 'completed') => {
+  const handleStatusUpdate = async (assignmentId: string, status: 'accepted' | 'in_progress') => {
     setBusyAssignmentId(assignmentId);
     setActionError('');
     try {
@@ -555,14 +555,9 @@ export default function DispatchPage() {
                             </button>
                           )}
                           {assignment.assignmentStatus === 'in_progress' && (
-                            <button
-                              type="button"
-                              onClick={() => void handleStatusUpdate(assignment.id, 'completed')}
-                              disabled={busyAssignmentId === assignment.id}
-                              className="min-h-11 min-w-0 flex-1 rounded-lg bg-success px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-brand-950 transition-colors hover:bg-success/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-none sm:px-3 sm:text-xs sm:tracking-[0.12em]"
-                            >
-                              Complete
-                            </button>
+                            <span className="inline-flex min-h-11 items-center justify-center rounded-lg border border-info/25 bg-info/10 px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.06em] text-info-foreground sm:px-3 sm:text-xs">
+                              Awaiting driver POD
+                            </span>
                           )}
                         </>
                       )}
