@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { cn, toTitleCase } from '@/utils/helpers';
 import { getDriverRating } from '@/utils/driver-ratings';
-import { AlertCircle, Award, Download, MapPin, TrendingUp, Users, Search, UserPlus } from 'lucide-react';
+import { AlertCircle, Award, Download, MapPin, TrendingUp, Users, Search, UserPlus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 const statusColors: Record<string, string> = {
@@ -33,9 +33,11 @@ export default function DriversPage() {
   const { drivers, assignments, customerFeedback, isLoading, error, refresh } = useOperationsData();
   const [searchTerm, setSearchTerm] = useState('');
   const [actionError, setActionError] = useState('');
+  const [actionSuccess, setActionSuccess] = useState('');
   const [busyDriverId, setBusyDriverId] = useState<string | null>(null);
 
-  const filteredDrivers = drivers.filter((driver) =>
+  const rosterDrivers = drivers.filter((driver) => driver.user_status !== 'suspended');
+  const filteredDrivers = rosterDrivers.filter((driver) =>
     (driver.full_name ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     driver.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     driver.vehicle_number.toLowerCase().includes(searchTerm.toLowerCase())
@@ -45,16 +47,16 @@ export default function DriversPage() {
     return assignments.filter((a) => a.personnel_id === driverId);
   };
 
-  const avgRating = drivers.length > 0
-    ? (drivers.reduce((sum, driver) => sum + getDriverRating(driver.id, customerFeedback, driver.rating).average, 0) / drivers.length).toFixed(1)
+  const avgRating = rosterDrivers.length > 0
+    ? (rosterDrivers.reduce((sum, driver) => sum + getDriverRating(driver.id, customerFeedback, driver.rating).average, 0) / rosterDrivers.length).toFixed(1)
     : 0;
   const assignedDriverIds = new Set(
     assignments
       .filter((assignment) => ['pending', 'accepted', 'in_progress'].includes(assignment.status))
       .map((assignment) => assignment.personnel_id)
   );
-  const availableCount = drivers.filter((d) => d.current_status === 'available' && !assignedDriverIds.has(d.id)).length;
-  const onDeliveryCount = drivers.filter((d) => d.current_status === 'on_delivery').length;
+  const availableCount = rosterDrivers.filter((d) => d.current_status === 'available' && !assignedDriverIds.has(d.id)).length;
+  const onDeliveryCount = rosterDrivers.filter((d) => d.current_status === 'on_delivery').length;
 
   const exportDrivers = () => {
     const escapeCell = (value: string | number | boolean | undefined) => {
@@ -114,12 +116,35 @@ export default function DriversPage() {
   const handleStatusUpdate = async (driverId: string, status: 'available' | 'on_delivery') => {
     setBusyDriverId(driverId);
     setActionError('');
+    setActionSuccess('');
     try {
       const result = await driverService.updateStatus(driverId, status);
       if (result.error) throw new Error(result.error);
       await refresh(true);
     } catch (updateError) {
       setActionError(updateError instanceof Error ? updateError.message : 'Unable to update driver status');
+    } finally {
+      setBusyDriverId(null);
+    }
+  };
+
+  const handleDeleteDriver = async (driverId: string, driverName: string) => {
+    const confirmed = window.confirm(
+      `Remove ${driverName} from the active driver roster?\n\nTheir account access will be suspended. Past assignments, proof of delivery, and customer feedback will be preserved.\n\nContinue?`
+    );
+    if (!confirmed) return;
+
+    setBusyDriverId(driverId);
+    setActionError('');
+    setActionSuccess('');
+    try {
+      const response = await fetch(`/api/drivers/${encodeURIComponent(driverId)}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to remove this driver.');
+      await refresh(true);
+      setActionSuccess(`${driverName} was removed from the active driver roster. Their delivery history was preserved.`);
+    } catch (deleteError) {
+      setActionError(deleteError instanceof Error ? deleteError.message : 'Unable to remove this driver.');
     } finally {
       setBusyDriverId(null);
     }
@@ -147,6 +172,12 @@ export default function DriversPage() {
           </div>
         </div>
 
+        {actionSuccess && (
+          <p role="status" className="rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-success-foreground">
+            {actionSuccess}
+          </p>
+        )}
+
         {(error || actionError) && (
           <div role="alert" className="flex items-start gap-3 rounded-lg border border-danger/30 bg-danger/10 p-4 text-danger-foreground">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
@@ -172,7 +203,7 @@ export default function DriversPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">Total Drivers</p>
-                <p className="mt-3 text-3xl font-bold tabular-nums text-foreground">{drivers.length}</p>
+                <p className="mt-3 text-3xl font-bold tabular-nums text-foreground">{rosterDrivers.length}</p>
               </div>
               <div className="rounded-md bg-primary/10 p-3 text-primary">
                 <Users className="h-6 w-6" />
@@ -339,7 +370,7 @@ export default function DriversPage() {
                   </div>
                 )}
 
-                <div className="mt-4 flex gap-2 sm:mt-6">
+                <div className="mt-4 flex flex-wrap gap-2 sm:mt-6">
                   {canManageDrivers && (
                     <>
                       <button
@@ -362,6 +393,20 @@ export default function DriversPage() {
                       >
                         On delivery
                       </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleDeleteDriver(driver.id, driver.full_name || driver.employee_id);
+                        }}
+                        disabled={busyDriverId === driver.id || hasActiveAssignment}
+                        aria-label={`Delete ${driver.full_name || driver.employee_id}`}
+                        title={hasActiveAssignment ? 'Complete or cancel active assignments before removing this driver' : undefined}
+                        className="inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg border border-danger/30 bg-danger/5 px-2 py-2 text-xs font-semibold text-danger-foreground transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </button>
                     </>
                   )}
                   <button
@@ -374,6 +419,11 @@ export default function DriversPage() {
                     Details
                   </button>
                 </div>
+                {canManageDrivers && hasActiveAssignment && (
+                  <p className="mt-2 text-xs text-warning-foreground">
+                    Complete or cancel active assignments before deleting this driver.
+                  </p>
+                )}
                 {!isLoading && filteredDrivers.length > 1 && (
                   <p className="-mt-4 text-[11px] text-muted-foreground lg:hidden">Swipe sideways to browse driver cards.</p>
                 )}
