@@ -1,17 +1,22 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuth } from '@/hooks';
 import { useOperationsData } from '@/hooks/useOperationsData';
 import { getDriverRating } from '@/utils/driver-ratings';
-import { ArrowLeft, AlertCircle, Award, Briefcase, Phone, Activity } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Award, Briefcase, Phone, Activity, Trash2 } from 'lucide-react';
 
 export default function DriverDetailPage() {
   const router = useRouter();
   const params = useParams();
   const driverId = params.id as string;
-  const { drivers, assignments, orders, customerFeedback, isLoading, error, customerFeedbackError } = useOperationsData();
+  const { user } = useAuth();
+  const { drivers, assignments, orders, customerFeedback, isLoading, error, customerFeedbackError, refresh } = useOperationsData();
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const canManageDrivers = user?.role === 'admin';
 
   const driver = useMemo(() => drivers.find((d) => d.id === driverId), [drivers, driverId]);
 
@@ -26,6 +31,29 @@ export default function DriverDetailPage() {
     [customerFeedback, driverId]
   );
   const ratingSummary = driver ? getDriverRating(driver.id, customerFeedback, driver.rating) : { average: 0, count: 0 };
+
+  const handleDeleteDriver = async () => {
+    if (!driver) return;
+    const driverName = driver.full_name || driver.employee_id;
+    const confirmed = window.confirm(
+      `Remove ${driverName} from the active driver roster?\n\nTheir account access will be suspended. Past assignments, proof of delivery, and customer feedback will be preserved.\n\nContinue?`
+    );
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    setDeleteError('');
+    try {
+      const response = await fetch(`/api/drivers/${encodeURIComponent(driver.id)}`, { method: 'DELETE' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to remove this driver.');
+      await refresh(true);
+      router.push('/drivers');
+    } catch (deleteError) {
+      setDeleteError(deleteError instanceof Error ? deleteError.message : 'Unable to remove this driver.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -85,6 +113,13 @@ export default function DriverDetailPage() {
           Back
         </button>
 
+        {deleteError && (
+          <div role="alert" className="mb-6 flex items-start gap-3 rounded-lg border border-danger/30 bg-danger/10 p-4 text-danger-foreground">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
+            <p className="text-sm">{deleteError}</p>
+          </div>
+        )}
+
         {/* Driver Header */}
         <div className="surface-glass mb-8 rounded-lg p-6 sm:p-8">
           <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
@@ -100,9 +135,23 @@ export default function DriverDetailPage() {
               <span className={`inline-flex min-h-8 items-center rounded-full px-4 py-2 text-sm font-semibold ${statusColors[driver.current_status] ?? 'bg-muted text-muted-foreground'}`}>
                 {driver.current_status.replace('_', ' ')}
               </span>
+              {driver.user_status === 'suspended' && (
+                <span className="rounded-full bg-danger/10 px-3 py-1 text-xs font-semibold text-danger-foreground">Removed from active roster</span>
+              )}
               <div className="flex items-center gap-2 text-lg font-semibold text-warning-foreground">
                 {ratingSummary.average.toFixed(1)}⭐
               </div>
+              {canManageDrivers && driver.user_status !== 'suspended' && (
+                <button
+                  type="button"
+                  onClick={() => void handleDeleteDriver()}
+                  disabled={isDeleting}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-danger/30 bg-danger/5 px-4 py-2 text-sm font-semibold text-danger-foreground transition hover:bg-danger/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {isDeleting ? 'Removing…' : 'Delete driver'}
+                </button>
+              )}
             </div>
           </div>
         </div>
