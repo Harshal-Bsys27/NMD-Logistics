@@ -163,14 +163,17 @@
 
   html {
     scroll-behavior: smooth;
+    text-size-adjust: 100%;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+    min-height: 100dvh;
+    -webkit-tap-highlight-color: transparent;
   }
 
   #root {
-    min-height: 100vh;
+    min-height: 100dvh;
   }
 }
 
