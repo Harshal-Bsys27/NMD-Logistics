@@ -98,7 +98,7 @@ export default function GlobalSearch({ compact = false }: { compact?: boolean })
       )}
 
       {open && (
-        <div id="global-search-results" role="dialog" aria-label="Search logistics records" className="absolute right-0 top-[calc(100%+8px)] z-[60] w-[min(520px,calc(100vw-32px))] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl">
+        <div id="global-search-results" role="dialog" aria-label="Search logistics records" className={`${compact ? 'fixed inset-x-3 top-[calc(var(--navbar-height)+8px)] w-auto' : 'absolute right-0 top-[calc(100%+8px)] w-[min(520px,calc(100vw-32px))]'} z-[60] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl`}>
           <div className="border-b border-border p-3 md:hidden">
             <label className="relative block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
