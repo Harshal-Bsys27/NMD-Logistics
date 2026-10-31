@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
-import { Bell, CheckCheck, Circle, PackageCheck, ShieldAlert, Settings2 } from 'lucide-react';
+import { Bell, CheckCheck, Circle, PackageCheck, ShieldAlert, Settings2, Trash2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks';
 import { useOperationsData } from '@/hooks/useOperationsData';
@@ -310,6 +310,13 @@ export default function NotificationsMenu() {
     }));
   };
 
+  const clearAllNotifications = () => {
+    seenIdsRef.current.clear();
+    setStore((current) => (
+      current.userId === userId ? { ...current, items: [] } : current
+    ));
+  };
+
   const enableDesktopAlerts = async () => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
       setBrowserPermission('unsupported');
@@ -357,14 +364,25 @@ export default function NotificationsMenu() {
                 {realtimeState === 'live' ? 'Live updates enabled' : realtimeState === 'connecting' ? 'Connecting to live updates…' : 'Live updates unavailable'}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={markAllRead}
-              disabled={unreadCount === 0}
-              className="shrink-0 text-xs font-medium text-primary transition hover:text-primary/80 disabled:cursor-default disabled:text-muted-foreground"
-            >
-              Mark all read
-            </button>
+            <div className="flex shrink-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={markAllRead}
+                disabled={unreadCount === 0}
+                className="text-xs font-medium text-primary transition hover:text-primary/80 disabled:cursor-default disabled:text-muted-foreground"
+              >
+                Mark all read
+              </button>
+              <button
+                type="button"
+                onClick={clearAllNotifications}
+                disabled={notifications.length === 0}
+                className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition hover:text-danger disabled:cursor-default disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Clear all
+              </button>
+            </div>
           </div>
 
           {browserPermission === 'default' && (

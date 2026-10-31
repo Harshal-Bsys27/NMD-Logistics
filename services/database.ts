@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import { CreateOrderInput } from '@/lib/validations/schemas';
-import type { AssignmentStatus, OrderAssignment, OrderStatus } from '@/types';
+import type { AssignmentStatus, OrderAssignment, OrderStatus, PersonnelStatus } from '@/types';
 
 // ============== ORDER OPERATIONS ==============
 
@@ -194,6 +194,58 @@ export const driverService = {
       return { data, error: null };
     } catch (error: any) {
       return { data: null, error: error.message };
+    }
+  },
+
+  async setMyAvailability(status: Exclude<PersonnelStatus, 'on_delivery'>) {
+    try {
+      const { error } = await supabase.rpc('set_my_driver_availability', {
+        p_status: status,
+      });
+
+      if (error) throw error;
+      return { error: null };
+    } catch (error: unknown) {
+      const errorRecord = error && typeof error === 'object'
+        ? error as Record<string, unknown>
+        : {};
+      const message = typeof errorRecord.message === 'string'
+        ? errorRecord.message
+        : error instanceof Error
+          ? error.message
+          : '';
+      const code = typeof errorRecord.code === 'string' ? errorRecord.code : '';
+      const details = typeof errorRecord.details === 'string' ? errorRecord.details : '';
+      const hint = typeof errorRecord.hint === 'string' ? errorRecord.hint : '';
+      const diagnostic = [message, code ? `(${code})` : '', details, hint ? `Hint: ${hint}` : '']
+        .filter(Boolean)
+        .join(' ');
+
+      return {
+        error: code === 'PGRST202'
+          ? `The availability update function is not installed in this Supabase database. Apply the driver availability migration. ${diagnostic}`
+          : diagnostic || 'Unable to update your availability for an unknown reason.',
+      };
+    }
+  },
+
+  async getAvailabilityHistory(driverId: string, limit = 6) {
+    try {
+      const { data, error } = await supabase
+        .from('driver_availability_history')
+        .select('id, previous_status, new_status, changed_at')
+        .eq('driver_id', driverId)
+        .order('changed_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return { data: data ?? [], error: null };
+    } catch (error: unknown) {
+      const message = error && typeof error === 'object' && 'message' in error
+        && typeof error.message === 'string'
+        ? error.message
+        : error instanceof Error ? error.message : 'Unable to load availability history';
+      return { data: [], error: message };
     }
   },
 
