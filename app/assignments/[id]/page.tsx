@@ -246,12 +246,11 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
     }
   };
 
-  const canAccept = assignment.status === 'pending';
-  const canReject = assignment.status === 'pending' || assignment.status === 'accepted';
-  const canStart = assignment.status === 'accepted';
-  const canComplete = assignment.status === 'in_progress'
-    && user?.role === 'delivery_personnel'
-    && driver?.user_id === user.id;
+  const isAssignedDriver = user?.role === 'delivery_personnel' && driver?.user_id === user.id;
+  const canAccept = isAssignedDriver && assignment.status === 'pending';
+  const canReject = isAssignedDriver && (assignment.status === 'pending' || assignment.status === 'accepted');
+  const canStart = isAssignedDriver && assignment.status === 'accepted';
+  const canComplete = isAssignedDriver && assignment.status === 'in_progress';
   const canRequestFeedback = !!proof && (
     user?.role === 'admin'
     || user?.role === 'supervisor'
@@ -595,7 +594,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
 
         {/* Action Buttons */}
         <div className="surface-glass rounded-lg p-6">
-          <h2 className="mb-4 text-lg font-semibold text-foreground">Update Status</h2>
+          <h2 className="mb-4 text-lg font-semibold text-foreground">{isAssignedDriver ? 'Your delivery response' : 'Assignment status'}</h2>
           <div className="flex flex-col gap-3 sm:flex-row">
             {canAccept && (
               <button
@@ -627,6 +626,22 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
               </button>
             )}
           </div>
+
+          {!isAssignedDriver && assignment.status === 'pending' && (
+            <p className="rounded-lg border border-warning/25 bg-warning/10 p-3 text-sm text-warning-foreground">
+              Waiting for the assigned driver to accept or decline this delivery.
+            </p>
+          )}
+          {!isAssignedDriver && assignment.status === 'accepted' && (
+            <p className="rounded-lg border border-info/25 bg-info/10 p-3 text-sm text-info-foreground">
+              The driver accepted this delivery. The assigned driver will start it when ready.
+            </p>
+          )}
+          {!isAssignedDriver && assignment.status === 'in_progress' && !proof && (
+            <p className="rounded-lg border border-info/25 bg-info/10 p-3 text-sm text-info-foreground">
+              Delivery is in progress. Only the assigned driver can submit proof of delivery and complete it.
+            </p>
+          )}
 
           {canComplete && !proof && (
             <form onSubmit={handleCompleteWithProof} className="mt-5 space-y-4 rounded-xl border border-success/25 bg-success/[0.05] p-4 sm:p-5">
