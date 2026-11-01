@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateOrderInput, createOrderSchema } from '@/lib/validations/schemas';
+import { CreateOrderInput, createOrderSchema, orderSchema } from '@/lib/validations/schemas';
 import { Order } from '@/types';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
@@ -27,7 +27,7 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
     formState: { errors },
     reset,
   } = useForm<CreateOrderInput>({
-    resolver: zodResolver(createOrderSchema),
+    resolver: zodResolver(initialOrder ? orderSchema : createOrderSchema),
     defaultValues: initialOrder
       ? {
           client_name: initialOrder.client_name,
@@ -37,6 +37,7 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
           pickup_location: initialOrder.pickup_location,
           delivery_location: initialOrder.delivery_location,
           package_description: initialOrder.package_description,
+          package_weight: initialOrder.package_weight ?? undefined,
           package_value: initialOrder.package_value,
           priority: (initialOrder.priority || 'normal') as 'low' | 'normal' | 'high' | 'urgent',
           special_instructions: initialOrder.special_instructions,
@@ -173,6 +174,24 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
             />
             {errors.package_description && (
               <p className="mt-1 text-xs text-danger-foreground">{errors.package_description.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-foreground">Package Weight (kg)</label>
+            <Input
+              {...register('package_weight', {
+                setValueAs: (value: string) => value === '' ? undefined : Number(value),
+              })}
+              aria-invalid={!!errors.package_weight}
+              type="number"
+              min="0.01"
+              step="0.01"
+              required={!initialOrder}
+              placeholder="e.g. 2.5"
+            />
+            {errors.package_weight && (
+              <p className="mt-1 text-xs text-danger-foreground">{errors.package_weight.message}</p>
             )}
           </div>
 
