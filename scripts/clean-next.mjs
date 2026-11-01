@@ -1,4 +1,5 @@
 import { readFile, rm } from 'node:fs/promises';
+import { getProcessState } from './process-state.mjs';
 
 const lockPath = '.next-dev-server.lock';
 let lockContents;
@@ -11,11 +12,11 @@ try {
 if (lockContents) {
   const ownerPid = Number(lockContents.trim());
   if (Number.isSafeInteger(ownerPid) && ownerPid > 0) {
-    try {
-      process.kill(ownerPid, 0);
-      throw new Error('Stop the development server with Ctrl+C before cleaning its build output.');
-    } catch (error) {
-      if (error.code !== 'ESRCH') throw error;
+    const ownerState = getProcessState(ownerPid);
+    if (ownerState !== 'stopped') {
+      throw new Error(ownerState === 'inaccessible'
+        ? `Cannot verify lock owner PID ${ownerPid} because Windows denied access. Check that process before cleaning build output.`
+        : 'Stop the development server with Ctrl+C before cleaning its build output.');
     }
   }
   await rm(lockPath, { force: true });

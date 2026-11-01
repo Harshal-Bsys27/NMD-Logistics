@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import { open, readFile, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { getProcessState } from './process-state.mjs';
 
 const lockPath = resolve('.next-dev-server.lock');
 
@@ -27,17 +28,17 @@ async function acquireLock() {
         continue;
       }
 
-      try {
-        process.kill(ownerPid, 0);
-      } catch (processError) {
-        if (processError.code === 'ESRCH') {
-          await rm(lockPath, { force: true });
-          continue;
-        }
-        throw processError;
+      const ownerState = getProcessState(ownerPid);
+      if (ownerState === 'stopped') {
+        await rm(lockPath, { force: true });
+        continue;
       }
 
-      console.error(`A development server is already running (PID ${ownerPid}). Stop it with Ctrl+C before starting another.`);
+      if (ownerState === 'inaccessible') {
+        console.error(`The development lock points to PID ${ownerPid}, but Windows denied access to verify it. To avoid starting a second server, check whether that PID is a Next.js process before removing .next-dev-server.lock.`);
+      } else {
+        console.error(`A development server is already running (PID ${ownerPid}). Stop it with Ctrl+C before starting another.`);
+      }
       return false;
     }
   }

@@ -33,6 +33,7 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
           client_name: initialOrder.client_name,
           client_phone: initialOrder.client_phone,
           client_email: initialOrder.client_email,
+          delivery_email_consent: initialOrder.delivery_email_consent ?? false,
           pickup_location: initialOrder.pickup_location,
           delivery_location: initialOrder.delivery_location,
           package_description: initialOrder.package_description,
@@ -114,6 +115,23 @@ export function OrderForm({ initialOrder, onSubmit, isLoading }: OrderFormProps)
               <p className="mt-1 text-xs text-danger-foreground">{errors.client_email.message}</p>
             )}
           </div>
+        </div>
+
+        <div className="rounded-lg border border-border bg-muted/30 p-4">
+          <label className="flex items-start gap-3 text-sm text-foreground">
+            <input
+              {...register('delivery_email_consent')}
+              type="checkbox"
+              className="mt-0.5 h-4 w-4 rounded border-input text-primary focus:ring-ring"
+            />
+            <span>
+              Customer agrees to receive a delivery confirmation and feedback request by email.
+              <span className="mt-1 block text-xs text-muted-foreground">This is optional. No email will be sent unless consent is checked and an email address is provided.</span>
+            </span>
+          </label>
+          {errors.delivery_email_consent && (
+            <p className="mt-2 text-xs text-danger-foreground">{errors.delivery_email_consent.message}</p>
+          )}
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

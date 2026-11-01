@@ -4,7 +4,7 @@ import Image from 'next/image'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Activity, BarChart3, FileCode2, FileText, HelpCircle, LayoutDashboard, LogOut, Menu, Package, Settings, Truck, UserRound, X, Zap, Route, Users } from 'lucide-react'
+import { Activity, BarChart3, FileCode2, FileText, HelpCircle, LayoutDashboard, LogOut, Menu, Package, Settings, Truck, UserRound, X, Zap, Route, Users, MessageSquare } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import ThemeToggle from '@/components/layout/ThemeToggle'
 import { useAuth } from '@/hooks'
@@ -18,6 +18,7 @@ const mobileGroups = [
       { href: '/drivers', label: 'Drivers', icon: Truck },
       { href: '/users', label: 'Invites & staff', icon: Users, adminOnly: true },
       { href: '/assignments', label: 'Assignments', icon: Zap },
+      { href: '/customer-feedback', label: 'Customer feedback', icon: MessageSquare, staffOnly: true },
       { href: '/dispatch', label: 'Dispatch', icon: Route },
       { href: '/reports', label: 'Reports', icon: FileText },
       { href: '/analytics', label: 'Analytics', icon: BarChart3 },
@@ -118,6 +119,7 @@ export default function MobileSidebar() {
                   .filter(() => !loading && !!user)
                   .filter((item) => user?.role !== 'delivery_personnel' || item.href === '/assignments')
                   .filter((item) => !('adminOnly' in item) || !item.adminOnly || user?.role === 'admin')
+                  .filter((item) => !('staffOnly' in item) || !item.staffOnly || user?.role === 'admin' || user?.role === 'supervisor')
                 if (!visibleLinks.length) return null
 
                 return (

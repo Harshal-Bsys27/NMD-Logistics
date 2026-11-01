@@ -1,0 +1,18 @@
+export const colors = {
+  navy: '#0A1A3F',
+  navyDeep: '#070F2B',
+  blue: '#1D4ED8',
+  gold: '#FBBF24',
+  background: '#F4F7FC',
+  surface: '#FFFFFF',
+  text: '#0B1530',
+  muted: '#5B6B8C',
+  border: '#E3E9F4',
+  success: '#15803D',
+  warning: '#92400E',
+  danger: '#BE123C',
+  paleBlue: '#EFF6FF',
+  paleGold: '#FFFBEB',
+  paleGreen: '#F0FDF4',
+  paleRed: '#FFF1F2',
+};

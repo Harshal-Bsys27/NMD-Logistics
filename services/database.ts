@@ -17,7 +17,8 @@ export const orderService = {
               .padStart(4, '0')}`,
             client_name: orderData.client_name,
             client_phone: orderData.client_phone,
-            client_email: orderData.client_email,
+            client_email: orderData.client_email?.trim() || null,
+            delivery_email_consent: orderData.delivery_email_consent ?? false,
             pickup_location: orderData.pickup_location,
             delivery_location: orderData.delivery_location,
             package_description: orderData.package_description,
@@ -48,7 +49,8 @@ export const orderService = {
         .update({
           client_name: orderData.client_name,
           client_phone: orderData.client_phone,
-          client_email: orderData.client_email,
+          client_email: orderData.client_email === undefined ? undefined : orderData.client_email.trim() || null,
+          delivery_email_consent: orderData.delivery_email_consent,
           pickup_location: orderData.pickup_location,
           delivery_location: orderData.delivery_location,
           package_description: orderData.package_description,
@@ -355,10 +357,26 @@ export const assignmentService = {
     recipientName: string;
     notes: string;
     photo: File | null;
+    signature: File | null;
+    signatureExceptionReason: string;
   }) {
     let photoPath: string | null = null;
-    let preserveUploadedPhoto = false;
+    let signaturePath: string | null = null;
+    let preserveUploadedFiles = false;
     try {
+      const uploadFile = async (file: File, path: string, acceptedTypes: string[]) => {
+        if (!acceptedTypes.includes(file.type)) throw new Error('Choose a supported proof image.');
+        if (file.size > 8 * 1024 * 1024) throw new Error('Each proof image must be 8 MB or smaller.');
+        const { error: uploadError } = await supabase.storage
+          .from('delivery-proofs')
+          .upload(path, file, {
+            cacheControl: '3600',
+            contentType: file.type,
+            upsert: false,
+          });
+        if (uploadError) throw new Error(`Could not upload proof image: ${uploadError.message}`);
+      };
+
       if (input.photo) {
         const extensionByType: Record<string, string> = {
           'image/jpeg': 'jpg',
@@ -367,18 +385,13 @@ export const assignmentService = {
         };
         const extension = extensionByType[input.photo.type];
         if (!extension) throw new Error('Choose a JPG, PNG, or WebP proof photo.');
-        if (input.photo.size > 8 * 1024 * 1024) throw new Error('The proof photo must be 8 MB or smaller.');
-
-        const uploadPath = `${input.assignmentId}/${crypto.randomUUID()}.${extension}`;
-        const { error: uploadError } = await supabase.storage
-          .from('delivery-proofs')
-          .upload(uploadPath, input.photo, {
-            cacheControl: '3600',
-            contentType: input.photo.type,
-            upsert: false,
-          });
-        if (uploadError) throw new Error(`Could not upload proof photo: ${uploadError.message}`);
-        photoPath = uploadPath;
+        photoPath = `${input.assignmentId}/${crypto.randomUUID()}.${extension}`;
+        await uploadFile(input.photo, photoPath, ['image/jpeg', 'image/png', 'image/webp']);
+      }
+      if (input.signature) {
+        if (input.signature.type !== 'image/png') throw new Error('The recipient signature must be a PNG image.');
+        signaturePath = `${input.assignmentId}/signature-${crypto.randomUUID()}.png`;
+        await uploadFile(input.signature, signaturePath, ['image/png']);
       }
 
       const { data, error } = await supabase.rpc('complete_assignment_with_proof', {
@@ -386,27 +399,57 @@ export const assignmentService = {
         p_recipient_name: input.recipientName.trim(),
         p_notes: input.notes.trim() || null,
         p_photo_path: photoPath,
+        p_recipient_signature_path: signaturePath,
+        p_signature_exception_reason: input.signatureExceptionReason.trim() || null,
       });
+      let savedProof: DeliveryProof | null = data as DeliveryProof | null;
       if (error) {
         const verification = await supabase
           .from('delivery_proofs')
-          .select('*')
+          .select('id, photo_path, recipient_signature_path')
           .eq('assignment_id', input.assignmentId)
           .maybeSingle();
-        if (verification.data) return { data: verification.data as DeliveryProof, error: null };
+        if (verification.data) {
+          savedProof = verification.data as DeliveryProof;
+          preserveUploadedFiles = (photoPath !== null && verification.data.photo_path === photoPath)
+            || (signaturePath !== null && verification.data.recipient_signature_path === signaturePath);
+        }
         if (verification.error) {
-          preserveUploadedPhoto = true;
+          preserveUploadedFiles = true;
           throw new Error(
-            `${error.message} Delivery completion could not be verified. Refresh the assignment before retrying.${photoPath ? ' The uploaded photo has been retained.' : ''}`
+            `${error.message} Delivery completion could not be verified. Refresh the assignment before retrying.${photoPath || signaturePath ? ' Uploaded proof files have been retained.' : ''}`
           );
         }
-        throw new Error(error.message);
+        if (!verification.data) throw new Error(error.message);
       }
-      if (!data) throw new Error('Delivery completion returned no proof record.');
-      return { data: data as DeliveryProof, error: null };
+      if (!savedProof) throw new Error('Delivery completion returned no proof record.');
+
+      let notificationStatus: 'sent' | 'skipped' | 'failed' = 'failed';
+      let notificationError: string | null = null;
+      try {
+        const response = await fetch('/api/customer-feedback/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assignment_id: input.assignmentId }),
+        });
+        const result = await response.json() as { status?: unknown; error?: unknown };
+        if (result.status === 'sent' || result.status === 'skipped') {
+          notificationStatus = result.status;
+        } else {
+          notificationError = typeof result.error === 'string'
+            ? result.error
+            : 'The customer email could not be sent.';
+        }
+      } catch (notificationFailure) {
+        notificationError = notificationFailure instanceof Error
+          ? notificationFailure.message
+          : 'The customer email could not be sent.';
+      }
+      return { data: savedProof, error: null, notificationStatus, notificationError };
     } catch (error) {
-      if (photoPath && !preserveUploadedPhoto) {
-        const { error: cleanupError } = await supabase.storage.from('delivery-proofs').remove([photoPath]);
+      const uploadedPaths = [photoPath, signaturePath].filter((path): path is string => !!path);
+      if (uploadedPaths.length && !preserveUploadedFiles) {
+        const { error: cleanupError } = await supabase.storage.from('delivery-proofs').remove(uploadedPaths);
         if (cleanupError) {
           console.error('Unable to remove proof photo after delivery completion failed:', cleanupError);
           const message = error instanceof Error ? error.message : 'Unable to complete delivery';

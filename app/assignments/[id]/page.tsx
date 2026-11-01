@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { assignmentService } from '@/services/database';
 import { useOperationsData } from '@/hooks/useOperationsData';
 import { useAuth } from '@/hooks/auth';
+import SignatureCapture from '@/components/forms/SignatureCapture';
 import { formatDate } from '@/utils/helpers';
 import { getDriverRating } from '@/utils/driver-ratings';
 import {
@@ -32,6 +33,14 @@ const vehicleEmojis: Record<string, string> = {
   truck: '🚚',
 };
 
+function signatureDataUrlToFile(dataUrl: string) {
+  const encoded = dataUrl.split(',')[1];
+  if (!encoded) throw new Error('The recipient signature could not be read. Ask them to sign again.');
+  const binary = atob(encoded);
+  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+  return new File([bytes], 'recipient-signature.png', { type: 'image/png' });
+}
+
 export default function AssignmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const resolvedParams = use(params);
@@ -52,18 +61,17 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
   const [assignmentFeedback, setAssignmentFeedback] = useState<DeliveryFeedback | null>(null);
   const [feedbackLoadError, setFeedbackLoadError] = useState('');
   const [proofPhotoUrl, setProofPhotoUrl] = useState<string | null>(null);
+  const [proofSignatureUrl, setProofSignatureUrl] = useState<string | null>(null);
   const [proofLoading, setProofLoading] = useState(false);
   const [proofLoadingError, setProofLoadingError] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [proofPhoto, setProofPhoto] = useState<File | null>(null);
+  const [recipientSignature, setRecipientSignature] = useState<string | null>(null);
+  const [signatureException, setSignatureException] = useState(false);
+  const [signatureExceptionReason, setSignatureExceptionReason] = useState('');
   const [proofSubmitLoading, setProofSubmitLoading] = useState(false);
   const [proofSubmitError, setProofSubmitError] = useState('');
-  const [feedbackLinkUrl, setFeedbackLinkUrl] = useState('');
-  const [feedbackLinkExpiresAt, setFeedbackLinkExpiresAt] = useState('');
-  const [feedbackLinkError, setFeedbackLinkError] = useState('');
-  const [feedbackLinkLoading, setFeedbackLinkLoading] = useState(false);
-  const [feedbackLinkCopied, setFeedbackLinkCopied] = useState(false);
 
   const assignment = assignments.find((a) => a.id === resolvedParams.id);
   const order = assignment ? orders.find((o) => o.id === assignment.order_id) : null;
@@ -74,6 +82,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
     let active = true;
     setProof(null);
     setProofPhotoUrl(null);
+    setProofSignatureUrl(null);
     setAssignmentFeedback(null);
     setFeedbackLoadError('');
     if (!assignmentId) return () => { active = false; };
@@ -96,6 +105,14 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
           else setProofPhotoUrl(photoResult.data);
         } else {
           setProofPhotoUrl(null);
+        }
+        if (result.data?.recipient_signature_path) {
+          const signatureResult = await assignmentService.getProofPhotoUrl(result.data.recipient_signature_path);
+          if (!active) return;
+          if (signatureResult.error) setProofLoadingError(signatureResult.error);
+          else setProofSignatureUrl(signatureResult.data);
+        } else {
+          setProofSignatureUrl(null);
         }
         if (result.data) {
           const feedbackResult = await assignmentService.getFeedbackByAssignmentId(assignmentId);
@@ -189,24 +206,52 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
       setProofSubmitError('Recipient name must be 120 characters or fewer and notes must be 1000 characters or fewer.');
       return;
     }
+    if (!signatureException && !recipientSignature) {
+      setProofSubmitError('Ask the recipient to sign, or select the no-signature exception and provide a reason with a proof photo.');
+      return;
+    }
+    if (signatureException && (!proofPhoto || signatureExceptionReason.trim().length < 10)) {
+      setProofSubmitError('A proof photo and a reason of at least 10 characters are required when the recipient cannot sign.');
+      return;
+    }
+    if (signatureExceptionReason.trim().length > 300) {
+      setProofSubmitError('The no-signature reason must be 300 characters or fewer.');
+      return;
+    }
 
     setProofSubmitLoading(true);
     try {
+      const signatureFile = recipientSignature ? signatureDataUrlToFile(recipientSignature) : null;
       const result = await assignmentService.completeWithProof({
         assignmentId: assignment.id,
         recipientName,
         notes: deliveryNotes,
         photo: proofPhoto,
+        signature: signatureFile,
+        signatureExceptionReason: signatureException ? signatureExceptionReason : '',
       });
       if (result.error || !result.data) throw new Error(result.error || 'Unable to save proof of delivery.');
       setProof(result.data);
       if (result.data.photo_path) {
         const photoResult = await assignmentService.getProofPhotoUrl(result.data.photo_path);
-        if (photoResult.error) throw new Error(`Delivery completed, but proof photo could not be displayed: ${photoResult.error}`);
-        setProofPhotoUrl(photoResult.data);
+        if (photoResult.error) setProofLoadingError(`Delivery completed, but proof photo could not be displayed: ${photoResult.error}`);
+        else setProofPhotoUrl(photoResult.data);
+      }
+      if (result.data.recipient_signature_path) {
+        const signatureResult = await assignmentService.getProofPhotoUrl(result.data.recipient_signature_path);
+        if (signatureResult.error) setProofLoadingError(`Delivery completed, but recipient signature could not be displayed: ${signatureResult.error}`);
+        else setProofSignatureUrl(signatureResult.data);
       }
       setProofPhoto(null);
-      setActionMessage('Proof saved and delivery completed.');
+      setRecipientSignature(null);
+      setActionMessage(result.notificationStatus === 'sent'
+        ? 'Delivery completed and customer email sent.'
+        : result.notificationStatus === 'skipped'
+          ? 'Delivery completed. No customer email was sent because consent or an email address is missing.'
+          : 'Delivery completed. The customer email needs administrator attention.');
+      if (result.notificationStatus === 'failed') {
+        setActionError(result.notificationError || 'Customer email failed. An administrator can retry it from Customer Feedback.');
+      }
       await refresh(true);
     } catch (submitError) {
       setProofSubmitError(submitError instanceof Error ? submitError.message : 'Unable to complete delivery.');
@@ -215,48 +260,11 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
     }
   };
 
-  const generateFeedbackLink = async () => {
-    setFeedbackLinkError('');
-    setFeedbackLinkUrl('');
-    setFeedbackLinkCopied(false);
-    setFeedbackLinkLoading(true);
-    try {
-      const response = await fetch('/api/customer-feedback/links', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignment_id: assignment.id }),
-      });
-      const result = await response.json() as { url?: string; expires_at?: string; error?: string };
-      if (!response.ok || !result.url) throw new Error(result.error || 'Unable to generate a customer feedback link.');
-      setFeedbackLinkUrl(result.url);
-      setFeedbackLinkExpiresAt(result.expires_at || '');
-    } catch (error) {
-      setFeedbackLinkError(error instanceof Error ? error.message : 'Unable to generate a customer feedback link.');
-    } finally {
-      setFeedbackLinkLoading(false);
-    }
-  };
-
-  const copyFeedbackLink = async () => {
-    try {
-      await navigator.clipboard.writeText(feedbackLinkUrl);
-      setFeedbackLinkCopied(true);
-    } catch {
-      setFeedbackLinkError('Copy was blocked by the browser. Select and copy the link from the field above.');
-    }
-  };
-
   const isAssignedDriver = user?.role === 'delivery_personnel' && driver?.user_id === user.id;
   const canAccept = isAssignedDriver && assignment.status === 'pending';
   const canReject = isAssignedDriver && (assignment.status === 'pending' || assignment.status === 'accepted');
   const canStart = isAssignedDriver && assignment.status === 'accepted';
   const canComplete = isAssignedDriver && assignment.status === 'in_progress';
-  const canRequestFeedback = !!proof && (
-    user?.role === 'admin'
-    || user?.role === 'supervisor'
-    || (user?.role === 'delivery_personnel' && driver?.user_id === user.id)
-  );
-
   const eta = assignment.started_at
     ? new Date(new Date(assignment.started_at).getTime() + (assignment.estimated_duration_minutes || 45) * 60 * 1000)
     : null;
@@ -347,7 +355,21 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
                       <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{proof.notes}</p>
                     </div>
                   )}
+                  {proof.signature_exception_reason && (
+                    <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-warning-foreground">No-signature exception</p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{proof.signature_exception_reason}</p>
+                    </div>
+                  )}
                 </div>
+                {proofSignatureUrl && (
+                  <div className="mt-4">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Recipient acknowledgement</p>
+                    <div className="inline-block overflow-hidden rounded-lg border border-border bg-white p-2">
+                      <Image src={proofSignatureUrl} alt={`Recipient signature for ${order.order_number}`} width={600} height={180} unoptimized className="max-h-40 w-auto object-contain" />
+                    </div>
+                  </div>
+                )}
                 {proof.photo_path && proofPhotoUrl && (
                   <div className="mt-4">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Delivery photo</p>
@@ -378,51 +400,6 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
                 )}
                 {feedbackLoadError && (
                   <p role="alert" className="mt-4 text-sm text-danger-foreground">Could not load customer feedback: {feedbackLoadError}</p>
-                )}
-                {canRequestFeedback && !assignmentFeedback && (
-                  <div className="mt-5 border-t border-border pt-5">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <h3 className="font-semibold text-foreground">Customer feedback</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">Create a one-time rating link that expires in 30 days.</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void generateFeedbackLink()}
-                        disabled={feedbackLinkLoading}
-                        className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <Star className="h-4 w-4" />
-                        {feedbackLinkLoading ? 'Generating…' : feedbackLinkUrl ? 'Generate new link' : 'Generate feedback link'}
-                      </button>
-                    </div>
-                    {feedbackLinkUrl && (
-                      <div className="mt-3 space-y-2">
-                        <div className="flex flex-col gap-2 sm:flex-row">
-                          <input
-                            aria-label="Customer feedback link"
-                            readOnly
-                            value={feedbackLinkUrl}
-                            onFocus={(event) => event.currentTarget.select()}
-                            className="min-h-11 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 text-xs text-foreground"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => void copyFeedbackLink()}
-                            className="min-h-11 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
-                          >
-                            {feedbackLinkCopied ? 'Copied' : 'Copy link'}
-                          </button>
-                        </div>
-                        {feedbackLinkExpiresAt && (
-                          <p className="text-xs text-muted-foreground">Expires {formatDate(feedbackLinkExpiresAt)}. Generating another link invalidates this one.</p>
-                        )}
-                      </div>
-                    )}
-                    {feedbackLinkError && (
-                      <p role="alert" className="mt-3 rounded-lg border border-danger/25 bg-danger/10 p-3 text-sm text-danger-foreground">{feedbackLinkError}</p>
-                    )}
-                  </div>
                 )}
               </section>
             )}
@@ -647,7 +624,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
             <form onSubmit={handleCompleteWithProof} className="mt-5 space-y-4 rounded-xl border border-success/25 bg-success/[0.05] p-4 sm:p-5">
               <div>
                 <h3 className="font-semibold text-foreground">Complete delivery with proof</h3>
-                <p className="mt-1 text-sm text-muted-foreground">Record who received the package. A delivery photo is optional.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Record who received the package and ask them to sign for the delivery.</p>
               </div>
               <label className="block">
                 <span className="mb-1.5 flex items-center gap-2 text-sm font-medium text-foreground">
@@ -663,6 +640,39 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
                   placeholder="Name of the person who received the delivery"
                 />
               </label>
+              <label className="flex min-h-11 items-start gap-3 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={signatureException}
+                  onChange={(event) => {
+                    setSignatureException(event.target.checked);
+                    setRecipientSignature(null);
+                    setSignatureExceptionReason('');
+                  }}
+                  className="mt-0.5 h-4 w-4 rounded border-input text-primary focus:ring-ring"
+                />
+                <span>Recipient is unable or unwilling to sign</span>
+              </label>
+              {signatureException ? (
+                <label className="block">
+                  <span className="mb-1.5 block text-sm font-medium text-foreground">Reason for no signature <span className="text-danger-foreground">*</span></span>
+                  <textarea
+                    required
+                    minLength={10}
+                    maxLength={300}
+                    rows={3}
+                    value={signatureExceptionReason}
+                    onChange={(event) => setSignatureExceptionReason(event.target.value)}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-ring focus:ring-2 focus:ring-ring/20"
+                    placeholder="Explain why the recipient could not sign"
+                  />
+                </label>
+              ) : (
+                <div>
+                  <span className="mb-1.5 block text-sm font-medium text-foreground">Recipient signature <span className="text-danger-foreground">*</span></span>
+                  <SignatureCapture onChange={setRecipientSignature} />
+                </div>
+              )}
               <label className="block">
                 <span className="mb-1.5 block text-sm font-medium text-foreground">Delivery notes <span className="font-normal text-muted-foreground">(optional)</span></span>
                 <textarea
@@ -678,11 +688,12 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
               <label className="block">
                 <span className="mb-1.5 flex items-center gap-2 text-sm font-medium text-foreground">
                   <Camera className="h-4 w-4 text-muted-foreground" />
-                  Delivery photo <span className="font-normal text-muted-foreground">(optional, JPG/PNG/WebP up to 8 MB)</span>
+                  Delivery photo <span className="font-normal text-muted-foreground">({signatureException ? 'required' : 'optional'}, JPG/PNG/WebP up to 8 MB)</span>
                 </span>
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
+                  required={signatureException}
                   onChange={(event) => setProofPhoto(event.currentTarget.files?.[0] ?? null)}
                   className="block min-h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-muted file:px-3 file:py-1 file:text-sm file:font-medium file:text-foreground"
                 />

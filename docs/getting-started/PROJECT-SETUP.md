@@ -58,6 +58,29 @@ npm run dev
 
 Use the local URL printed by Next.js. Run one development server per checkout because Next.js servers share the `.next` directory and can cause confusing stale-asset errors.
 
+If startup reports an existing development server, stop the running `npm run dev`
+terminal with **Ctrl+C** and retry. The launcher removes a lock whose recorded
+process has stopped. If it says Windows could not verify the lock owner, do not
+delete the lock until you have checked that PID and confirmed no Next.js server
+is using the checkout:
+
+```powershell
+Get-CimInstance Win32_Process -Filter "ProcessId = <PID>" |
+  Select-Object ProcessId, Name, CommandLine
+Get-NetTCPConnection -State Listen -LocalPort 3000
+```
+
+Only when the PID is not a Next.js/dev-server process and port 3000 is not
+serving this app, remove the specific stale lock and restart:
+
+```powershell
+Remove-Item -LiteralPath .next-dev-server.lock
+npm run dev
+```
+
+Do not use `npm run dev:clean` to fix a live-server lock; it intentionally
+refuses to remove build output while the server is running.
+
 Useful checks:
 
 ```powershell

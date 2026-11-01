@@ -48,10 +48,11 @@ export const createUserSchema = z.object({
 export const updateUserSchema = createUserSchema.partial();
 
 // Order Schemas
-export const createOrderSchema = z.object({
+const orderSchema = z.object({
   client_name: z.string().min(2, 'Client name must be at least 2 characters'),
   client_phone: z.string().regex(/^[6-9]\d{9}$/, 'Invalid phone number'),
-  client_email: z.string().email('Invalid email address').optional(),
+  client_email: z.string().email('Invalid email address').or(z.literal('')).optional(),
+  delivery_email_consent: z.boolean().default(false),
   
   pickup_location: z.string().min(5, 'Pickup location is required'),
   pickup_time: z.string().datetime().optional(),
@@ -67,7 +68,15 @@ export const createOrderSchema = z.object({
   special_instructions: z.string().optional(),
 });
 
-export const updateOrderSchema = createOrderSchema.partial();
+export const createOrderSchema = orderSchema.refine(
+  (data) => !data.delivery_email_consent || !!data.client_email?.trim(),
+  { message: 'A customer email is required when email notifications are enabled', path: ['client_email'] },
+);
+
+export const updateOrderSchema = orderSchema.partial().refine(
+  (data) => data.delivery_email_consent !== true || !!data.client_email?.trim(),
+  { message: 'A customer email is required when email notifications are enabled', path: ['client_email'] },
+);
 
 // Delivery Personnel Schemas
 export const createDeliveryPersonnelSchema = z.object({
