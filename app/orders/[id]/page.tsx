@@ -191,7 +191,15 @@ export default function OrderDetailPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <p className="text-sm text-muted-foreground">Description</p>
-              <p className="mt-1 text-foreground">{order.package_description}</p>
+              <p className="mt-1 text-foreground">{order.package_description || 'Not provided'}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Package Weight</p>
+              <p className="mt-1 font-medium tabular-nums text-foreground">
+                {order.package_weight != null
+                  ? `${order.package_weight.toLocaleString('en-IN', { maximumFractionDigits: 2 })} kg`
+                  : 'Not provided'}
+              </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Priority</p>

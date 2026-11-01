@@ -373,6 +373,11 @@ export default function OrdersPage() {
                     </span>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Weight: {order.package_weight != null
+                        ? `${order.package_weight.toLocaleString('en-IN', { maximumFractionDigits: 2 })} kg`
+                        : 'Not provided'}
+                    </span>
                     <span className={cn('rounded-full px-2.5 py-1 text-xs font-semibold', priorityColors[order.priority || 'normal'])}>
                       {toTitleCase(order.priority || 'normal')} priority
                     </span>
@@ -456,6 +461,11 @@ export default function OrdersPage() {
                             <div>
                               <p className="font-semibold text-foreground">{order.order_number}</p>
                               <p className="text-xs text-muted-foreground">{order.package_description}</p>
+                              <p className="text-xs font-medium text-muted-foreground">
+                                {order.package_weight != null
+                                  ? `${order.package_weight.toLocaleString('en-IN', { maximumFractionDigits: 2 })} kg`
+                                  : 'Weight not provided'}
+                              </p>
                             </div>
                           </div>
                         </td>
