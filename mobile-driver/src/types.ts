@@ -40,6 +40,7 @@ export interface DriverAssignment {
     pickup_location: string;
     delivery_location: string;
     package_description: string | null;
+    package_weight: number | null;
     special_instructions: string | null;
   };
 }

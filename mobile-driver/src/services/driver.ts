@@ -286,6 +286,7 @@ export async function getDriverAssignments(driverId: string): Promise<DriverAssi
         pickup_location,
         delivery_location,
         package_description,
+        package_weight,
         special_instructions
       )
     `)
