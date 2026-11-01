@@ -242,29 +242,35 @@ export default function AssignmentDetailScreen({
           </View>
         </View>
 
-        {(assignment.order.package_description || assignment.order.special_instructions || assignment.notes) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Package & instructions</Text>
-            {assignment.order.package_description ? (
-              <View style={styles.infoCard}>
-                <Text style={styles.infoLabel}>PACKAGE</Text>
-                <Text style={styles.infoValue}>{assignment.order.package_description}</Text>
-              </View>
-            ) : null}
-            {assignment.order.special_instructions ? (
-              <View style={styles.infoCard}>
-                <Text style={styles.infoLabel}>CUSTOMER INSTRUCTIONS</Text>
-                <Text style={styles.infoValue}>{assignment.order.special_instructions}</Text>
-              </View>
-            ) : null}
-            {assignment.notes ? (
-              <View style={styles.infoCard}>
-                <Text style={styles.infoLabel}>DISPATCH NOTES</Text>
-                <Text style={styles.infoValue}>{assignment.notes}</Text>
-              </View>
-            ) : null}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Package & instructions</Text>
+          <View style={styles.infoCard}>
+            <Text style={styles.infoLabel}>PACKAGE WEIGHT</Text>
+            <Text style={styles.infoValue}>
+              {assignment.order.package_weight != null
+                ? `${assignment.order.package_weight.toLocaleString('en-IN', { maximumFractionDigits: 2 })} kg`
+                : 'Not provided'}
+            </Text>
           </View>
-        )}
+          {assignment.order.package_description ? (
+            <View style={styles.infoCard}>
+              <Text style={styles.infoLabel}>PACKAGE</Text>
+              <Text style={styles.infoValue}>{assignment.order.package_description}</Text>
+            </View>
+          ) : null}
+          {assignment.order.special_instructions ? (
+            <View style={styles.infoCard}>
+              <Text style={styles.infoLabel}>CUSTOMER INSTRUCTIONS</Text>
+              <Text style={styles.infoValue}>{assignment.order.special_instructions}</Text>
+            </View>
+          ) : null}
+          {assignment.notes ? (
+            <View style={styles.infoCard}>
+              <Text style={styles.infoLabel}>DISPATCH NOTES</Text>
+              <Text style={styles.infoValue}>{assignment.notes}</Text>
+            </View>
+          ) : null}
+        </View>
 
         {assignment.status === 'in_progress' && showProofForm && (
           <View style={styles.proofCard}>
@@ -701,9 +707,18 @@ const styles = StyleSheet.create({
 });
 
 const signatureWebStyle = `
-  .m-signature-pad { box-shadow: none; border: 0; }
-  .m-signature-pad--body { border: 0; }
-  .m-signature-pad--footer { height: 44px; margin: 0; }
+  .m-signature-pad { position: relative; box-shadow: none; border: 0; }
+  .m-signature-pad--body { height: calc(100% - 44px); border: 0; }
+  .m-signature-pad--footer {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 44px;
+    margin: 0;
+    padding: 0 8px;
+    background: #FFFFFF;
+  }
   .m-signature-pad--footer .button { border-radius: 6px; font-size: 13px; font-weight: 700; }
   body, html { width: 100%; height: 100%; margin: 0; }
 `;

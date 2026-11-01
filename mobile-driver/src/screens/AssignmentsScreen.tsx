@@ -155,6 +155,11 @@ export default function AssignmentsScreen({
               </View>
             </View>
             <Text numberOfLines={1} style={styles.clientName}>{assignment.order.client_name}</Text>
+            <Text style={styles.packageWeight}>
+              Weight · {assignment.order.package_weight != null
+                ? `${assignment.order.package_weight.toLocaleString('en-IN', { maximumFractionDigits: 2 })} kg`
+                : 'Not provided'}
+            </Text>
             <Text style={styles.routeLabel}>PICKUP</Text>
             <Text numberOfLines={2} style={styles.routeValue}>{assignment.order.pickup_location}</Text>
             <View style={styles.routeDivider} />
@@ -377,6 +382,13 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '800',
     marginTop: 8,
+  },
+  packageWeight: {
+    marginTop: 4,
+    marginBottom: 8,
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '700',
   },
   routeLabel: {
     color: colors.muted,
