@@ -18,6 +18,7 @@ import {
   LogOut,
   Route,
   Users,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/utils/helpers';
 import { useAuth } from '@/hooks';
@@ -34,6 +35,7 @@ const navigationGroups = [
       { href: '/drivers', label: 'Drivers', icon: Truck },
       { href: '/users', label: 'Invites & staff', icon: Users, adminOnly: true },
       { href: '/assignments', label: 'Assignments', icon: Zap },
+      { href: '/customer-feedback', label: 'Customer feedback', icon: MessageSquare, staffOnly: true },
       { href: '/dispatch', label: 'Dispatch', icon: Route },
       { href: '/reports', label: 'Reports', icon: FileText },
       { href: '/analytics', label: 'Analytics', icon: BarChart3 },
@@ -86,13 +88,14 @@ export default function Sidebar({ collapsed }: SidebarProps) {
             .filter(() => !loading && !!user)
             .filter((item) => user?.role !== 'delivery_personnel' || item.href === '/assignments')
             .filter((item) => !('adminOnly' in item) || !item.adminOnly || user?.role === 'admin');
-          if (!visibleItems.length) return null;
+          const staffItems = visibleItems.filter((item) => !('staffOnly' in item) || !item.staffOnly || user?.role === 'admin' || user?.role === 'supervisor');
+          if (!staffItems.length) return null;
 
           return (
           <div key={group.label}>
             {!collapsed && <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-on-brand/75">{group.label}</p>}
             <div className="space-y-1">
-              {visibleItems.map((item) => {
+              {staffItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
