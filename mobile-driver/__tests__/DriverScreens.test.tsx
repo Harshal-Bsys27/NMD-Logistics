@@ -204,6 +204,7 @@ test('does not expose manual feedback-link generation to drivers', async () => {
       pickup_location: 'Warehouse',
       delivery_location: 'Customer address',
       package_description: null,
+      package_weight: 2.5,
       special_instructions: null,
     },
   };
@@ -223,6 +224,7 @@ test('does not expose manual feedback-link generation to drivers', async () => {
   if (!screen) throw new Error('The assignment detail screen did not render.');
   const visibleText = screen.root.findAllByType(Text).map((node) => node.props.children);
   expect(visibleText).toContain('Delivery completed');
+  expect(visibleText).toContain('2.5 kg');
   expect(visibleText).not.toContain('Generate feedback link');
   expect(visibleText).not.toContain('Share feedback link');
 });
@@ -246,6 +248,7 @@ test('requires a signature or the documented no-signature exception', async () =
       pickup_location: 'Warehouse',
       delivery_location: 'Customer address',
       package_description: null,
+      package_weight: null,
       special_instructions: null,
     },
   };

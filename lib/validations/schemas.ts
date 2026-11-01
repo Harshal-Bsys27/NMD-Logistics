@@ -48,7 +48,7 @@ export const createUserSchema = z.object({
 export const updateUserSchema = createUserSchema.partial();
 
 // Order Schemas
-const orderSchema = z.object({
+export const orderSchema = z.object({
   client_name: z.string().min(2, 'Client name must be at least 2 characters'),
   client_phone: z.string().regex(/^[6-9]\d{9}$/, 'Invalid phone number'),
   client_email: z.string().email('Invalid email address').or(z.literal('')).optional(),
@@ -61,7 +61,7 @@ const orderSchema = z.object({
   expected_delivery_time: z.string().datetime().optional(),
   
   package_description: z.string().min(5, 'Package description is required'),
-  package_weight: z.number().positive('Package weight must be positive').optional(),
+  package_weight: z.number().positive('Package weight must be positive').nullable().optional(),
   package_value: z.number().nonnegative('Package value cannot be negative').optional(),
   
   priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
@@ -71,6 +71,9 @@ const orderSchema = z.object({
 export const createOrderSchema = orderSchema.refine(
   (data) => !data.delivery_email_consent || !!data.client_email?.trim(),
   { message: 'A customer email is required when email notifications are enabled', path: ['client_email'] },
+).refine(
+  (data) => data.package_weight != null,
+  { message: 'Package weight is required', path: ['package_weight'] },
 );
 
 export const updateOrderSchema = orderSchema.partial().refine(
