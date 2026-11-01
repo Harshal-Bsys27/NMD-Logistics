@@ -9,6 +9,7 @@ Welcome to the project documentation. Start with the guide that matches what you
 | [Project setup](./getting-started/PROJECT-SETUP.md) | Local development, environment variables, Supabase setup, migrations, and deployment |
 | [Admin access and invitations](./user-guides/ADMIN-ACCESS-AND-INVITATIONS.md) | First administrator bootstrap, role permissions, inviting supervisors and delivery personnel, and troubleshooting access |
 | [Email delivery](./user-guides/EMAIL-DELIVERY.md) | Supabase Auth email templates, SMTP providers, no-domain testing options, and invite links |
+| [Customer delivery feedback](./user-guides/CUSTOMER-DELIVERY-FEEDBACK.md) | Recipient acknowledgement, consent-based customer email, feedback links, and retries |
 | [System architecture](./architecture/SYSTEM-OVERVIEW.md) | Current application structure, authentication flow, role boundaries, and database workflow |
 
 ## Source-of-truth files
