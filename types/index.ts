@@ -56,6 +56,7 @@ export interface Order {
   client_name: string;
   client_phone: string;
   client_email?: string;
+  delivery_email_consent?: boolean;
   
   pickup_location: string;
   pickup_latitude?: number;
@@ -119,6 +120,8 @@ export interface DeliveryProof {
   recipient_name: string;
   notes?: string | null;
   photo_path?: string | null;
+  recipient_signature_path?: string | null;
+  signature_exception_reason?: string | null;
   delivered_at: string;
   created_by: string;
   created_at: string;
