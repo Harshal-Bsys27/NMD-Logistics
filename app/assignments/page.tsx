@@ -591,6 +591,11 @@ export default function AssignmentsPage() {
                             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-primary">{isDriver ? 'Delivery & route' : 'Order route'}</p>
                           </div>
                           <p className="mt-2 break-words text-sm font-semibold text-foreground">{order?.package_description || 'Package details unavailable'}</p>
+                          <p className="mt-1 text-xs font-medium text-muted-foreground">
+                            Weight: {order?.package_weight != null
+                              ? `${order.package_weight.toLocaleString('en-IN', { maximumFractionDigits: 2 })} kg`
+                              : 'Not provided'}
+                          </p>
                           <div className="mt-3 grid gap-2 sm:grid-cols-2">
                             <div className="min-w-0 rounded-lg border border-primary/20 bg-background/90 p-2.5 dark:border-primary/25 dark:bg-primary/[0.12]">
                               <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-primary">Pickup</p>
