@@ -101,6 +101,14 @@ export default function CustomerFeedbackPage() {
   const pendingCount = notifications.filter((row) => row.status === 'pending' || row.status === 'sending').length;
 
   const retryNotification = async (assignmentId: string, notificationId: string) => {
+    const notification = notifications.find((row) => row.id === notificationId);
+    if (
+      notification?.status === 'sent'
+      && !window.confirm('Gmail previously accepted this email. Resending may send a duplicate if the original is delayed or in spam. Continue?')
+    ) {
+      return;
+    }
+
     setRetryingId(notificationId);
     setNotice('');
     setError('');
@@ -110,11 +118,13 @@ export default function CustomerFeedbackPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assignment_id: assignmentId, retry: true }),
       });
-      const result = await response.json() as { status?: string; error?: string };
+      const result = await response.json() as { status?: string; error?: string; feedback_submitted?: boolean };
       if (!response.ok || result.status !== 'sent') {
         throw new Error(result.error || 'The customer email could not be sent.');
       }
-      setNotice('Customer email sent successfully.');
+      setNotice(result.feedback_submitted
+        ? 'Feedback has already been submitted for this delivery; no email was resent.'
+        : 'Gmail accepted the email for delivery. Inbox delivery is not confirmed; check the recipient address, spam, and promotions folders.');
       await loadData();
     } catch (retryError) {
       setError(retryError instanceof Error ? retryError.message : 'The customer email could not be sent.');
@@ -145,6 +155,9 @@ export default function CustomerFeedbackPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Delivery quality</p>
           <h1 className="mt-1 text-2xl font-bold sm:text-3xl">Customer feedback</h1>
           <p className="mt-2 text-sm text-muted-foreground">Track delivery emails, proof follow-up, and customer ratings.</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            “Sent” means Gmail accepted the email request; it does not confirm inbox delivery. Check the recipient address and spam or promotions folders.
+          </p>
         </div>
         <button
           type="button"
@@ -188,7 +201,7 @@ export default function CustomerFeedbackPage() {
                         {order?.order_number || 'Delivery'}
                       </Link>
                       <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${statusStyles[row.status]}`}>
-                        {row.status}
+                        {row.status === 'sent' ? 'accepted by Gmail' : row.status}
                       </span>
                       {rating && <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-foreground"><Star className="h-3.5 w-3.5 fill-current" />{rating.rating}/5</span>}
                     </div>
@@ -196,14 +209,14 @@ export default function CustomerFeedbackPage() {
                     <p className="truncate text-xs text-muted-foreground">{row.recipient_email || 'No email recorded'} · Driver: {driver?.full_name || 'Unknown'}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {row.status === 'sent' && row.sent_at
-                        ? `Email sent ${formatDate(row.sent_at)}`
+                        ? `Gmail accepted the email ${formatDate(row.sent_at)}`
                         : `Created ${formatDate(row.created_at)} · ${row.attempt_count} attempt${row.attempt_count === 1 ? '' : 's'}`}
                     </p>
                     {row.last_error && <p className="mt-2 text-xs text-danger-foreground">{row.last_error}</p>}
                     {rating?.review && <blockquote className="mt-3 rounded-lg border border-border bg-muted/40 p-3 text-sm leading-6">“{rating.review}”</blockquote>}
                     {rating && <p className="mt-2 text-xs text-muted-foreground">Feedback submitted {formatDate(rating.submitted_at)}</p>}
                   </div>
-                  {(row.status === 'failed' || row.status === 'pending' || staleSending) && (
+                  {(row.status === 'failed' || row.status === 'pending' || row.status === 'sent' || staleSending) && (
                     <button
                       type="button"
                       disabled={retryingId === row.id}
@@ -211,7 +224,13 @@ export default function CustomerFeedbackPage() {
                       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <RefreshCw className={`h-4 w-4 ${retryingId === row.id ? 'animate-spin' : ''}`} />
-                      {retryingId === row.id ? 'Sending…' : row.status === 'pending' ? 'Send email' : 'Retry email'}
+                      {retryingId === row.id
+                        ? 'Sending…'
+                        : row.status === 'pending'
+                          ? 'Send email'
+                          : row.status === 'sent'
+                            ? 'Resend email'
+                            : 'Retry email'}
                     </button>
                   )}
                 </article>

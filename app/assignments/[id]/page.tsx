@@ -245,7 +245,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
       setProofPhoto(null);
       setRecipientSignature(null);
       setActionMessage(result.notificationStatus === 'sent'
-        ? 'Delivery completed and customer email sent.'
+        ? 'Delivery completed. Gmail accepted the customer email; inbox delivery is not confirmed.'
         : result.notificationStatus === 'skipped'
           ? 'Delivery completed. No customer email was sent because consent or an email address is missing.'
           : 'Delivery completed. The customer email needs administrator attention.');
@@ -462,7 +462,11 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
             </div>
             <div className="rounded-md bg-muted/50 p-4">
               <p className="text-sm text-muted-foreground">Weight</p>
-              <p className="mt-1 font-bold tabular-nums text-foreground">{order.package_weight} kg</p>
+              <p className="mt-1 font-bold tabular-nums text-foreground">
+                {order.package_weight != null
+                  ? `${order.package_weight.toLocaleString('en-IN', { maximumFractionDigits: 2 })} kg`
+                  : 'Not provided'}
+              </p>
             </div>
           </div>
 
