@@ -8,7 +8,7 @@ import { useOperationsData } from '@/hooks/useOperationsData';
 import { OrderForm } from '@/components/forms/OrderForm';
 import { CreateOrderInput } from '@/lib/validations/schemas';
 import { formatDate } from '@/utils/helpers';
-import { ArrowLeft, AlertCircle, MapPin, Calendar, DollarSign, Package, ArrowRight } from 'lucide-react';
+import { ArrowLeft, AlertCircle, MapPin, Calendar, DollarSign, Package, ArrowRight, Send } from 'lucide-react';
 
 export default function OrderDetailPage() {
   const router = useRouter();
@@ -19,7 +19,10 @@ export default function OrderDetailPage() {
   const { orders, isLoading: loadingOrder, error: loadError, refresh } = useOperationsData();
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isSendingTrackingEmail, setIsSendingTrackingEmail] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [trackingMessage, setTrackingMessage] = useState('');
+  const [trackingError, setTrackingError] = useState('');
   const order = orders.find((item) => item.id === orderId) ?? null;
   const nextStatus = order?.status === 'draft' ? 'pending' : null;
 
@@ -36,6 +39,29 @@ export default function OrderDetailPage() {
       setActionError(error instanceof Error ? error.message : 'Unable to update order status');
     } finally {
       setIsUpdatingStatus(false);
+    }
+  };
+
+  const sendTrackingEmail = async () => {
+    if (!order) return;
+    setIsSendingTrackingEmail(true);
+    setTrackingError('');
+    setTrackingMessage('');
+    try {
+      const response = await fetch('/api/customer-tracking/links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: order.id }),
+      });
+      const result = await response.json() as { status?: string; error?: string };
+      if (!response.ok || result.status !== 'accepted') {
+        throw new Error(result.error || 'Unable to send the tracking email.');
+      }
+      setTrackingMessage('Gmail accepted the tracking email. Inbox delivery is not confirmed.');
+    } catch (error) {
+      setTrackingError(error instanceof Error ? error.message : 'Unable to send the tracking email.');
+    } finally {
+      setIsSendingTrackingEmail(false);
     }
   };
 
@@ -230,6 +256,41 @@ export default function OrderDetailPage() {
             </div>
           )}
         </div>
+
+        {canManageOrders && (
+          <section className="surface-glass mb-8 rounded-lg border border-border p-5 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="font-semibold text-foreground">Customer tracking</h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Email a private 30-day link showing delivery milestones only.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void sendTrackingEmail()}
+                disabled={isSendingTrackingEmail || !order.client_email || order.status === 'draft'}
+                title={!order.client_email
+                  ? 'Add a customer email address first.'
+                  : order.status === 'draft'
+                    ? 'Release the order for dispatch before sending a tracking link.'
+                    : undefined}
+                className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Send className="h-4 w-4" />
+                {isSendingTrackingEmail ? 'Sending…' : 'Email tracking link'}
+              </button>
+            </div>
+            {!order.client_email && (
+              <p className="mt-3 text-xs text-muted-foreground">Add the customer email address to enable tracking emails.</p>
+            )}
+            {order.status === 'draft' && order.client_email && (
+              <p className="mt-3 text-xs text-muted-foreground">Release this order for dispatch before sending its tracking link.</p>
+            )}
+            {trackingMessage && <p role="status" className="mt-3 rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-success-foreground">{trackingMessage}</p>}
+            {trackingError && <p role="alert" className="mt-3 rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger-foreground">{trackingError}</p>}
+          </section>
+        )}
 
         {/* Edit Form */}
         {canManageOrders && (
