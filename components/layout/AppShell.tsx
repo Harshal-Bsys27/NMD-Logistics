@@ -12,11 +12,12 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const isAuthRoute = pathname === '/auth' || pathname.startsWith('/auth/');
   const isPublicLanding = pathname === '/';
-  const isPublicFeedback = pathname.startsWith('/feedback/');
+  const isPublicCustomerPage = pathname.startsWith('/feedback/') || pathname.startsWith('/track/');
 
   useEffect(() => {
+    if (isAuthRoute || isPublicLanding || isPublicCustomerPage) return;
     setSidebarCollapsed(localStorage.getItem('nmd-sidebar-collapsed') === 'true');
-  }, []);
+  }, [isAuthRoute, isPublicLanding, isPublicCustomerPage]);
 
   const toggleSidebar = () => {
     setSidebarCollapsed((current) => {
@@ -28,7 +29,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      {isAuthRoute || isPublicLanding || isPublicFeedback ? (
+      {isAuthRoute || isPublicLanding || isPublicCustomerPage ? (
         <main>{children}</main>
       ) : (
         <div className="min-h-screen bg-background text-foreground">
