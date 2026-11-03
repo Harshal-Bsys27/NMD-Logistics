@@ -1,11 +1,6 @@
 import nodemailer from 'nodemailer';
 
-export async function sendCustomerDeliveryFeedbackEmail(input: {
-  to: string;
-  orderNumber: string;
-  customerName: string;
-  feedbackUrl: string;
-}): Promise<string> {
+function createGmailTransport() {
   const username = process.env.GMAIL_SMTP_USER?.trim();
   const appPassword = process.env.GMAIL_APP_PASSWORD?.replace(/\s/g, '');
 
@@ -13,16 +8,27 @@ export async function sendCustomerDeliveryFeedbackEmail(input: {
     throw new Error('Gmail email is not configured. Set GMAIL_SMTP_USER and GMAIL_APP_PASSWORD on the server.');
   }
 
-  const transport = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: { user: username, pass: appPassword },
-    connectionTimeout: 10_000,
-    greetingTimeout: 10_000,
-    socketTimeout: 20_000,
-  });
+  return {
+    username,
+    transport: nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: { user: username, pass: appPassword },
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 20_000,
+    }),
+  };
+}
 
+export async function sendCustomerDeliveryFeedbackEmail(input: {
+  to: string;
+  orderNumber: string;
+  customerName: string;
+  feedbackUrl: string;
+}): Promise<string> {
+  const { username, transport } = createGmailTransport();
   const orderNumber = escapeHtml(input.orderNumber);
   const customerName = escapeHtml(input.customerName);
   try {
@@ -32,6 +38,29 @@ export async function sendCustomerDeliveryFeedbackEmail(input: {
       subject: `Your NMD Logistics delivery ${input.orderNumber} is complete`,
       text: `Hello ${input.customerName},\n\nYour delivery ${input.orderNumber} has been completed. Please share your experience: ${input.feedbackUrl}\n\nThis private feedback link expires in 30 days and can be used once.\n\nThank you,\nNMD Logistics`,
       html: `<p>Hello ${customerName},</p><p>Your delivery <strong>${orderNumber}</strong> has been completed.</p><p><a href="${input.feedbackUrl}">Share your delivery experience</a></p><p>This private feedback link expires in 30 days and can be used once.</p><p>Thank you,<br>NMD Logistics</p>`,
+    });
+    return info.messageId;
+  } finally {
+    transport.close();
+  }
+}
+
+export async function sendCustomerTrackingEmail(input: {
+  to: string;
+  orderNumber: string;
+  customerName: string;
+  trackingUrl: string;
+}): Promise<string> {
+  const { username, transport } = createGmailTransport();
+  const orderNumber = escapeHtml(input.orderNumber);
+  const customerName = escapeHtml(input.customerName);
+  try {
+    const info = await transport.sendMail({
+      from: { name: 'NMD Logistics', address: username },
+      to: input.to,
+      subject: `Track your NMD Logistics order ${input.orderNumber}`,
+      text: `Hello ${input.customerName},\n\nYou can check the delivery progress for order ${input.orderNumber} here:\n${input.trackingUrl}\n\nThis private tracking link expires in 30 days. It shows delivery milestones only and does not display your address or driver details.\n\nThank you,\nNMD Logistics`,
+      html: `<p>Hello ${customerName},</p><p>You can check the delivery progress for order <strong>${orderNumber}</strong> here:</p><p><a href="${input.trackingUrl}">Track your delivery</a></p><p>This private tracking link expires in 30 days. It shows delivery milestones only and does not display your address or driver details.</p><p>Thank you,<br>NMD Logistics</p>`,
     });
     return info.messageId;
   } finally {
