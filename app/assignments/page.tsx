@@ -208,6 +208,9 @@ export default function AssignmentsPage() {
     try {
       const result = await assignmentService.updateStatus(assignmentId, status);
       if (result.error) throw new Error(result.error);
+      if (result.customerNotificationError) {
+        setActionError(`Assignment updated, but the customer email needs attention: ${result.customerNotificationError}`);
+      }
       await refresh(true);
     } catch (updateError) {
       setActionError(updateError instanceof Error ? updateError.message : 'Unable to update assignment');

@@ -187,6 +187,9 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
       if (result.error) throw new Error(result.error);
       await refresh(true);
       setActionMessage(`Assignment ${statusColors[newStatus].label}`);
+      if (result.customerNotificationError) {
+        setActionError(`Assignment updated, but the customer email needs attention: ${result.customerNotificationError}`);
+      }
       setTimeout(() => setActionMessage(null), 2500);
     } catch (updateError) {
       setActionError(updateError instanceof Error ? updateError.message : 'Unable to update assignment');
