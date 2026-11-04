@@ -2,6 +2,22 @@ import { supabase } from '@/lib/supabase/client';
 import { CreateOrderInput } from '@/lib/validations/schemas';
 import type { AssignmentStatus, DeliveryFeedback, DeliveryProof, OrderAssignment, OrderStatus, PersonnelStatus } from '@/types';
 
+async function requestCustomerTrackingNotification(orderId: string, event: 'assigned' | 'in_transit') {
+  try {
+    const response = await fetch('/api/customer-tracking/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ order_id: orderId, event }),
+    });
+    const result = await response.json() as { status?: string; error?: string };
+    if (!response.ok) return result.error || 'The customer tracking update could not be sent.';
+    if (result.status === 'sent' || result.status === 'already_sent' || result.status === 'skipped') return null;
+    return 'The customer tracking update returned an unexpected status.';
+  } catch (error) {
+    return error instanceof Error ? error.message : 'The customer tracking update could not be sent.';
+  }
+}
+
 // ============== ORDER OPERATIONS ==============
 
 export const orderService = {
@@ -310,9 +326,10 @@ export const assignmentService = {
         .single();
 
       if (error) throw error;
-      return { data, error: null };
+      const customerNotificationError = await requestCustomerTrackingNotification(data.order_id, 'assigned');
+      return { data, error: null, customerNotificationError };
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message, customerNotificationError: null };
     }
   },
 
@@ -346,9 +363,12 @@ export const assignmentService = {
         .single();
 
       if (error) throw error;
-      return { data, error: null };
+      const customerNotificationError = status === 'in_progress'
+        ? await requestCustomerTrackingNotification(data.order_id, 'in_transit')
+        : null;
+      return { data, error: null, customerNotificationError };
     } catch (error: any) {
-      return { data: null, error: error.message };
+      return { data: null, error: error.message, customerNotificationError: null };
     }
   },
 

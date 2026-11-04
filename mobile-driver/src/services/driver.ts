@@ -265,6 +265,47 @@ function getOwnedAvatarPath(avatarUrl: string | null, userId: string): string | 
   }
 }
 
+async function requestCustomerTrackingNotification(
+  orderId: string,
+  event: 'in_transit',
+): Promise<string | null> {
+  const appUrl = Config.NMD_WEB_APP_URL?.trim();
+  if (!appUrl) return 'NMD_WEB_APP_URL is not configured in the driver app.';
+
+  let endpoint: URL;
+  try {
+    endpoint = new URL('/api/customer-tracking/notifications', appUrl);
+  } catch {
+    return 'NMD_WEB_APP_URL must be a valid absolute HTTP or HTTPS URL.';
+  }
+  if (endpoint.protocol !== 'http:' && endpoint.protocol !== 'https:') {
+    return 'NMD_WEB_APP_URL must use HTTP or HTTPS.';
+  }
+
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) return `Could not verify your sign-in: ${error.message}`;
+    const accessToken = data.session?.access_token;
+    if (!accessToken) return 'Your sign-in expired; the customer update could not be sent.';
+
+    const response = await fetch(endpoint.toString(), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ order_id: orderId, event }),
+    });
+    const result = await response.json() as { status?: unknown; error?: unknown };
+    if (response.ok && ['sent', 'already_sent', 'skipped'].includes(String(result.status))) return null;
+    return typeof result.error === 'string'
+      ? result.error
+      : `The customer update could not be sent (HTTP ${response.status}).`;
+  } catch (error) {
+    return error instanceof Error ? error.message : 'The customer update could not be sent.';
+  }
+}
+
 export async function getDriverAssignments(driverId: string): Promise<DriverAssignment[]> {
   const { data, error } = await supabase
     .from('order_assignments')
@@ -304,7 +345,7 @@ export async function getDriverAssignments(driverId: string): Promise<DriverAssi
 export async function updateAssignmentStatus(
   assignment: DriverAssignment,
   nextStatus: 'accepted' | 'rejected' | 'in_progress',
-) {
+): Promise<string | null> {
   const now = new Date().toISOString();
   const update: Record<string, string> = {
     status: nextStatus,
@@ -321,6 +362,10 @@ export async function updateAssignmentStatus(
     .single();
 
   if (error) throw new Error(`Could not update this assignment: ${error.message}`);
+  if (nextStatus === 'in_progress') {
+    return requestCustomerTrackingNotification(assignment.order_id, 'in_transit');
+  }
+  return null;
 }
 
 export async function completeAssignment(input: {

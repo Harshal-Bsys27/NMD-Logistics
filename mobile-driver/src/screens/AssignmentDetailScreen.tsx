@@ -53,8 +53,14 @@ export default function AssignmentDetailScreen({
     setBusy(true);
     setActionError('');
     try {
-      await updateAssignmentStatus(assignment, nextStatus);
+      const notificationError = await updateAssignmentStatus(assignment, nextStatus);
       await onUpdated();
+      if (notificationError && nextStatus === 'in_progress') {
+        Alert.alert(
+          'Delivery started',
+          `Your status was updated, but the customer email needs attention: ${notificationError}`,
+        );
+      }
     } catch (actionFailure) {
       setActionError(actionFailure instanceof Error ? actionFailure.message : 'Unable to update assignment.');
     } finally {

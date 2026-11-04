@@ -27,6 +27,7 @@ export async function sendCustomerDeliveryFeedbackEmail(input: {
   orderNumber: string;
   customerName: string;
   feedbackUrl: string;
+  trackingUrl?: string;
 }): Promise<string> {
   const { username, transport } = createGmailTransport();
   const orderNumber = escapeHtml(input.orderNumber);
@@ -36,8 +37,8 @@ export async function sendCustomerDeliveryFeedbackEmail(input: {
       from: { name: 'NMD Logistics', address: username },
       to: input.to,
       subject: `Your NMD Logistics delivery ${input.orderNumber} is complete`,
-      text: `Hello ${input.customerName},\n\nYour delivery ${input.orderNumber} has been completed. Please share your experience: ${input.feedbackUrl}\n\nThis private feedback link expires in 30 days and can be used once.\n\nThank you,\nNMD Logistics`,
-      html: `<p>Hello ${customerName},</p><p>Your delivery <strong>${orderNumber}</strong> has been completed.</p><p><a href="${input.feedbackUrl}">Share your delivery experience</a></p><p>This private feedback link expires in 30 days and can be used once.</p><p>Thank you,<br>NMD Logistics</p>`,
+      text: `Hello ${input.customerName},\n\nYour delivery ${input.orderNumber} has been completed. Please share your experience: ${input.feedbackUrl}${input.trackingUrl ? `\n\nView delivery details: ${input.trackingUrl}` : ''}\n\nThis private feedback link expires in 30 days and can be used once.\n\nThank you,\nNMD Logistics`,
+      html: `<p>Hello ${customerName},</p><p>Your delivery <strong>${orderNumber}</strong> has been completed.</p><p><a href="${input.feedbackUrl}">Share your delivery experience</a></p>${input.trackingUrl ? `<p><a href="${input.trackingUrl}">View delivery details</a></p>` : ''}<p>This private feedback link expires in 30 days and can be used once.</p><p>Thank you,<br>NMD Logistics</p>`,
     });
     return info.messageId;
   } finally {
@@ -61,6 +62,42 @@ export async function sendCustomerTrackingEmail(input: {
       subject: `Track your NMD Logistics order ${input.orderNumber}`,
       text: `Hello ${input.customerName},\n\nYou can check the delivery progress for order ${input.orderNumber} here:\n${input.trackingUrl}\n\nThis private tracking link expires in 30 days. It shows delivery milestones only and does not display your address or driver details.\n\nThank you,\nNMD Logistics`,
       html: `<p>Hello ${customerName},</p><p>You can check the delivery progress for order <strong>${orderNumber}</strong> here:</p><p><a href="${input.trackingUrl}">Track your delivery</a></p><p>This private tracking link expires in 30 days. It shows delivery milestones only and does not display your address or driver details.</p><p>Thank you,<br>NMD Logistics</p>`,
+    });
+    return info.messageId;
+  } finally {
+    transport.close();
+  }
+}
+
+export async function sendCustomerTrackingUpdateEmail(input: {
+  to: string;
+  orderNumber: string;
+  customerName: string;
+  event: 'assigned' | 'in_transit';
+  trackingUrl: string;
+}): Promise<string> {
+  const { username, transport } = createGmailTransport();
+  const orderNumber = escapeHtml(input.orderNumber);
+  const customerName = escapeHtml(input.customerName);
+  const update = input.event === 'assigned'
+    ? {
+        subject: `A driver has been assigned to order ${input.orderNumber}`,
+        text: `A driver has been assigned to your NMD Logistics order ${input.orderNumber}. Follow its progress here: ${input.trackingUrl}`,
+        html: `<p>A driver has been assigned to your NMD Logistics order <strong>${orderNumber}</strong>.</p><p><a href="${input.trackingUrl}">Track your delivery</a></p>`,
+      }
+    : {
+        subject: `Your NMD Logistics order ${input.orderNumber} is on the way`,
+        text: `Your NMD Logistics order ${input.orderNumber} is on the way. Follow its progress here: ${input.trackingUrl}`,
+        html: `<p>Your NMD Logistics order <strong>${orderNumber}</strong> is on the way.</p><p><a href="${input.trackingUrl}">Track your delivery</a></p>`,
+      };
+
+  try {
+    const info = await transport.sendMail({
+      from: { name: 'NMD Logistics', address: username },
+      to: input.to,
+      subject: update.subject,
+      text: `Hello ${input.customerName},\n\n${update.text}\n\nThank you,\nNMD Logistics`,
+      html: `<p>Hello ${customerName},</p>${update.html}<p>Thank you,<br>NMD Logistics</p>`,
     });
     return info.messageId;
   } finally {
