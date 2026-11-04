@@ -303,6 +303,22 @@ export async function POST(request: Request) {
     }
 
     const feedbackUrl = new URL(`/feedback/${token}`, appUrl).toString();
+    const trackingToken = randomBytes(32).toString('base64url');
+    const trackingTokenHash = createHash('sha256').update(trackingToken).digest('hex');
+    const { error: trackingLinkError } = await admin
+      .from('customer_tracking_links')
+      .insert({
+        order_id: assignment.order_id,
+        token_hash: trackingTokenHash,
+        expires_at: expiresAt,
+        created_by: userId,
+      });
+    if (trackingLinkError) {
+      console.error('Unable to create tracking link for delivery confirmation:', trackingLinkError.message);
+      await setNotificationFailure(admin, notification.id, 'Could not create the delivery tracking link.');
+      return NextResponse.json({ status: 'failed', error: 'Could not create the delivery tracking link.' }, { status: 500 });
+    }
+    const trackingUrl = new URL(`/track/${trackingToken}`, appUrl).toString();
     let providerMessageId: string | null = null;
     try {
       providerMessageId = await sendCustomerDeliveryFeedbackEmail({
@@ -310,6 +326,7 @@ export async function POST(request: Request) {
         orderNumber: order.order_number,
         customerName: order.client_name,
         feedbackUrl,
+        trackingUrl,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Gmail SMTP request failed.';
