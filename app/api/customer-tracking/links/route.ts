@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     const { data: order, error: orderError } = await admin
       .from('orders')
-      .select('id, order_number, client_name, client_email, status')
+      .select('id, order_number, client_name, client_email, delivery_email_consent, status')
       .eq('id', parsed.data.order_id)
       .maybeSingle();
     if (orderError) {
@@ -59,6 +59,9 @@ export async function POST(request: Request) {
     }
     if (!order.client_email?.trim()) {
       return NextResponse.json({ error: 'Add a customer email address before sending a tracking link.' }, { status: 409 });
+    }
+    if (!order.delivery_email_consent) {
+      return NextResponse.json({ error: 'Record customer email consent before sending a tracking link.' }, { status: 409 });
     }
 
     const appUrl = getAppUrl(request.url);
