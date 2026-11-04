@@ -269,9 +269,11 @@ export default function OrderDetailPage() {
               <button
                 type="button"
                 onClick={() => void sendTrackingEmail()}
-                disabled={isSendingTrackingEmail || !order.client_email || order.status === 'draft'}
+                disabled={isSendingTrackingEmail || !order.client_email || !order.delivery_email_consent || order.status === 'draft'}
                 title={!order.client_email
                   ? 'Add a customer email address first.'
+                  : !order.delivery_email_consent
+                    ? 'Record customer email consent before sending a tracking link.'
                   : order.status === 'draft'
                     ? 'Release the order for dispatch before sending a tracking link.'
                     : undefined}
@@ -281,8 +283,8 @@ export default function OrderDetailPage() {
                 {isSendingTrackingEmail ? 'Sending…' : 'Email tracking link'}
               </button>
             </div>
-            {!order.client_email && (
-              <p className="mt-3 text-xs text-muted-foreground">Add the customer email address to enable tracking emails.</p>
+            {(!order.client_email || !order.delivery_email_consent) && (
+              <p className="mt-3 text-xs text-muted-foreground">Add a customer email address and record consent to enable tracking emails.</p>
             )}
             {order.status === 'draft' && order.client_email && (
               <p className="mt-3 text-xs text-muted-foreground">Release this order for dispatch before sending its tracking link.</p>

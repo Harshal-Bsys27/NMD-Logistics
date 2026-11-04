@@ -214,6 +214,9 @@ export default function DispatchPage() {
       if (result.error || !result.data) {
         throw new Error(result.error || 'Unable to create assignment');
       }
+      if (result.customerNotificationError) {
+        setActionError(`Driver assigned, but the customer email needs attention: ${result.customerNotificationError}`);
+      }
       await refresh(true);
     } catch (assignError) {
       setActionError(assignError instanceof Error ? assignError.message : 'Unable to assign this order');

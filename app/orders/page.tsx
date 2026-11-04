@@ -178,6 +178,9 @@ export default function OrdersPage() {
         notes: `Assigned for ${order.order_number}`,
       });
       if (assignment.error || !assignment.data) throw new Error(assignment.error || 'Unable to create assignment');
+      if (assignment.customerNotificationError) {
+        setActionError(`Driver assigned, but the customer email needs attention: ${assignment.customerNotificationError}`);
+      }
 
       await refresh(true);
     } catch (error) {
