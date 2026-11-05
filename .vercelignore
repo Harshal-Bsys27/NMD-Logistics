@@ -1,0 +1,7 @@
+mobile-driver/android/
+mobile-driver/node_modules/
+mobile-driver/ios/Pods/
+mobile-driver/ios/build/
+.next/
+.next-dev/
+node_modules/
