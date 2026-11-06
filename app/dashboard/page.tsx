@@ -77,6 +77,8 @@ export default function DashboardPage() {
     drivers,
     assignments,
     deliveryProofs,
+    deliveryExceptions,
+    deliveryExceptionsError,
     customerFeedback,
     deliveryProofsError,
     customerFeedbackError,
@@ -310,7 +312,10 @@ export default function DashboardPage() {
   ];
 
   const dispatchBoard = useMemo(() => {
-    return assignments.slice(0, 3).map((assignment) => {
+    return assignments
+      .filter((assignment) => assignment.status !== 'failed')
+      .slice(0, 3)
+      .map((assignment) => {
       const driver = drivers.find((person) => person.id === assignment.personnel_id);
       const order = orders.find((item) => item.id === assignment.order_id);
 
@@ -321,7 +326,7 @@ export default function DashboardPage() {
         eta: assignment.status === 'completed' ? 'Delivered' : assignment.status === 'in_progress' ? 'In progress' : 'Awaiting start',
         status: assignment.status === 'completed' ? 'Completed' : assignment.status === 'in_progress' ? 'On route' : 'Queued',
       };
-    });
+      });
   }, [assignments, drivers, orders]);
 
   if (loading) {
@@ -417,6 +422,50 @@ export default function DashboardPage() {
             );
           })}
         </div>
+
+        {canManageOperations && (
+          <section aria-label="Delivery issues" className="order-2 rounded-xl border border-danger/20 bg-danger/5 p-4 sm:p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 font-semibold text-foreground">
+                  <AlertTriangle className="h-5 w-5 text-danger-foreground" />
+                  Delivery issues
+                  <span className="rounded-full bg-danger/10 px-2.5 py-1 text-xs font-bold tabular-nums text-danger-foreground">
+                    {deliveryExceptions.filter((exception) => exception.status === 'open').length} open
+                  </span>
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">Review failed delivery attempts and return orders to dispatch.</p>
+              </div>
+              <Link
+                href="/delivery-exceptions"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-danger/20 bg-background px-4 text-sm font-semibold text-foreground hover:bg-muted"
+              >
+                Review delivery issues <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </div>
+            {deliveryExceptionsError ? (
+              <p role="alert" className="mt-3 text-sm text-danger-foreground">Issue reports could not be loaded: {deliveryExceptionsError}</p>
+            ) : deliveryExceptions.filter((exception) => exception.status === 'open').length ? (
+              <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {deliveryExceptions
+                  .filter((exception) => exception.status === 'open')
+                  .slice(0, 3)
+                  .map((exception) => (
+                    <Link
+                      key={exception.id}
+                      href="/delivery-exceptions"
+                      className="rounded-lg border border-border bg-background p-3 transition hover:border-danger/30"
+                    >
+                      <p className="font-semibold text-foreground">{exception.order_number}</p>
+                      <p className="mt-1 truncate text-sm text-muted-foreground">{exception.client_name} · {exception.driver_name}</p>
+                    </Link>
+                  ))}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-muted-foreground">No open delivery issues.</p>
+            )}
+          </section>
+        )}
 
         <div className="order-3 grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-12 xl:gap-6">
           <section className="surface-glass min-w-0 rounded-xl border border-border border-t-[3px] border-t-brand-600 p-4 shadow-lg shadow-brand-950/[0.04] transition-shadow hover:shadow-xl hover:shadow-brand-950/[0.07] dark:shadow-black/15 dark:hover:shadow-black/25 md:p-5 xl:col-span-8">

@@ -4,7 +4,7 @@ import Image from 'next/image'
 import React, { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Activity, BarChart3, FileCode2, FileText, HelpCircle, LayoutDashboard, LogOut, Menu, Package, Settings, Truck, UserRound, X, Zap, Route, Users, MessageSquare } from 'lucide-react'
+import { Activity, AlertTriangle, BarChart3, FileCode2, FileText, HelpCircle, LayoutDashboard, LogOut, Menu, Package, Settings, Truck, UserRound, X, Zap, Route, Users, MessageSquare } from 'lucide-react'
 import Button from '@/components/ui/Button'
 import ThemeToggle from '@/components/layout/ThemeToggle'
 import { useAuth } from '@/hooks'
@@ -19,6 +19,7 @@ const mobileGroups = [
       { href: '/users', label: 'Invites & staff', icon: Users, adminOnly: true },
       { href: '/assignments', label: 'Assignments', icon: Zap },
       { href: '/customer-feedback', label: 'Customer feedback', icon: MessageSquare, staffOnly: true },
+      { href: '/delivery-exceptions', label: 'Delivery issues', icon: AlertTriangle, staffOnly: true },
       { href: '/dispatch', label: 'Dispatch', icon: Route },
       { href: '/reports', label: 'Reports', icon: FileText },
       { href: '/analytics', label: 'Analytics', icon: BarChart3 },

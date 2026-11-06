@@ -19,6 +19,7 @@ import {
   Route,
   Users,
   MessageSquare,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/utils/helpers';
 import { useAuth } from '@/hooks';
@@ -36,6 +37,7 @@ const navigationGroups = [
       { href: '/users', label: 'Invites & staff', icon: Users, adminOnly: true },
       { href: '/assignments', label: 'Assignments', icon: Zap },
       { href: '/customer-feedback', label: 'Customer feedback', icon: MessageSquare, staffOnly: true },
+      { href: '/delivery-exceptions', label: 'Delivery issues', icon: AlertTriangle, staffOnly: true },
       { href: '/dispatch', label: 'Dispatch', icon: Route },
       { href: '/reports', label: 'Reports', icon: FileText },
       { href: '/analytics', label: 'Analytics', icon: BarChart3 },
