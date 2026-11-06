@@ -120,6 +120,7 @@ export default function AssignmentsPage() {
     rejected: 'border border-danger/25 bg-danger/15 text-danger-foreground dark:border-danger/30 dark:bg-danger/15',
     in_progress: 'border border-info/25 bg-info/15 text-info-foreground dark:border-info/30 dark:bg-info/15',
     completed: 'border border-success/25 bg-success/15 text-success-foreground dark:border-success/30 dark:bg-success/15',
+    failed: 'border border-danger/25 bg-danger/15 text-danger-foreground dark:border-danger/30 dark:bg-danger/15',
     cancelled: 'border border-border bg-muted text-muted-foreground dark:bg-muted/80',
   };
   const statusAccentColors: Record<AssignmentStatus, string> = {
@@ -128,6 +129,7 @@ export default function AssignmentsPage() {
     rejected: 'border-l-danger',
     in_progress: 'border-l-info',
     completed: 'border-l-success',
+    failed: 'border-l-danger',
     cancelled: 'border-l-muted-foreground',
   };
 
@@ -137,6 +139,7 @@ export default function AssignmentsPage() {
     accepted: visibleAssignments.filter((a) => a.status === 'accepted').length,
     in_progress: visibleAssignments.filter((a) => a.status === 'in_progress').length,
     completed: visibleAssignments.filter((a) => a.status === 'completed').length,
+    failed: visibleAssignments.filter((a) => a.status === 'failed').length,
   };
   const completedDeliveryCount = driverProfile
     ? Math.max(driverProfile.total_deliveries_completed, statusCounts.completed)
@@ -469,7 +472,7 @@ export default function AssignmentsPage() {
             tabIndex={0}
             className="flex min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto overscroll-x-contain pb-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:flex-wrap sm:overflow-visible"
           >
-            {(['all', 'pending', 'accepted', 'in_progress', 'completed'] as const).map((status) => {
+            {(['all', 'pending', 'accepted', 'in_progress', 'completed', 'failed'] as const).map((status) => {
               const label = isDriver && status === 'all'
                 ? 'All deliveries'
                 : isDriver && status === 'pending'
@@ -729,6 +732,11 @@ export default function AssignmentsPage() {
                         {!isDriver && assignment.status === 'in_progress' && (
                           <span className="inline-flex min-h-11 items-center rounded-md border border-info/25 bg-info/10 px-3 text-xs font-semibold text-info-foreground">
                             In delivery · awaiting driver POD
+                          </span>
+                        )}
+                        {assignment.status === 'failed' && (
+                          <span className="inline-flex min-h-11 items-center rounded-md border border-danger/25 bg-danger/10 px-3 text-xs font-semibold text-danger-foreground">
+                            Delivery issue · see delivery issues queue
                           </span>
                         )}
                       </div>
