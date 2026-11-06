@@ -8,7 +8,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const requestSchema = z.object({
   order_id: z.string().uuid(),
-  event: z.enum(['assigned', 'in_transit']),
+  event: z.enum(['assigned', 'in_transit', 'delivery_failed']),
 });
 
 type AdminClient = ReturnType<typeof getSupabaseAdmin>;
@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       .from('order_assignments')
       .select('id, personnel_id, status')
       .eq('order_id', order.id)
-      .in('status', ['pending', 'accepted', 'in_progress', 'completed'])
+      .in('status', ['pending', 'accepted', 'in_progress', 'completed', 'failed'])
       .order('assigned_at', { ascending: false });
     if (assignmentsError) {
       console.error('Unable to verify order assignment for tracking notification:', assignmentsError.message);
@@ -104,8 +104,10 @@ export async function POST(request: Request) {
     if (!assignment) return response({ error: 'Assign this order before sending a tracking update.' }, 409);
 
     if (actor.role === 'delivery_personnel') {
-      if (parsed.data.event !== 'in_transit' || assignment.status !== 'in_progress') {
-        return response({ error: 'Drivers can send updates only when starting their assigned delivery.' }, 403);
+      const maySendTransit = parsed.data.event === 'in_transit' && assignment.status === 'in_progress';
+      const maySendFailure = parsed.data.event === 'delivery_failed' && assignment.status === 'failed';
+      if (!maySendTransit && !maySendFailure) {
+        return response({ error: 'Drivers can send delivery updates only for their own active delivery or reported issue.' }, 403);
       }
       const { data: personnel, error: personnelError } = await admin
         .from('delivery_personnel')
@@ -124,6 +126,9 @@ export async function POST(request: Request) {
     }
     if (parsed.data.event === 'in_transit' && !['in_transit', 'delivered'].includes(order.status)) {
       return response({ error: 'The order has not started delivery yet.' }, 409);
+    }
+    if (parsed.data.event === 'delivery_failed' && order.status !== 'failed') {
+      return response({ error: 'The order does not have a recorded delivery issue.' }, 409);
     }
 
     const { data: previous, error: previousError } = await admin
