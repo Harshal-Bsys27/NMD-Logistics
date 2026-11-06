@@ -71,6 +71,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       ?? firstStatusTime(['delivered'])
       ?? assignments?.find((item) => item.completed_at)?.completed_at
       ?? null;
+    const deliveryIssueAt = firstStatusTime(['failed']);
     const assigned = !!assignedAt || ['assigned', 'picked_up', 'in_transit', 'delivered'].includes(order.status);
     const inTransit = !!inTransitAt || ['picked_up', 'in_transit', 'delivered'].includes(order.status);
     const delivered = !!deliveredAt || order.status === 'delivered';
@@ -80,6 +81,8 @@ export async function GET(_request: Request, { params }: RouteContext) {
         ? 'assigned'
         : ['picked_up', 'in_transit'].includes(order.status)
           ? 'in_transit'
+          : order.status === 'failed'
+            ? 'delivery_issue'
           : order.status === 'delivered'
             ? 'delivered'
             : null;
@@ -87,6 +90,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       { key: 'received', label: 'Order received', occurred_at: order.created_at, complete: true },
       { key: 'assigned', label: 'Driver assigned', occurred_at: assignedAt, complete: assigned },
       { key: 'in_transit', label: 'On the way', occurred_at: inTransitAt, complete: inTransit },
+      { key: 'delivery_issue', label: 'Delivery issue reported', occurred_at: deliveryIssueAt, complete: !!deliveryIssueAt },
       { key: 'delivered', label: 'Delivered', occurred_at: deliveredAt, complete: delivered },
     ];
 
