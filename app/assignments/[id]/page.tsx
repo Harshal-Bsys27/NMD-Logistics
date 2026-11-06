@@ -176,6 +176,7 @@ export default function AssignmentDetailPage({ params }: { params: Promise<{ id:
     rejected: { bg: 'bg-danger', text: 'text-danger-foreground', label: 'Rejected' },
     in_progress: { bg: 'bg-info', text: 'text-info-foreground', label: 'In Progress' },
     completed: { bg: 'bg-success', text: 'text-success-foreground', label: 'Completed' },
+    failed: { bg: 'bg-danger', text: 'text-danger-foreground', label: 'Delivery issue' },
     cancelled: { bg: 'bg-muted', text: 'text-muted-foreground', label: 'Cancelled' },
   };
 

@@ -91,7 +91,7 @@ export default function DispatchPage() {
 
   const dispatcherData = useMemo(() => {
     return assignments
-      .filter((assignment) => assignment.status !== 'cancelled' && assignment.status !== 'rejected')
+      .filter((assignment) => !['cancelled', 'rejected', 'failed'].includes(assignment.status))
       .map((assignment) => {
         const order = orders.find((item) => item.id === assignment.order_id);
         const driver = drivers.find((person) => person.id === assignment.personnel_id);
