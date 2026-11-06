@@ -2,8 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { assignmentService, driverService, orderService } from '@/services/database';
-import type { Assignment, DeliveryFeedback, DeliveryPersonnel, DeliveryProof, Order } from '@/types';
+import { assignmentService, deliveryExceptionService, driverService, orderService } from '@/services/database';
+import type { Assignment, DeliveryException, DeliveryFeedback, DeliveryPersonnel, DeliveryProof, Order } from '@/types';
 import { useAuth } from './auth';
 
 interface OperationsData {
@@ -11,6 +11,8 @@ interface OperationsData {
   drivers: DeliveryPersonnel[];
   assignments: Assignment[];
   deliveryProofs: DeliveryProof[];
+  deliveryExceptions: DeliveryException[];
+  deliveryExceptionsError: string;
   customerFeedback: DeliveryFeedback[];
   deliveryProofsError: string;
   customerFeedbackError: string;
@@ -35,6 +37,8 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
   const [drivers, setDrivers] = useState<DeliveryPersonnel[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [deliveryProofs, setDeliveryProofs] = useState<DeliveryProof[]>([]);
+  const [deliveryExceptions, setDeliveryExceptions] = useState<DeliveryException[]>([]);
+  const [deliveryExceptionsError, setDeliveryExceptionsError] = useState('');
   const [customerFeedback, setCustomerFeedback] = useState<DeliveryFeedback[]>([]);
   const [deliveryProofsError, setDeliveryProofsError] = useState('');
   const [customerFeedbackError, setCustomerFeedbackError] = useState('');
@@ -45,6 +49,7 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
   const loadedUserIdRef = useRef<string | null>(null);
   const lastRefreshAtRef = useRef(0);
   const pendingRefreshRef = useRef<PendingRefresh | null>(null);
+  const canViewDeliveryExceptions = user?.role === 'admin' || user?.role === 'supervisor';
 
   const refresh = useCallback((silent = false) => {
     if (!userId) return Promise.resolve();
@@ -61,12 +66,15 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
 
     const promise = (async () => {
       try {
-        const [orderResult, driverResult, assignmentResult, proofResult, feedbackResult] = await Promise.all([
+        const [orderResult, driverResult, assignmentResult, proofResult, feedbackResult, exceptionResult] = await Promise.all([
           orderService.getAll(),
           driverService.getAll(),
           assignmentService.getAll(),
           assignmentService.getAllProofs(),
           assignmentService.getAllFeedback(),
+          canViewDeliveryExceptions
+            ? deliveryExceptionService.getAll()
+            : Promise.resolve({ data: [] as DeliveryException[], error: null }),
         ]);
         const firstError = orderResult.error || driverResult.error || assignmentResult.error;
         if (firstError) throw new Error(firstError);
@@ -76,6 +84,8 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
           setDrivers(driverResult.data ?? []);
           setAssignments(assignmentResult.data ?? []);
           setDeliveryProofs(proofResult.data ?? []);
+          setDeliveryExceptions(exceptionResult.data ?? []);
+          setDeliveryExceptionsError(exceptionResult.error ?? '');
           setDeliveryProofsError(proofResult.error ?? '');
           setCustomerFeedback(feedbackResult.data ?? []);
           setCustomerFeedbackError(feedbackResult.error ?? '');
@@ -105,7 +115,7 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
       }
     });
     return promise;
-  }, [userId]);
+  }, [canViewDeliveryExceptions, userId]);
 
   useEffect(() => {
     currentUserIdRef.current = userId;
@@ -118,8 +128,10 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
       setDrivers([]);
       setAssignments([]);
       setDeliveryProofs([]);
+      setDeliveryExceptions([]);
       setCustomerFeedback([]);
       setDeliveryProofsError('');
+      setDeliveryExceptionsError('');
       setCustomerFeedbackError('');
       setIsLoading(authLoading);
       setRealtimeStatus('connecting');
@@ -131,6 +143,7 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
       setDrivers([]);
       setAssignments([]);
       setDeliveryProofs([]);
+      setDeliveryExceptions([]);
       setCustomerFeedback([]);
       setIsLoading(true);
     }
@@ -148,6 +161,7 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'order_assignments' }, scheduleRefresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_personnel' }, scheduleRefresh)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'delivery_feedback' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_exceptions' }, scheduleRefresh)
       .subscribe((status) => {
         if (!active) return;
         if (status === 'SUBSCRIBED') {
@@ -198,6 +212,8 @@ export function OperationsDataProvider({ children }: { children: ReactNode }) {
       drivers,
       assignments,
       deliveryProofs,
+      deliveryExceptions,
+      deliveryExceptionsError,
       customerFeedback,
       deliveryProofsError,
       customerFeedbackError,

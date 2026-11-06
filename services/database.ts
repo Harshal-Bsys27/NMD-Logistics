@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase/client';
 import { CreateOrderInput } from '@/lib/validations/schemas';
-import type { AssignmentStatus, DeliveryFeedback, DeliveryProof, OrderAssignment, OrderStatus, PersonnelStatus } from '@/types';
+import type { AssignmentStatus, DeliveryException, DeliveryFeedback, DeliveryProof, OrderAssignment, OrderStatus, PersonnelStatus } from '@/types';
 
 async function requestCustomerTrackingNotification(orderId: string, event: 'assigned' | 'in_transit') {
   try {
@@ -615,6 +615,109 @@ export const assignmentService = {
       return { data: data || [], error: null };
     } catch (error: any) {
       return { data: [], error: error.message };
+    }
+  },
+};
+
+export const deliveryExceptionService = {
+  async getAll() {
+    try {
+      const { data, error } = await supabase
+        .from('delivery_exceptions')
+        .select(`
+          id,
+          order_id,
+          assignment_id,
+          personnel_id,
+          reason,
+          notes,
+          photo_path,
+          status,
+          resolution_action,
+          resolution_note,
+          reported_at,
+          resolved_at,
+          order:orders!delivery_exceptions_order_id_fkey(order_number, client_name),
+          personnel:delivery_personnel!delivery_exceptions_personnel_id_fkey(
+            employee_id,
+            user:users!delivery_personnel_user_id_fkey(full_name)
+          )
+        `)
+        .order('reported_at', { ascending: false });
+
+      if (error) throw error;
+
+      const one = <T,>(value: T | T[] | null): T | null =>
+        Array.isArray(value) ? value[0] ?? null : value;
+      const rows = (data ?? []) as Array<{
+        id: string;
+        order_id: string;
+        assignment_id: string;
+        personnel_id: string;
+        reason: DeliveryException['reason'];
+        notes: string | null;
+        photo_path: string | null;
+        status: DeliveryException['status'];
+        resolution_action: DeliveryException['resolution_action'];
+        resolution_note: string | null;
+        reported_at: string;
+        resolved_at: string | null;
+        order: { order_number: string; client_name: string } | { order_number: string; client_name: string }[] | null;
+        personnel: {
+          employee_id: string;
+          user: { full_name: string } | { full_name: string }[] | null;
+        } | {
+          employee_id: string;
+          user: { full_name: string } | { full_name: string }[] | null;
+        }[] | null;
+      }>;
+      return {
+        data: rows.map((row): DeliveryException => {
+          const order = one(row.order);
+          const personnel = one(row.personnel);
+          const user = one(personnel?.user ?? null);
+          return {
+            id: row.id,
+            order_id: row.order_id,
+            assignment_id: row.assignment_id,
+            personnel_id: row.personnel_id,
+            reason: row.reason,
+            notes: row.notes,
+            photo_path: row.photo_path,
+            status: row.status,
+            resolution_action: row.resolution_action,
+            resolution_note: row.resolution_note,
+            reported_at: row.reported_at,
+            resolved_at: row.resolved_at,
+            order_number: order?.order_number ?? 'Unknown order',
+            client_name: order?.client_name ?? 'Customer',
+            driver_name: user?.full_name ?? personnel?.employee_id ?? 'Driver',
+            employee_id: personnel?.employee_id ?? '',
+          };
+        }),
+        error: null,
+      };
+    } catch (error) {
+      return {
+        data: [] as DeliveryException[],
+        error: error instanceof Error ? error.message : 'Unable to load delivery issues',
+      };
+    }
+  },
+
+  async resolve(exceptionId: string, resolutionNote: string) {
+    try {
+      const { data, error } = await supabase.rpc('resolve_delivery_exception', {
+        p_exception_id: exceptionId,
+        p_resolution_note: resolutionNote.trim() || null,
+      });
+      if (error) throw error;
+      return { data, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: error instanceof Error ? error.message : 'Unable to reopen this order for dispatch',
+      };
     }
   },
 };

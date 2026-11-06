@@ -90,6 +90,7 @@ export type AssignmentStatus =
   | 'rejected'
   | 'in_progress'
   | 'completed'
+  | 'failed'
   | 'cancelled';
 
 export interface OrderAssignment {
@@ -125,6 +126,34 @@ export interface DeliveryProof {
   delivered_at: string;
   created_by: string;
   created_at: string;
+}
+
+export type DeliveryExceptionReason =
+  | 'customer_unavailable'
+  | 'address_issue'
+  | 'customer_refused'
+  | 'access_blocked'
+  | 'vehicle_issue'
+  | 'package_issue'
+  | 'other';
+
+export interface DeliveryException {
+  id: string;
+  order_id: string;
+  assignment_id: string;
+  personnel_id: string;
+  reason: DeliveryExceptionReason;
+  notes: string | null;
+  photo_path: string | null;
+  status: 'open' | 'resolved';
+  resolution_action: 'reopen_for_dispatch' | null;
+  resolution_note: string | null;
+  reported_at: string;
+  resolved_at: string | null;
+  order_number: string;
+  client_name: string;
+  driver_name: string;
+  employee_id: string;
 }
 
 export interface DeliveryFeedback {
