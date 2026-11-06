@@ -31,6 +31,7 @@ const statusLabels: Record<string, string> = {
   assigned: 'Driver assigned',
   picked_up: 'Picked up',
   in_transit: 'On the way',
+  delivery_issue: 'Delivery issue',
   delivered: 'Delivered',
   failed: 'Delivery issue',
   cancelled: 'Cancelled',

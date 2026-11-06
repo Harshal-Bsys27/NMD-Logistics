@@ -73,7 +73,7 @@ export async function sendCustomerTrackingUpdateEmail(input: {
   to: string;
   orderNumber: string;
   customerName: string;
-  event: 'assigned' | 'in_transit';
+  event: 'assigned' | 'in_transit' | 'delivery_failed';
   trackingUrl: string;
 }): Promise<string> {
   const { username, transport } = createGmailTransport();
@@ -85,10 +85,16 @@ export async function sendCustomerTrackingUpdateEmail(input: {
         text: `A driver has been assigned to your NMD Logistics order ${input.orderNumber}. Follow its progress here: ${input.trackingUrl}`,
         html: `<p>A driver has been assigned to your NMD Logistics order <strong>${orderNumber}</strong>.</p><p><a href="${input.trackingUrl}">Track your delivery</a></p>`,
       }
-    : {
-        subject: `Your NMD Logistics order ${input.orderNumber} is on the way`,
-        text: `Your NMD Logistics order ${input.orderNumber} is on the way. Follow its progress here: ${input.trackingUrl}`,
-        html: `<p>Your NMD Logistics order <strong>${orderNumber}</strong> is on the way.</p><p><a href="${input.trackingUrl}">Track your delivery</a></p>`,
+    : input.event === 'in_transit'
+      ? {
+          subject: `Your NMD Logistics order ${input.orderNumber} is on the way`,
+          text: `Your NMD Logistics order ${input.orderNumber} is on the way. Follow its progress here: ${input.trackingUrl}`,
+          html: `<p>Your NMD Logistics order <strong>${orderNumber}</strong> is on the way.</p><p><a href="${input.trackingUrl}">Track your delivery</a></p>`,
+      }
+      : {
+        subject: `Delivery update for your NMD Logistics order ${input.orderNumber}`,
+        text: `We could not complete the delivery for your NMD Logistics order ${input.orderNumber}. Follow its progress or contact the delivery team here: ${input.trackingUrl}`,
+        html: `<p>We could not complete the delivery for your NMD Logistics order <strong>${orderNumber}</strong>.</p><p>Our delivery team will review the issue. <a href="${input.trackingUrl}">Check delivery status</a></p>`,
       };
 
   try {
