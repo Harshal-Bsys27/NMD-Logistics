@@ -4,7 +4,17 @@ export type AssignmentStatus =
   | 'rejected'
   | 'in_progress'
   | 'completed'
+  | 'failed'
   | 'cancelled';
+
+export type DeliveryExceptionReason =
+  | 'customer_unavailable'
+  | 'address_issue'
+  | 'customer_refused'
+  | 'access_blocked'
+  | 'vehicle_issue'
+  | 'package_issue'
+  | 'other';
 
 export type DriverAvailability = 'available' | 'on_delivery' | 'on_break' | 'off_duty';
 

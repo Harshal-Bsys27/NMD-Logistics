@@ -14,12 +14,13 @@ import {
 import { launchCamera } from 'react-native-image-picker';
 import SignatureScreen from 'react-native-signature-canvas';
 import { supabase } from '../lib/supabase';
-import type { DriverAssignment, ProofPhoto } from '../types';
+import type { DeliveryExceptionReason, DriverAssignment, ProofPhoto } from '../types';
 import { colors } from '../theme';
 import ActionButton from '../components/ActionButton';
 import InlineError from '../components/InlineError';
 import {
   completeAssignment,
+  reportDeliveryException,
   updateAssignmentStatus,
 } from '../services/driver';
 
@@ -47,7 +48,21 @@ export default function AssignmentDetailScreen({
   const [signatureException, setSignatureException] = useState(false);
   const [signatureExceptionReason, setSignatureExceptionReason] = useState('');
   const [showProofForm, setShowProofForm] = useState(false);
+  const [showExceptionForm, setShowExceptionForm] = useState(false);
+  const [exceptionReason, setExceptionReason] = useState<DeliveryExceptionReason>('customer_unavailable');
+  const [exceptionNotes, setExceptionNotes] = useState('');
+  const [exceptionPhoto, setExceptionPhoto] = useState<ProofPhoto | null>(null);
   const statusLabel = assignment.status.replace(/_/g, ' ');
+
+  const exceptionReasons: Array<{ value: DeliveryExceptionReason; label: string }> = [
+    { value: 'customer_unavailable', label: 'Customer unavailable' },
+    { value: 'address_issue', label: 'Address issue' },
+    { value: 'customer_refused', label: 'Customer refused delivery' },
+    { value: 'access_blocked', label: 'Could not access location' },
+    { value: 'vehicle_issue', label: 'Vehicle issue' },
+    { value: 'package_issue', label: 'Package issue' },
+    { value: 'other', label: 'Other' },
+  ];
 
   const runStatusAction = async (nextStatus: 'accepted' | 'rejected' | 'in_progress') => {
     setBusy(true);
@@ -100,6 +115,70 @@ export default function AssignmentDetailScreen({
       });
     } catch (cameraError) {
       setActionError(cameraError instanceof Error ? cameraError.message : 'Unable to open the camera.');
+    }
+  };
+
+  const captureExceptionPhoto = async () => {
+    setActionError('');
+    try {
+      const result = await launchCamera({
+        mediaType: 'photo',
+        includeBase64: true,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.8,
+        saveToPhotos: false,
+      });
+      if (result.didCancel) return;
+      if (result.errorCode) {
+        setActionError(result.errorMessage || 'Could not open the camera.');
+        return;
+      }
+      const asset = result.assets?.[0];
+      if (!asset?.base64) {
+        setActionError('The camera did not return a usable photo. Please try again.');
+        return;
+      }
+      if (asset.fileSize && asset.fileSize > 8 * 1024 * 1024) {
+        setActionError('Choose a photo smaller than 8 MB.');
+        return;
+      }
+      setExceptionPhoto({
+        base64: asset.base64,
+        fileName: asset.fileName || `exception-${Date.now()}.jpg`,
+        mimeType: asset.type || 'image/jpeg',
+      });
+    } catch (cameraError) {
+      setActionError(cameraError instanceof Error ? cameraError.message : 'Unable to open the camera.');
+    }
+  };
+
+  const submitDeliveryException = async () => {
+    if (exceptionNotes.trim().length > 1000) {
+      setActionError('Issue notes must be 1000 characters or fewer.');
+      return;
+    }
+
+    setBusy(true);
+    setActionError('');
+    try {
+      const result = await reportDeliveryException({
+        assignment,
+        reason: exceptionReason,
+        notes: exceptionNotes,
+        photo: exceptionPhoto,
+      });
+      await onUpdated();
+      Alert.alert(
+        'Delivery issue recorded',
+        result.notificationError
+          ? `Dispatch has been notified. The customer email needs attention: ${result.notificationError}`
+          : 'Dispatch has been notified. The order is now in the delivery issues queue.',
+      );
+    } catch (reportError) {
+      setActionError(reportError instanceof Error ? reportError.message : 'Unable to report the delivery issue.');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -278,6 +357,47 @@ export default function AssignmentDetailScreen({
           ) : null}
         </View>
 
+        {assignment.status === 'in_progress' && showExceptionForm && (
+          <View style={styles.exceptionCard}>
+            <Text style={styles.sectionTitle}>Report delivery issue</Text>
+            <Text style={styles.proofHint}>This records the attempt and returns the order to dispatch. It does not mark the delivery complete.</Text>
+            <Text style={styles.inputLabel}>Issue reason *</Text>
+            <View style={styles.reasonOptions}>
+              {exceptionReasons.map((reason) => (
+                <Pressable
+                  key={reason.value}
+                  accessibilityRole="radio"
+                  accessibilityLabel={reason.label}
+                  accessibilityState={{ checked: exceptionReason === reason.value }}
+                  onPress={() => setExceptionReason(reason.value)}
+                  style={[styles.reasonOption, exceptionReason === reason.value && styles.reasonOptionSelected]}
+                >
+                  <Text style={[styles.reasonOptionText, exceptionReason === reason.value && styles.reasonOptionTextSelected]}>
+                    {reason.label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.inputLabel}>Notes</Text>
+            <TextInput
+              accessibilityLabel="Delivery issue notes"
+              maxLength={1000}
+              multiline
+              onChangeText={setExceptionNotes}
+              placeholder="Add details for dispatch (optional)"
+              placeholderTextColor={colors.muted}
+              style={[styles.input, styles.notesInput]}
+              textAlignVertical="top"
+              value={exceptionNotes}
+            />
+            <Pressable accessibilityRole="button" onPress={() => captureExceptionPhoto()} style={styles.photoButton}>
+              <Text style={styles.photoButtonText}>{exceptionPhoto ? 'Photo captured · tap to retake' : 'Add issue photo (optional)'}</Text>
+            </Pressable>
+            <ActionButton label="Submit delivery issue" loading={busy} onPress={() => submitDeliveryException()} />
+            <ActionButton label="Back to delivery" variant="secondary" disabled={busy} onPress={() => setShowExceptionForm(false)} />
+          </View>
+        )}
+
         {assignment.status === 'in_progress' && showProofForm && (
           <View style={styles.proofCard}>
             <Text style={styles.sectionTitle}>Proof of delivery</Text>
@@ -381,11 +501,28 @@ export default function AssignmentDetailScreen({
             <ActionButton label="Start delivery" loading={busy} onPress={() => runStatusAction('in_progress')} />
           )}
           {assignment.status === 'in_progress' && !showProofForm && (
-            <ActionButton label="Complete delivery" onPress={() => setShowProofForm(true)} />
+            <>
+              {!showExceptionForm && <ActionButton label="Complete delivery" onPress={() => setShowProofForm(true)} />}
+              {!showExceptionForm && (
+                <ActionButton
+                  label="Report delivery issue"
+                  variant="secondary"
+                  onPress={() => {
+                    setShowProofForm(false);
+                    setShowExceptionForm(true);
+                  }}
+                />
+              )}
+            </>
           )}
           {assignment.status === 'completed' && (
             <View style={styles.completedBanner}>
               <Text style={styles.completedText}>Delivery completed</Text>
+            </View>
+          )}
+          {assignment.status === 'failed' && (
+            <View style={styles.neutralBanner}>
+              <Text style={styles.neutralText}>Delivery issue recorded. Dispatch will review this order.</Text>
             </View>
           )}
           {assignment.status === 'rejected' && (
@@ -601,6 +738,39 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: colors.paleBlue,
     padding: 15,
+  },
+  exceptionCard: {
+    gap: 11,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    borderRadius: 16,
+    backgroundColor: '#FEF2F2',
+    padding: 15,
+  },
+  reasonOptions: {
+    gap: 7,
+  },
+  reasonOption: {
+    minHeight: 40,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 9,
+    backgroundColor: colors.surface,
+    paddingHorizontal: 11,
+  },
+  reasonOptionSelected: {
+    borderColor: colors.blue,
+    backgroundColor: colors.paleBlue,
+  },
+  reasonOptionText: {
+    color: colors.text,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  reasonOptionTextSelected: {
+    color: colors.blue,
+    fontWeight: '800',
   },
   proofHint: {
     color: colors.muted,

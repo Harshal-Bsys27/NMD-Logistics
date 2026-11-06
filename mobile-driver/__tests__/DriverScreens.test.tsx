@@ -9,6 +9,7 @@ import {
   getDriverAvailabilityHistory,
   getDriverDeliveryProofs,
   getDriverFeedback,
+  reportDeliveryException,
   setDriverAvailability,
 } from '../src/services/driver';
 import type {
@@ -29,6 +30,7 @@ jest.mock('../src/services/driver', () => ({
   getDriverAvailabilityHistory: jest.fn().mockResolvedValue([]),
   getDriverDeliveryProofs: jest.fn().mockResolvedValue([]),
   getDriverFeedback: jest.fn().mockResolvedValue([]),
+  reportDeliveryException: jest.fn().mockResolvedValue({ notificationError: null }),
   setDriverAvailability: jest.fn().mockResolvedValue(undefined),
   updateDriverAvatar: jest.fn(),
 }));
@@ -279,6 +281,64 @@ test('requires a signature or the documented no-signature exception', async () =
   visibleText = screen.root.findAllByType(Text).map((node) => node.props.children);
   expect(visibleText).toContain('Reason for no signature *');
   expect(visibleText).toContain('Take proof photo (required)');
+});
+
+test('records a delivery issue without opening the completion proof form', async () => {
+  const assignment: DriverAssignment = {
+    id: 'assignment-issue',
+    order_id: 'order-issue',
+    personnel_id: 'driver-1',
+    status: 'in_progress',
+    assigned_at: '2026-11-06T12:00:00.000Z',
+    accepted_at: '2026-11-06T12:01:00.000Z',
+    started_at: '2026-11-06T12:02:00.000Z',
+    estimated_duration_minutes: null,
+    notes: null,
+    order: {
+      id: 'order-issue',
+      order_number: 'NMD-1003',
+      client_name: 'NMD Customer',
+      client_phone: '1234567890',
+      pickup_location: 'Warehouse',
+      delivery_location: 'Customer address',
+      package_description: null,
+      package_weight: null,
+      special_instructions: null,
+    },
+  };
+  const onUpdated = jest.fn().mockResolvedValue(undefined);
+  const screenRef: { current: ReactTestRenderer.ReactTestRenderer | null } = { current: null };
+  await ReactTestRenderer.act(() => {
+    screenRef.current = ReactTestRenderer.create(
+      <AssignmentDetailScreen
+        assignment={assignment}
+        onBack={jest.fn()}
+        onUpdated={onUpdated}
+        error=""
+        onClearError={jest.fn()}
+      />,
+    );
+  });
+  const screen = screenRef.current;
+  if (!screen) throw new Error('The assignment detail screen did not render.');
+
+  await ReactTestRenderer.act(() => {
+    screen.root.findByProps({ accessibilityLabel: 'Report delivery issue' }).props.onPress();
+  });
+  expect(screen.root.findByProps({ accessibilityLabel: 'Customer unavailable' })).toBeTruthy();
+  expect(screen.root.findAllByType(Text).map((node) => node.props.children)).not.toContain('Recipient signature *');
+
+  await ReactTestRenderer.act(async () => {
+    screen.root.findByProps({ accessibilityLabel: 'Submit delivery issue' }).props.onPress();
+  });
+
+  expect(reportDeliveryException).toHaveBeenCalledWith({
+    assignment,
+    reason: 'customer_unavailable',
+    notes: '',
+    photo: null,
+  });
+  expect(onUpdated).toHaveBeenCalled();
 });
 
 test('shows completed proof details and the associated delivery photo', async () => {

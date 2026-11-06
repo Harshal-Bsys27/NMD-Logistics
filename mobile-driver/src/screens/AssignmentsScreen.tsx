@@ -31,6 +31,7 @@ const statusLabels: Record<string, string> = {
   rejected: 'Declined',
   in_progress: 'On delivery',
   completed: 'Delivered',
+  failed: 'Delivery issue',
   cancelled: 'Cancelled',
 };
 
@@ -48,7 +49,7 @@ export default function AssignmentsScreen({
     ['pending', 'accepted', 'in_progress'].includes(item.status)
   );
   const completedAssignments = assignments.filter((item) =>
-    ['completed', 'rejected', 'cancelled'].includes(item.status)
+    ['completed', 'rejected', 'cancelled', 'failed'].includes(item.status)
   );
   const isHistory = tab === 'history';
   const orderedAssignments = isHistory ? completedAssignments : activeAssignments;
@@ -181,6 +182,7 @@ export default function AssignmentsScreen({
 function statusStyle(status: string) {
   if (status === 'in_progress') return { backgroundColor: colors.paleBlue };
   if (status === 'completed') return { backgroundColor: colors.paleGreen };
+  if (status === 'failed') return { backgroundColor: '#FEE2E2' };
   if (status === 'pending') return { backgroundColor: colors.paleGold };
   return { backgroundColor: colors.background };
 }
@@ -188,6 +190,7 @@ function statusStyle(status: string) {
 function statusTextStyle(status: string) {
   if (status === 'in_progress') return { color: colors.blue };
   if (status === 'completed') return { color: colors.success };
+  if (status === 'failed') return { color: colors.danger };
   if (status === 'pending') return { color: colors.warning };
   return { color: colors.muted };
 }

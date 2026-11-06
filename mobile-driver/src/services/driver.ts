@@ -8,6 +8,7 @@ import type {
   DriverDeliveryProof,
   DriverFeedback,
   DriverProfile,
+  DeliveryExceptionReason,
   ProofPhoto,
 } from '../types';
 
@@ -267,7 +268,7 @@ function getOwnedAvatarPath(avatarUrl: string | null, userId: string): string | 
 
 async function requestCustomerTrackingNotification(
   orderId: string,
-  event: 'in_transit',
+  event: 'in_transit' | 'delivery_failed',
 ): Promise<string | null> {
   const appUrl = Config.NMD_WEB_APP_URL?.trim();
   if (!appUrl) return 'NMD_WEB_APP_URL is not configured in the driver app.';
@@ -366,6 +367,78 @@ export async function updateAssignmentStatus(
     return requestCustomerTrackingNotification(assignment.order_id, 'in_transit');
   }
   return null;
+}
+
+export async function reportDeliveryException(input: {
+  assignment: DriverAssignment;
+  reason: DeliveryExceptionReason;
+  notes: string;
+  photo: ProofPhoto | null;
+}): Promise<{ notificationError: string | null }> {
+  let photoPath: string | null = null;
+  let preservePhoto = false;
+
+  try {
+    if (input.notes.trim().length > 1000) {
+      throw new Error('Issue notes must be 1000 characters or fewer.');
+    }
+
+    if (input.photo) {
+      const extensionByType: Record<string, string> = {
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'image/webp': 'webp',
+      };
+      const extension = extensionByType[input.photo.mimeType];
+      if (!extension) throw new Error('Choose a JPG, PNG, or WebP issue photo.');
+      if (input.photo.base64.length * 0.75 > 8 * 1024 * 1024) {
+        throw new Error('The issue photo must be 8 MB or smaller.');
+      }
+
+      photoPath = `${input.assignment.id}/exception-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+      const { error: uploadError } = await supabase.storage
+        .from('delivery-proofs')
+        .upload(photoPath, decode(input.photo.base64), {
+          contentType: input.photo.mimeType,
+          cacheControl: '3600',
+          upsert: false,
+        });
+      if (uploadError) throw new Error(`Could not upload issue photo: ${uploadError.message}`);
+    }
+
+    const { data, error } = await supabase.rpc('report_delivery_exception', {
+      p_assignment_id: input.assignment.id,
+      p_reason: input.reason,
+      p_notes: input.notes.trim() || null,
+      p_photo_path: photoPath,
+    });
+
+    if (error || !data) {
+      const { data: existing, error: verifyError } = await supabase
+        .from('delivery_exceptions')
+        .select('id, photo_path')
+        .eq('assignment_id', input.assignment.id)
+        .maybeSingle();
+      if (existing) preservePhoto = photoPath !== null && existing.photo_path === photoPath;
+      if (verifyError) {
+        preservePhoto = true;
+        throw new Error('The issue report could not be verified. Refresh your assignments before retrying.');
+      }
+      if (!existing) throw new Error(error?.message ?? 'The issue report returned no record.');
+    }
+
+    return {
+      notificationError: await requestCustomerTrackingNotification(input.assignment.order_id, 'delivery_failed'),
+    };
+  } catch (error) {
+    if (photoPath && !preservePhoto) {
+      const { error: cleanupError } = await supabase.storage.from('delivery-proofs').remove([photoPath]);
+      if (cleanupError) {
+        throw new Error(`${error instanceof Error ? error.message : 'Unable to report the delivery issue.'} The uploaded photo could not be removed; contact dispatch.`);
+      }
+    }
+    throw error;
+  }
 }
 
 export async function completeAssignment(input: {
