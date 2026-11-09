@@ -14,9 +14,6 @@ export const metadata: Metadata = {
     template: '%s | NMD Logistics',
   },
   description: 'Coordinate orders, dispatch, drivers, and delivery performance in one logistics operations workspace.',
-  icons: {
-    icon: '/favicon.ico',
-  },
 };
 
 export const viewport = {
