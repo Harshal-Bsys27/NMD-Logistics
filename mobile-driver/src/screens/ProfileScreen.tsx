@@ -17,7 +17,7 @@ import type {
   DriverFeedback,
   DriverProfile,
 } from '../types';
-import { colors } from '../theme';
+import { useAppTheme, type AppColors } from '../theme';
 import ActionButton from '../components/ActionButton';
 import InlineError from '../components/InlineError';
 import {
@@ -34,6 +34,7 @@ interface ProfileScreenProps {
   assignments: DriverAssignment[];
   error: string;
   onSignOut: () => void;
+  onOpenSettings: () => void;
   onProfileUpdated: () => Promise<void>;
 }
 
@@ -50,8 +51,11 @@ export default function ProfileScreen({
   assignments,
   error,
   onSignOut,
+  onOpenSettings,
   onProfileUpdated,
 }: ProfileScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const [avatarUrl, setAvatarUrl] = useState(profile?.avatar_url ?? null);
   const [avatarFailed, setAvatarFailed] = useState(false);
   const [avatarPreviewVisible, setAvatarPreviewVisible] = useState(false);
@@ -295,18 +299,18 @@ export default function ProfileScreen({
 
         <Text style={styles.sectionTitle}>Delivery overview</Text>
         <View style={styles.statsCard}>
-          <Stat value={String(profile?.total_deliveries_completed ?? 0)} label="Completed" />
+          <Stat value={String(profile?.total_deliveries_completed ?? 0)} label="Completed" colors={colors} />
           <View style={styles.statDivider} />
-          <Stat value={String(activeAssignments.length)} label="Active" />
+          <Stat value={String(activeAssignments.length)} label="Active" colors={colors} />
           <View style={styles.statDivider} />
-          <Stat value={profile?.rating ? Number(profile.rating).toFixed(1) : '—'} label="Rating" />
+          <Stat value={profile?.rating ? Number(profile.rating).toFixed(1) : '—'} label="Rating" colors={colors} />
         </View>
 
         <Text style={styles.sectionTitle}>Driver information</Text>
         <View style={styles.detailsCard}>
-          <DetailRow label="Employee ID" value={profile?.employee_id || 'Not set'} />
-          <DetailRow label="Vehicle type" value={profile?.vehicle_type || 'Not set'} />
-          <DetailRow label="Vehicle number" value={profile?.vehicle_number || 'Not set'} last />
+          <DetailRow label="Employee ID" value={profile?.employee_id || 'Not set'} colors={colors} />
+          <DetailRow label="Vehicle type" value={profile?.vehicle_type || 'Not set'} colors={colors} />
+          <DetailRow label="Vehicle number" value={profile?.vehicle_number || 'Not set'} colors={colors} last />
         </View>
 
         <Text style={styles.sectionTitle}>Availability history</Text>
@@ -316,6 +320,7 @@ export default function ProfileScreen({
               key={entry.id}
               label={new Date(entry.changed_at).toLocaleString()}
               value={`${entry.previous_status.replace(/_/g, ' ')} → ${entry.new_status.replace(/_/g, ' ')}`}
+              colors={colors}
               last={index === history.length - 1}
             />
           )) : (
@@ -343,6 +348,12 @@ export default function ProfileScreen({
         </View>
 
         <View style={styles.signOutCard}>
+          <Text style={styles.signOutTitle}>App preferences</Text>
+          <Text style={styles.signOutText}>Choose your appearance and view app information.</Text>
+          <ActionButton label="Open settings" onPress={onOpenSettings} variant="secondary" />
+        </View>
+
+        <View style={styles.signOutCard}>
           <Text style={styles.signOutTitle}>Account</Text>
           <Text style={styles.signOutText}>Sign out of this device when you are finished.</Text>
           <ActionButton label="Sign out" onPress={onSignOut} variant="secondary" />
@@ -352,7 +363,8 @@ export default function ProfileScreen({
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function Stat({ value, label, colors }: { value: string; label: string; colors: AppColors }) {
+  const styles = createStyles(colors);
   return (
     <View style={styles.stat}>
       <Text style={styles.statValue}>{value}</Text>
@@ -361,7 +373,18 @@ function Stat({ value, label }: { value: string; label: string }) {
   );
 }
 
-function DetailRow({ label, value, last = false }: { label: string; value: string; last?: boolean }) {
+function DetailRow({
+  label,
+  value,
+  colors,
+  last = false,
+}: {
+  label: string;
+  value: string;
+  colors: AppColors;
+  last?: boolean;
+}) {
+  const styles = createStyles(colors);
   return (
     <View style={[styles.detailRow, !last && styles.detailBorder]}>
       <Text numberOfLines={2} style={styles.detailLabel}>{label}</Text>
@@ -370,7 +393,7 @@ function DetailRow({ label, value, last = false }: { label: string; value: strin
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: AppColors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -418,17 +441,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   avatar: {
-    width: 76,
-    height: 76,
+    width: 112,
+    height: 112,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 38,
+    borderRadius: 56,
     backgroundColor: colors.paleGold,
   },
   avatarImage: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
     backgroundColor: colors.paleGold,
   },
   avatarText: {
