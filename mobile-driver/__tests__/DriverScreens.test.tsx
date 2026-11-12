@@ -1,10 +1,13 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
-import { Image, Text } from 'react-native';
+import { Image, Text, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import AssignmentDetailScreen from '../src/screens/AssignmentDetailScreen';
 import ProfileScreen from '../src/screens/ProfileScreen';
 import ProofsScreen from '../src/screens/ProofsScreen';
 import AssignmentsScreen from '../src/screens/AssignmentsScreen';
+import SettingsScreen from '../src/screens/SettingsScreen';
+import { ThemeProvider } from '../src/theme';
 import {
   getDriverAvailabilityHistory,
   getDriverDeliveryProofs,
@@ -23,6 +26,18 @@ import type {
 jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(),
 }));
+
+jest.mock('@react-native-async-storage/async-storage', () => {
+  const storage: Record<string, string> = {};
+  return {
+    __esModule: true,
+    default: {
+      getItem: jest.fn(async (key: string) => storage[key] ?? null),
+      setItem: jest.fn(async (key: string, value: string) => { storage[key] = value; }),
+      removeItem: jest.fn(async (key: string) => { delete storage[key]; }),
+    },
+  };
+});
 
 jest.mock('react-native-signature-canvas', () => 'SignatureScreen');
 
@@ -89,6 +104,7 @@ test('shows driver availability, rating and profile history sections', async () 
         assignments={[]}
         error=""
         onSignOut={jest.fn()}
+        onOpenSettings={jest.fn()}
         onProfileUpdated={jest.fn().mockResolvedValue(undefined)}
       />,
     );
@@ -119,6 +135,7 @@ test.each([
         assignments={[]}
         error=""
         onSignOut={onSignOut}
+        onOpenSettings={jest.fn()}
         onProfileUpdated={jest.fn().mockResolvedValue(undefined)}
       />,
     );
@@ -167,6 +184,7 @@ test('shows the saved profile photo in deliveries and opens a full-size profile 
         assignments={[]}
         error=""
         onSignOut={jest.fn()}
+        onOpenSettings={jest.fn()}
         onProfileUpdated={jest.fn().mockResolvedValue(undefined)}
       />,
     );
@@ -175,16 +193,62 @@ test('shows the saved profile photo in deliveries and opens a full-size profile 
   if (!profileScreen) throw new Error('The profile screen did not render.');
   expect(profileScreen.root.findByProps({ accessibilityLabel: 'Profile photo' }).props.source)
     .toEqual({ uri: photoProfile.avatar_url });
+  expect(profileScreen.root.findByProps({ accessibilityLabel: 'Profile photo' }).props.style)
+    .toEqual(expect.objectContaining({ width: 112, height: 112 }));
 
   await ReactTestRenderer.act(async () => {
     profileScreen.root.findByProps({ accessibilityLabel: 'View profile photo' }).props.onPress();
   });
+
   expect(profileScreen.root.findByProps({ accessibilityLabel: 'Full-size profile photo' }))
     .toBeTruthy();
   expect(profileScreen.root.findAllByType(Image).some((image) => (
     image.props.accessibilityLabel === 'Full-size profile photo'
     && image.props.source.uri === photoProfile.avatar_url
   ))).toBe(true);
+});
+
+test('opens app settings from profile and saves a dark theme preference', async () => {
+  const onOpenSettings = jest.fn();
+  const settingsProfileRef: { current: ReactTestRenderer.ReactTestRenderer | null } = { current: null };
+  await ReactTestRenderer.act(async () => {
+    settingsProfileRef.current = ReactTestRenderer.create(
+      <ProfileScreen
+        profile={profile}
+        userId="user-1"
+        email={profile.email}
+        assignments={[]}
+        error=""
+        onSignOut={jest.fn()}
+        onOpenSettings={onOpenSettings}
+        onProfileUpdated={jest.fn().mockResolvedValue(undefined)}
+      />,
+    );
+  });
+  const settingsProfile = settingsProfileRef.current;
+  if (!settingsProfile) throw new Error('The profile screen did not render.');
+  await ReactTestRenderer.act(async () => {
+    settingsProfile.root.findByProps({ accessibilityLabel: 'Open settings' }).props.onPress();
+  });
+  expect(onOpenSettings).toHaveBeenCalledTimes(1);
+
+  const settingsScreenRef: { current: ReactTestRenderer.ReactTestRenderer | null } = { current: null };
+  await ReactTestRenderer.act(async () => {
+    settingsScreenRef.current = ReactTestRenderer.create(
+      <ThemeProvider>
+        <SettingsScreen />
+      </ThemeProvider>,
+    );
+  });
+  const settingsScreen = settingsScreenRef.current;
+  if (!settingsScreen) throw new Error('The settings screen did not render.');
+  await ReactTestRenderer.act(async () => {
+    settingsScreen.root.findByProps({ accessibilityLabel: 'Dark' }).props.onPress();
+  });
+  expect(settingsScreen.root.findByProps({ accessibilityLabel: 'Dark' }).props.accessibilityState.checked).toBe(true);
+  expect(AsyncStorage.setItem).toHaveBeenCalledWith('@nmd-driver/theme-mode', 'dark');
+  expect(settingsScreen.root.findByType(View).props.style)
+    .toEqual(expect.objectContaining({ backgroundColor: '#0B1220' }));
 });
 
 test('does not expose manual feedback-link generation to drivers', async () => {

@@ -13,6 +13,18 @@ jest.mock('react-native-config', () => ({
   GOOGLE_WEB_CLIENT_ID: 'test-web-client-id',
 }));
 
+jest.mock('@react-native-async-storage/async-storage', () => {
+  const storage: Record<string, string> = {};
+  return {
+    __esModule: true,
+    default: {
+      getItem: jest.fn(async (key: string) => storage[key] ?? null),
+      setItem: jest.fn(async (key: string, value: string) => { storage[key] = value; }),
+      removeItem: jest.fn(async (key: string) => { delete storage[key]; }),
+    },
+  };
+});
+
 jest.mock('@react-native-google-signin/google-signin', () => ({
   GoogleSignin: {
     configure: jest.fn(),
