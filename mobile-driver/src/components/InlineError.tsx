@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme';
+import { useAppTheme } from '../theme';
 
 export default function InlineError({
   message,
@@ -9,6 +9,8 @@ export default function InlineError({
   message: string;
   onDismiss?: () => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   if (!message) return null;
 
   return (
@@ -23,7 +25,7 @@ export default function InlineError({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   container: {
     gap: 8,
     borderRadius: 12,

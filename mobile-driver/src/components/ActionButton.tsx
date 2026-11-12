@@ -1,6 +1,6 @@
 import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { colors } from '../theme';
+import { useAppTheme } from '../theme';
 
 interface ActionButtonProps {
   label: string;
@@ -19,6 +19,8 @@ export default function ActionButton({
   loading = false,
   disabled = false,
 }: ActionButtonProps) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const buttonStyle = variant === 'primary'
     ? styles.primary
     : variant === 'danger'
@@ -47,7 +49,7 @@ export default function ActionButton({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   button: {
     minHeight: 50,
     alignItems: 'center',
