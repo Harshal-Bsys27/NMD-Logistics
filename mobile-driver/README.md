@@ -114,7 +114,11 @@ outside source control before distributing it or publishing it to Google Play.
   not generate or share feedback links.
 - Update profile photo and availability; view the profile photo full-screen or
   in the deliveries header, and review availability history, delivery totals,
-  and customer feedback.
+  and customer feedback. The profile photo is shown at a larger size in the
+  profile screen.
+- Open **Settings** from the profile or bottom navigation to choose System,
+  Light, or Dark appearance. The selected theme is saved on the device and
+  applies throughout the app.
 - Navigate between active deliveries, delivery history, proofs, and your
   driver profile.
 
