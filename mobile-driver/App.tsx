@@ -20,10 +20,13 @@ import AssignmentsScreen from './src/screens/AssignmentsScreen';
 import AssignmentDetailScreen from './src/screens/AssignmentDetailScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import ProofsScreen from './src/screens/ProofsScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 import BottomTabBar, { type WorkspaceTab } from './src/components/BottomTabBar';
-import { colors } from './src/theme';
+import { ThemeProvider, useAppTheme } from './src/theme';
 
 function DriverApp() {
+  const { colors, isDark } = useAppTheme();
+  const styles = createStyles(colors);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<DriverProfile | null>(null);
   const [assignments, setAssignments] = useState<DriverAssignment[]>([]);
@@ -188,7 +191,7 @@ function DriverApp() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
       {loading ? (
         <View style={styles.loading}>
           <ActivityIndicator size="large" color={colors.gold} />
@@ -214,10 +217,13 @@ function DriverApp() {
               assignments={assignments}
               error={error}
               onSignOut={() => handleSignOut()}
+              onOpenSettings={() => setActiveTab('settings')}
               onProfileUpdated={refresh}
             />
           ) : activeTab === 'proofs' ? (
             <ProofsScreen driverId={profile?.id ?? ''} />
+          ) : activeTab === 'settings' ? (
+            <SettingsScreen />
           ) : (
             <AssignmentsScreen
               profile={profile}
@@ -239,13 +245,15 @@ function DriverApp() {
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <DriverApp />
-    </SafeAreaProvider>
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <DriverApp />
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,

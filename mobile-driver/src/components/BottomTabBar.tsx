@@ -1,8 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme';
+import { useAppTheme } from '../theme';
 
-export type WorkspaceTab = 'deliveries' | 'history' | 'proofs' | 'profile';
+export type WorkspaceTab = 'deliveries' | 'history' | 'proofs' | 'profile' | 'settings';
 
 interface BottomTabBarProps {
   activeTab: WorkspaceTab;
@@ -14,9 +14,13 @@ const tabs: { id: WorkspaceTab; label: string; icon: string }[] = [
   { id: 'history', label: 'History', icon: '↻' },
   { id: 'proofs', label: 'Proofs', icon: '✓' },
   { id: 'profile', label: 'Profile', icon: '●' },
+  { id: 'settings', label: 'Settings', icon: '⚙' },
 ];
 
 export default function BottomTabBar({ activeTab, onSelect }: BottomTabBarProps) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
+
   return (
     <View accessibilityRole="tablist" style={styles.container}>
       {tabs.map((tab) => {
@@ -38,7 +42,7 @@ export default function BottomTabBar({ activeTab, onSelect }: BottomTabBarProps)
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
