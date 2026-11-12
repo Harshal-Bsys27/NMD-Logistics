@@ -10,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import type { DriverAssignment, DriverProfile } from '../types';
-import { colors } from '../theme';
+import { useAppTheme } from '../theme';
 import InlineError from '../components/InlineError';
 import type { WorkspaceTab } from '../components/BottomTabBar';
 
@@ -45,6 +45,8 @@ export default function AssignmentsScreen({
   onRefresh,
   onOpenAssignment,
 }: AssignmentsScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const activeAssignments = assignments.filter((item) =>
     ['pending', 'accepted', 'in_progress'].includes(item.status)
   );
@@ -149,8 +151,8 @@ export default function AssignmentsScreen({
           >
             <View style={styles.cardTop}>
               <Text style={styles.orderNumber}>{assignment.order.order_number}</Text>
-              <View style={[styles.statusPill, statusStyle(assignment.status)]}>
-                <Text style={[styles.statusText, statusTextStyle(assignment.status)]}>
+              <View style={[styles.statusPill, statusStyle(assignment.status, colors)]}>
+                <Text style={[styles.statusText, statusTextStyle(assignment.status, colors)]}>
                   {statusLabels[assignment.status] ?? assignment.status}
                 </Text>
               </View>
@@ -179,7 +181,7 @@ export default function AssignmentsScreen({
   );
 }
 
-function statusStyle(status: string) {
+function statusStyle(status: string, colors: ReturnType<typeof useAppTheme>['colors']) {
   if (status === 'in_progress') return { backgroundColor: colors.paleBlue };
   if (status === 'completed') return { backgroundColor: colors.paleGreen };
   if (status === 'failed') return { backgroundColor: '#FEE2E2' };
@@ -187,7 +189,7 @@ function statusStyle(status: string) {
   return { backgroundColor: colors.background };
 }
 
-function statusTextStyle(status: string) {
+function statusTextStyle(status: string, colors: ReturnType<typeof useAppTheme>['colors']) {
   if (status === 'in_progress') return { color: colors.blue };
   if (status === 'completed') return { color: colors.success };
   if (status === 'failed') return { color: colors.danger };
@@ -195,7 +197,7 @@ function statusTextStyle(status: string) {
   return { color: colors.muted };
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,

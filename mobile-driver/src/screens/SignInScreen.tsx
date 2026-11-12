@@ -12,7 +12,7 @@ import {
 import Config from 'react-native-config';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { supabase } from '../lib/supabase';
-import { colors } from '../theme';
+import { useAppTheme } from '../theme';
 import ActionButton from '../components/ActionButton';
 import InlineError from '../components/InlineError';
 
@@ -23,6 +23,8 @@ export default function SignInScreen({
   error: string;
   onError: (message: string) => void;
 }) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -191,9 +193,10 @@ export default function SignInScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   flex: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   content: {
     flexGrow: 1,

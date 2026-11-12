@@ -10,10 +10,12 @@ import {
 } from 'react-native';
 import type { DriverDeliveryProof } from '../types';
 import { getDriverDeliveryProofs } from '../services/driver';
-import { colors } from '../theme';
+import { useAppTheme } from '../theme';
 import InlineError from '../components/InlineError';
 
 export default function ProofsScreen({ driverId }: { driverId: string }) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const [proofs, setProofs] = useState<DriverDeliveryProof[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -138,7 +140,7 @@ export default function ProofsScreen({ driverId }: { driverId: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,

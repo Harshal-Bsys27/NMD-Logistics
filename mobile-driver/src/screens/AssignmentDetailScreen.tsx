@@ -15,7 +15,7 @@ import { launchCamera } from 'react-native-image-picker';
 import SignatureScreen from 'react-native-signature-canvas';
 import { supabase } from '../lib/supabase';
 import type { DeliveryExceptionReason, DriverAssignment, ProofPhoto } from '../types';
-import { colors } from '../theme';
+import { useAppTheme } from '../theme';
 import ActionButton from '../components/ActionButton';
 import InlineError from '../components/InlineError';
 import {
@@ -39,6 +39,8 @@ export default function AssignmentDetailScreen({
   error,
   onClearError,
 }: AssignmentDetailScreenProps) {
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
   const [recipientName, setRecipientName] = useState('');
@@ -541,7 +543,7 @@ export default function AssignmentDetailScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ReturnType<typeof useAppTheme>['colors']) => StyleSheet.create({
   flex: {
     flex: 1,
   },
